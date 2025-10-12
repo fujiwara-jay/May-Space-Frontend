@@ -22,7 +22,7 @@ function AdminUnitFinderManager() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5000/admin/units");
+      const res = await fetch("https://may-space-backend.onrender.com/admin/units");
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to fetch units");
       setUnits(data.units || []);
