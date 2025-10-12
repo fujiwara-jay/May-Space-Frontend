@@ -1,0 +1,71 @@
+
+.admin-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(0,0,0,0.55);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+}
+.admin-modal {
+	background: #232b34;
+	color: #f7e7b6;
+	border-radius: 14px;
+	box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+	padding: 36px 32px 28px 32px;
+	min-width: 340px;
+	max-width: 90vw;
+	position: relative;
+	text-align: center;
+}
+.admin-modal-close {
+	position: absolute;
+	top: 12px;
+	right: 18px;
+	background: none;
+	border: none;
+	color: #e57373;
+	font-size: 2rem;
+	cursor: pointer;
+}
+.admin-modal-actions {
+	margin-top: 28px;
+	display: flex;
+	gap: 18px;
+	justify-content: center;
+}
+.admin-modal-btn {
+	padding: 10px 24px;
+	border: none;
+	border-radius: 8px;
+	font-size: 1.1rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.2s, color 0.2s;
+}
+.admin-modal-btn.confirm {
+	background: #e0c16d;
+	color: #232b34;
+}
+.admin-modal-btn.confirm:hover {
+	background: #f7e7b6;
+}
+.admin-modal-btn.cancel {
+	background: #3d4852;
+	color: #f7e7b6;
+}
+.admin-modal-btn.cancel:hover {
+	background: #232b34;
+}
+.admin-modal-btn.danger {
+	background: #e57373;
+	color: #fff;
+}
+.admin-modal-btn.danger:hover {
+	background: #c62828;
+}
+

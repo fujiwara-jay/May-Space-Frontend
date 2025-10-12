@@ -1,0 +1,42 @@
+.renter-dashboard {
+  min-height: 100vh;
+  background: #f7f7f7;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.renter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #4a6572;
+  color: #fff;
+  padding: 15px 20px;
+  border-radius: 10px;
+}
+
+.logout-btn {
+  background: #e63946;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.logout-btn:hover {
+  background: #d62828;
+}
+
+.renter-content {
+  margin-top: 30px;
+}
+
+section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}

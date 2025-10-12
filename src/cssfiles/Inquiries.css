@@ -1,0 +1,93 @@
+
+.inquiries-container {
+	max-width: 800px;
+	margin: 40px auto;
+	background: #2c363f;
+	color: #f7e7b6;
+	border-radius: 18px;
+	box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+	padding: 36px 32px 28px 32px;
+	font-family: inherit;
+}
+.inquiries-container h2 {
+	text-align: center;
+	margin-bottom: 24px;
+	color: #e0c16d;
+	font-size: 1.6rem;
+	font-weight: 900;
+	letter-spacing: 0.25em;
+}
+.loading, .no-inquiries, .error-message {
+	text-align: center;
+	margin: 18px 0;
+	font-size: 1.1rem;
+}
+.inquiries-list {
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+}
+.inquiry-card {
+	background: #3d4852;
+	border-radius: 12px;
+	padding: 18px 22px;
+	box-shadow: 0 1px 5px rgba(0,0,0,0.10);
+	color: #f7e7b6;
+	transition: box-shadow 0.2s;
+}
+.inquiry-card:hover {
+	box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+}
+.inquiry-info > div {
+	margin-bottom: 6px;
+	font-size: 1.05rem;
+}
+.reply-section {
+	margin-top: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.reply-section textarea {
+	width: 100%;
+	border-radius: 8px;
+	border: none;
+	background: #4a5a6a;
+	color: #f7e7b6;
+	padding: 10px;
+	font-size: 1rem;
+	resize: vertical;
+}
+.send-reply-btn, .cancel-reply-btn, .reply-btn {
+	padding: 10px 22px;
+	border: none;
+	border-radius: 8px;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	margin-right: 10px;
+	margin-top: 4px;
+	transition: background 0.2s, color 0.2s;
+}
+.send-reply-btn {
+	background: #e0c16d;
+	color: #2c363f;
+}
+.send-reply-btn:hover {
+	background: #f7e7b6;
+	color: #1a1a1a;
+}
+.cancel-reply-btn {
+	background: #6c757d;
+	color: #f7e7b6;
+}
+.cancel-reply-btn:hover {
+	background: #5a6268;
+}
+.reply-btn {
+	background: #4a90e2;
+	color: #fff;
+}
+.reply-btn:hover {
+	background: #357ae8;
+}

@@ -1,0 +1,78 @@
+.bookings-container {
+  max-width: 900px;
+  margin: 40px auto;
+  background: #2c363f;
+  color: #f7e7b6;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+  padding: 36px 32px 28px 32px;
+  font-family: inherit;
+}
+
+.bookings-header {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #e0c16d;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+}
+
+.bookings-section {
+  margin-bottom: 32px;
+}
+
+.bookings-section h3 {
+  color: #e0c16d;
+  margin-bottom: 12px;
+}
+
+.booking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.booking-card {
+  background: #3d4852;
+  border-radius: 12px;
+  padding: 18px 22px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.10);
+  color: #f7e7b6;
+  transition: box-shadow 0.2s;
+}
+.booking-card:hover {
+  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+}
+.booking-info > div {
+  margin-bottom: 6px;
+  font-size: 1.05rem;
+}
+.booking-actions {
+  margin-top: 10px;
+}
+.confirm-btn, .deny-btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 10px;
+  margin-top: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+.confirm-btn {
+  background: #4caf50;
+  color: #fff;
+}
+.confirm-btn:hover {
+  background: #388e3c;
+}
+.deny-btn {
+  background: #e57373;
+  color: #fff;
+}
+.deny-btn:hover {
+  background: #c62828;
+}
