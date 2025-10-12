@@ -1,6 +1,6 @@
 CREATE DATABASE IF NOT EXISTS mayspace_portal;
 
-USE mayspace_portal;
+USE defaultdb;
 
 
 CREATE TABLE IF NOT EXISTS users (
