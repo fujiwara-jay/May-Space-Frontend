@@ -21,8 +21,8 @@ function Home() {
 
     try {
       const endpoint = userType === "admin"
-        ? "http://localhost:5000/admin/login"
-        : "http://localhost:5000/user/login";
+        ? "https://may-space-backend.onrender.com/admin/login"
+        : "https://may-space-backend.onrender.com/user/login";
 
       const response = await fetch(endpoint, {
         method: "POST",

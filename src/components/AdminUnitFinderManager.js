@@ -57,7 +57,7 @@ function AdminUnitFinderManager() {
     if (!deleteId) return;
     setActionMessage("");
     try {
-      const res = await fetch(`http://localhost:5000/admin/units/${deleteId}`, {
+      const res = await fetch(`https://may-space-backend.onrender.com/admin/units/${deleteId}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -103,7 +103,7 @@ function AdminUnitFinderManager() {
               <div style={{ display: "flex", gap: 18 }}>
                 {unit.images && JSON.parse(unit.images || "[]").length > 0 ? (
                   <img
-                    src={`http://localhost:5000${JSON.parse(unit.images)[0]}`}
+                    src={`https://may-space-backend.onrender.com${JSON.parse(unit.images)[0]}`}
                     alt="unit"
                     style={{
                       width: 120,

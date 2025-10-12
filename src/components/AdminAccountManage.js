@@ -54,7 +54,7 @@ function AdminAccountManage() {
     if (!deleteId) return;
     setActionMessage("");
     try {
-      const res = await fetch(`http://localhost:5000/admin/users/${deleteId}`, {
+      const res = await fetch(`https://may-space-backend.onrender.com/admin/users/${deleteId}`, {
         method: "DELETE",
       });
       const data = await res.json();

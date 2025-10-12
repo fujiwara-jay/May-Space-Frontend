@@ -44,7 +44,7 @@ function PostUnits() {
   const fetchPostedUnits = async () => {
     setFetchError(null);
     try {
-      const response = await fetch('http://localhost:5000/units', {
+      const response = await fetch('https://may-space-backend.onrender.com/units', {
         headers: getAuthHeaders(),
       });
       if (!response.ok) {
@@ -123,7 +123,7 @@ function PostUnits() {
     });
 
     try {
-      const response = await fetch('http://localhost:5000/units', {
+      const response = await fetch('https://may-space-backend.onrender.com/units', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: formData,
@@ -161,7 +161,7 @@ function PostUnits() {
     setFormError(null);
     setActionMessage(null);
     try {
-      const response = await fetch(`http://localhost:5000/units/${id}`, {
+      const response = await fetch(`https://may-space-backend.onrender.com/units/${id}`, {
         headers: getAuthHeaders(),
       });
       if (!response.ok) {
@@ -220,7 +220,7 @@ function PostUnits() {
     });
 
     try {
-      const response = await fetch(`http://localhost:5000/units/${editingUnitId}`, {
+      const response = await fetch(`https://may-space-backend.onrender.com/units/${editingUnitId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: formData,
@@ -265,7 +265,7 @@ function PostUnits() {
     setFormError(null);
     setActionMessage(null);
     try {
-      const response = await fetch(`http://localhost:5000/units/${unitToDelete}`, {
+      const response = await fetch(`https://may-space-backend.onrender.com/units/${unitToDelete}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -483,7 +483,7 @@ function PostUnits() {
                 {unitDetails.existingImages.map((img, index) => (
                   <div key={`existing-${index}`} className="image-preview-item">
                     <img
-                      src={`http://localhost:5000${img}`}
+                      src={`https://may-space-backend.onrender.com${img}`}
                       alt={`Existing ${index + 1}`}
                       style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "4px" }}
                     />
@@ -530,7 +530,7 @@ function PostUnits() {
                     {unit.images.map((img, imgIndex) => (
                       <img
                         key={imgIndex}
-                        src={`http://localhost:5000${img}`}
+                        src={`https://may-space-backend.onrender.com${img}`}
                         alt={`${unit.building_name} - ${unit.unit_number} (${imgIndex + 1})`}
                         className="unit-image"
                       />

@@ -49,7 +49,7 @@ function Inquiries() {
   const handleSendReply = async (inquiry) => {
     if (!replyMessage.trim()) return;
     try {
-      const res = await fetch(`http://localhost:5000/inquiries/reply`, {
+      const res = await fetch(`https://may-space-backend.onrender.com/inquiries/reply`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
