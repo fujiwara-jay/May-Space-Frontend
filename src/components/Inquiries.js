@@ -24,7 +24,7 @@ function Inquiries() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:5000/inquiries`, {
+      const res = await fetch(`https://may-space-backend.onrender.com/inquiries`, {
         headers: { "X-User-ID": userId },
       });
       if (!res.ok) throw new Error("Failed to fetch inquiries");
