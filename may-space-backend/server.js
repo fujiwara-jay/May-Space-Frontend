@@ -21,6 +21,19 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --- Helper function to safely parse images ---
+const safeParseImages = (imagesData) => {
+  if (!imagesData) return [];
+  if (Array.isArray(imagesData)) return imagesData;
+  try {
+    const parsed = JSON.parse(imagesData);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Error parsing images data:', error, 'Data:', imagesData);
+    return [];
+  }
+};
+
 // --- Registration Endpoints ---
 
 // User Registration
@@ -195,7 +208,12 @@ app.get('/units', authenticate, async (req, res) => {
       [userId]
     );
     await connection.end();
-    res.status(200).json({ units });
+    // FIXED: Use safeParseImages instead of JSON.parse
+    const processedUnits = units.map(unit => ({
+      ...unit,
+      images: safeParseImages(unit.images)
+    }));
+    res.status(200).json({ units: processedUnits });
   } catch (error) {
     console.error('Error fetching units:', error);
     res.status(500).json({ message: 'Failed to fetch units' });
@@ -216,7 +234,11 @@ app.get('/units/:id', authenticate, async (req, res) => {
     if (units.length === 0) {
       return res.status(404).json({ message: 'Unit not found or does not belong to this user' });
     }
-    const unit = { ...units[0], images: JSON.parse(units[0].images || '[]') };
+    // FIXED: Use safeParseImages instead of JSON.parse
+    const unit = { 
+      ...units[0], 
+      images: safeParseImages(units[0].images)
+    };
     res.status(200).json({ unit });
   } catch (error) {
     console.error('Error fetching unit:', error);
@@ -230,8 +252,11 @@ app.put('/units/:id', authenticate, upload.array('images', 5), async (req, res) 
   const userId = req.userId;
   const { buildingName, unitNumber, location, specs, specialFeatures, contactPerson, phoneNumber, existingImages } = req.body;
   const newImagePaths = req.files.map(file => `/uploads/${file.filename}`);
-  const parsedExistingImages = existingImages ? JSON.parse(existingImages) : [];
+  
+  // FIXED: Use safeParseImages for existingImages
+  const parsedExistingImages = safeParseImages(existingImages);
   const imagesToStore = parsedExistingImages.concat(newImagePaths);
+  
   if (!buildingName || !unitNumber || !specs) {
     return res.status(400).json({ message: 'Building Name, Unit Number, and Specifications are required' });
   }
@@ -271,7 +296,8 @@ app.delete('/units/:id', authenticate, async (req, res) => {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found or does not belong to this user' });
     }
-    const imagePathsToDelete = JSON.parse(unitToDeleteRows[0].images || '[]');
+    // FIXED: Use safeParseImages instead of JSON.parse
+    const imagePathsToDelete = safeParseImages(unitToDeleteRows[0].images);
     for (const imagePath of imagePathsToDelete) {
       const filePath = path.join(__dirname, imagePath);
       try {
@@ -298,10 +324,11 @@ app.get('/public/units', async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     const [units] = await connection.execute('SELECT * FROM units');
     await connection.end();
-    // Map unit_price to unitPrice for frontend consistency
+    // FIXED: Use safeParseImages instead of JSON.parse
     const mappedUnits = units.map(unit => ({
       ...unit,
-      unitPrice: unit.unit_price
+      unitPrice: unit.unit_price,
+      images: safeParseImages(unit.images)  // ← MAIN FIX HERE
     }));
     res.status(200).json({ units: mappedUnits });
   } catch (error) {
@@ -514,6 +541,7 @@ app.put('/bookings/:id/status', async (req, res) => {
     res.status(500).json({ message: 'Failed to update booking status' });
   }
 });
+
 // --- Admin User Management Endpoints ---
 
 // Fetch all users (admin view)
@@ -537,7 +565,8 @@ app.delete('/admin/users/:id', async (req, res) => {
     // Find all units for this user to delete their images
     const [unitRows] = await connection.execute('SELECT id, images FROM units WHERE user_id = ?', [userId]);
     for (const unit of unitRows) {
-      const imagePaths = JSON.parse(unit.images || '[]');
+      // FIXED: Use safeParseImages instead of JSON.parse
+      const imagePaths = safeParseImages(unit.images);
       for (const imagePath of imagePaths) {
         const filePath = path.join(__dirname, imagePath);
         try {
@@ -558,6 +587,7 @@ app.delete('/admin/users/:id', async (req, res) => {
     res.status(500).json({ message: 'Failed to delete user' });
   }
 });
+
 // --- Admin Unit Management Endpoints ---
 
 // Fetch all units (admin view, includes user info)
@@ -568,7 +598,12 @@ app.get('/admin/units', async (req, res) => {
       `SELECT units.*, users.username as owner_username, users.email as owner_email FROM units LEFT JOIN users ON units.user_id = users.id`
     );
     await connection.end();
-    res.status(200).json({ units });
+    // FIXED: Use safeParseImages instead of JSON.parse
+    const processedUnits = units.map(unit => ({
+      ...unit,
+      images: safeParseImages(unit.images)  // ← FIX HERE
+    }));
+    res.status(200).json({ units: processedUnits });
   } catch (error) {
     console.error('Admin: Error fetching all units:', error);
     res.status(500).json({ message: 'Failed to fetch all units for admin' });
@@ -586,21 +621,22 @@ app.delete('/admin/units/:id', async (req, res) => {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found' });
     }
-    const imagePathsToDelete = JSON.parse(unitRows[0].images || '[]');
+
+    const imagePathsToDelete = safeParseImages(unitRows[0].images);
     for (const imagePath of imagePathsToDelete) {
       const filePath = path.join(__dirname, imagePath);
       try {
         await fs.unlink(filePath);
       } catch (error) {
-        // Ignore file not found errors
+
       }
     }
     await connection.execute('DELETE FROM units WHERE id = ?', [unitId]);
     await connection.end();
-    res.status(200).json({ message: 'Unit deleted successfully' });
-  } catch (error) {
-    console.error('Admin: Error deleting unit:', error);
-    res.status(500).json({ message: 'Failed to delete unit' });
-  }
-  
-});
+res.status(200).json({ message: 'Unit deleted successfully' });
+} catch (error) {
+  console.error('Admin: Error deleting unit', error);
+  res.status(500).json({ message: 'Failed to delete unit' });
+}
+// Remove the extra } that was here
+});  // This closes the app.delete() method

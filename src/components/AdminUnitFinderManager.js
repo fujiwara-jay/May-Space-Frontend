@@ -1,3 +1,13 @@
+  const safeParseImages = (imagesData) => {
+    if (!imagesData) return [];
+    if (Array.isArray(imagesData)) return imagesData;
+    try {
+      const parsed = JSON.parse(imagesData);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  };
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../cssfiles/AdminUnitFinderManager.css";
@@ -101,9 +111,9 @@ function AdminUnitFinderManager() {
               }}
             >
               <div style={{ display: "flex", gap: 18 }}>
-                {unit.images && JSON.parse(unit.images || "[]").length > 0 ? (
+                {safeParseImages(unit.images).length > 0 ? (
                   <img
-                    src={`https://may-space-backend.onrender.com${JSON.parse(unit.images)[0]}`}
+                    src={`https://may-space-backend.onrender.com${safeParseImages(unit.images)[0]}`}
                     alt="unit"
                     style={{
                       width: 120,

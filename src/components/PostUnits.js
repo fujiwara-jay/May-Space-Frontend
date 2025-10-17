@@ -41,6 +41,17 @@ function PostUnits() {
     };
   };
 
+  const safeParseImages = (imagesData) => {
+    if (!imagesData) return [];
+    if (Array.isArray(imagesData)) return imagesData;
+    try {
+      const parsed = JSON.parse(imagesData);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  };
+
   const fetchPostedUnits = async () => {
     setFetchError(null);
     try {
@@ -54,7 +65,7 @@ function PostUnits() {
       const data = await response.json();
       setUnits(data.units.map(unit => ({
         ...unit,
-        images: JSON.parse(unit.images || '[]')
+        images: safeParseImages(unit.images)
       })));
     } catch (error) {
       console.error("Error fetching posted units:", error);
