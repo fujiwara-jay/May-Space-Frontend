@@ -2,6 +2,17 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../cssfiles/UnitFinder.css";
 
+const safeParseImages = (imagesData) => {
+  if (!imagesData) return [];
+  if (Array.isArray(imagesData)) return imagesData;
+  try {
+    const parsed = JSON.parse(imagesData);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 const API_BASE = process.env.REACT_APP_API_URL || "https://may-space-backend.onrender.com";
 
 const UnitFinder = () => {
@@ -112,18 +123,11 @@ const UnitFinder = () => {
       const data = await res.json();
       
       const normalized = (data.units || []).map((u) => {
-        let imgs = [];
-        try {
-          imgs = JSON.parse(u.images || "[]");
-        } catch {
-          imgs = [];
-        }
+        const imgs = safeParseImages(u.images);
         const images = imgs.map((p) => (p && p.startsWith("/") ? `${API_BASE}${p}` : p));
-        
         const unitPrice = u.unitPrice || u.price || null;
-        
-        return { 
-          ...u, 
+        return {
+          ...u,
           images,
           unitPrice,
           price: unitPrice
