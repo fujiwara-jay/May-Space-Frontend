@@ -66,9 +66,7 @@ function Dashboard() {
     };
 
     fetchUnreadCount();
-    
     const interval = setInterval(fetchUnreadCount, 30000);
-    
     return () => clearInterval(interval);
   }, []);
 
@@ -85,9 +83,9 @@ function Dashboard() {
           Post an Available Unit
         </button>
         <button className="unit-finder-btn message-inquiries-btn" onClick={handleMessageInquiries}>
-          <span className="button-text">Message Inquiries</span>
+          Message Inquiries
           {unreadCount > 0 && (
-            <span className="notification-badge">
+            <span className="notification-badge corner">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
