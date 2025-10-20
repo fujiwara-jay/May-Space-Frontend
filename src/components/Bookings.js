@@ -14,11 +14,53 @@ function Bookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionMessage, setActionMessage] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const checkForNewBookings = () => {
+    const lastVisit = localStorage.getItem(`lastBookingVisit_${userId}`) || Date.now();
+    const newNotifications = [];
+    
+    rentedUnits.forEach(booking => {
+      const bookingTime = new Date(booking.created_at).getTime();
+      if (bookingTime > lastVisit && booking.status === 'pending') {
+        newNotifications.push({
+          id: `booking-${booking.id}`,
+          type: 'new_booking',
+          message: `New booking request for ${booking.unit_number}`,
+          bookingId: booking.id,
+          timestamp: booking.created_at,
+          read: false
+        });
+      }
+    });
+
+    if (newNotifications.length > 0) {
+      setNotifications(prev => [...prev, ...newNotifications]);
+    }
+  };
+
+  const markNotificationAsRead = (notificationId) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === notificationId ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    localStorage.setItem(`lastBookingVisit_${userId}`, Date.now());
+  };
+
+  const getUnreadNotificationCount = () => {
+    return notifications.filter(notif => !notif.read).length;
   };
 
   const handleStatusUpdate = async (bookingId, status) => {
@@ -35,6 +77,7 @@ function Bookings() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || `Failed to update booking`);
       setActionMessage(`Booking ${status}`);
+      setNotifications(prev => prev.filter(notif => notif.bookingId !== bookingId));
       setTimeout(() => setActionMessage(""), 2000);
       fetchBookings();
     } catch (err) {
@@ -64,12 +107,84 @@ function Bookings() {
   };
 
   useEffect(() => {
-    if (userId) fetchBookings();
-    else setLoading(false);
+    if (userId) {
+      fetchBookings();
+      localStorage.setItem(`lastBookingVisit_${userId}`, Date.now());
+    } else {
+      setLoading(false);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    if (rentedUnits.length > 0) {
+      checkForNewBookings();
+    }
+  }, [rentedUnits]);
 
   return (
     <div className="bookings-container">
+      <div className="notifications-container">
+        <button 
+          className="notifications-bell"
+          onClick={() => setShowNotifications(!showNotifications)}
+        >
+          🔔
+          {getUnreadNotificationCount() > 0 && (
+            <span className="notification-badge">
+              {getUnreadNotificationCount()}
+            </span>
+          )}
+        </button>
+
+        {showNotifications && (
+          <div className="notifications-dropdown">
+            <div className="notifications-header">
+              <h4>Booking Notifications</h4>
+              {notifications.length > 0 && (
+                <button 
+                  className="clear-notifications-btn"
+                  onClick={clearAllNotifications}
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+            
+            {notifications.length === 0 ? (
+              <div className="no-notifications">No new booking notifications</div>
+            ) : (
+              <div className="notifications-list">
+                {notifications.map(notification => (
+                  <div 
+                    key={notification.id} 
+                    className={`notification-item ${notification.read ? 'read' : 'unread'}`}
+                    onClick={() => {
+                      markNotificationAsRead(notification.id);
+                      setShowNotifications(false);
+                      const bookingElement = document.getElementById(`booking-${notification.bookingId}`);
+                      if (bookingElement) {
+                        bookingElement.scrollIntoView({ behavior: 'smooth' });
+                        bookingElement.style.backgroundColor = 'rgba(224, 193, 109, 0.1)';
+                        setTimeout(() => {
+                          bookingElement.style.backgroundColor = '';
+                        }, 2000);
+                      }
+                    }}
+                  >
+                    <div className="notification-message">
+                      {notification.message}
+                    </div>
+                    <div className="notification-time">
+                      {new Date(notification.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <button className="back-button" onClick={handleBack}>
         ⬅ Back
       </button>
@@ -108,7 +223,7 @@ function Bookings() {
             <div className="no-inquiries">No one has booked your units yet.</div>
           ) : (
             rentedUnits.map((booking) => (
-              <div key={booking.id} className="booking-card">
+              <div key={booking.id} id={`booking-${booking.id}`} className="booking-card">
                 <div className="booking-info">
                   <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
                   <div><strong>Location:</strong> {booking.location}</div>
