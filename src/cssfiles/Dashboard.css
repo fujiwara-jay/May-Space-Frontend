@@ -97,10 +97,17 @@
   max-width: 400px;
 }
 
+
+.bookings-btn {
+  position: relative;
+  overflow: visible !important;
+}
+
+
 .message-inquiries-btn,
 .bookings-btn {
   position: relative;
-  overflow: visible !important; 
+  overflow: visible !important;
 }
 
 .notification-badge {
@@ -124,9 +131,11 @@
   pointer-events: none;
 }
 
+
 .notification-badge.bookings-badge {
-  background: #ffa502; /* Distinct color for bookings */
+  background: #ffa502;
 }
+
 
 .notification-badge.inside {
   top: 8px;
@@ -139,6 +148,7 @@
   right: 0;
   transform: translate(50%, -50%);
 }
+
 
 @keyframes pulse {
   0% { 
@@ -155,6 +165,7 @@
   }
 }
 
+
 .notification-badge.corner {
   animation: pulse-corner 2s infinite;
 }
@@ -170,6 +181,7 @@
     transform: translate(50%, -50%) scale(1);
   }
 }
+
 
 .message-inquiries-btn,
 .bookings-btn {
