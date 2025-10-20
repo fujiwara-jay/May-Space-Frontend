@@ -73,7 +73,7 @@
   min-height: 50px;
   background-color: #e0c16d;
   color: #2c363f;
-  position: relative; /* ADDED: For positioning the badge */
+  position: relative;
 }
 
 .unit-finder-btn:hover,
@@ -99,18 +99,19 @@
 
 .message-inquiries-btn {
   position: relative;
+  overflow: visible;
 }
 
 .notification-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: -5px;
+  right: -5px;
   background: #ff4757;
   color: white;
   border-radius: 50%;
   width: 24px;
   height: 24px;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -118,6 +119,14 @@
   animation: pulse 2s infinite;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   border: 2px solid #2c363f;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.notification-badge.alternate {
+  top: 5px;
+  right: 5px;
+  transform: translate(50%, -50%);
 }
 
 @keyframes pulse {
@@ -133,6 +142,10 @@
     transform: scale(1); 
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
+}
+
+.message-inquiries-btn .button-text {
+  margin-right: 8px;
 }
 
 @media (max-width: 480px) {
@@ -152,8 +165,13 @@
   .notification-badge {
     width: 20px;
     height: 20px;
-    font-size: 0.7rem;
-    top: -6px;
-    right: -6px;
+    font-size: 0.6rem;
+    top: -4px;
+    right: -4px;
+  }
+  
+  .notification-badge.alternate {
+    top: 4px;
+    right: 4px;
   }
 }

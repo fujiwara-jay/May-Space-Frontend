@@ -21,6 +21,9 @@ function Dashboard() {
   };
 
   const handleMessageInquiries = () => {
+    const userId = localStorage.getItem("userId");
+    localStorage.setItem(`lastInquiryVisit_${userId}`, Date.now());
+    setUnreadCount(0);
     navigate("/message-inquiries");
   };
 
@@ -82,7 +85,7 @@ function Dashboard() {
           Post an Available Unit
         </button>
         <button className="unit-finder-btn message-inquiries-btn" onClick={handleMessageInquiries}>
-          Message Inquiries
+          <span className="button-text">Message Inquiries</span>
           {unreadCount > 0 && (
             <span className="notification-badge">
               {unreadCount > 99 ? '99+' : unreadCount}
