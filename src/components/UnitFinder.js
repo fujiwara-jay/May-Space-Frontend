@@ -205,6 +205,14 @@ const UnitFinder = () => {
     navigate("/tools");
   };
 
+  const handleOpenLocation = (e) => {
+    if (e && typeof e.stopPropagation === "function") {
+      e.stopPropagation();
+    }
+    const locationUrl = "https://maps.app.goo.gl/FEgrDs1nwstUb7iJ7";
+    window.open(locationUrl, "_blank", "noopener,noreferrer");
+  };
+
   const handleBookNowClick = (e, unit) => {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
@@ -564,6 +572,16 @@ const UnitFinder = () => {
             {tooltip.show && tooltip.target === "inquire" && (
               <div className="button-tooltip">Please Login to use this feature</div>
             )}
+          </div>
+
+          <div className="action-wrapper">
+            <button
+              className="location-btn"
+              onClick={handleOpenLocation}
+              title="View Location on Google Maps"
+            >
+              📍 View Location
+            </button>
           </div>
 
           <button className="close-btn" onClick={closeModal}>✕ Close</button>

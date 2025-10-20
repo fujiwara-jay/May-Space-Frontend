@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS units (
     unit_price DECIMAL(10,2) NOT NULL,
     contact_person VARCHAR(255),
     phone_number VARCHAR(20),
-    images JSON,
+    images LONGBLOB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
