@@ -7,6 +7,7 @@
     box-shadow: 0 8px 24px rgba(0,0,0,0.22);
     padding: 36px 32px 28px 32px;
     font-family: inherit;
+    position: relative;
 }
 
 .inquiries-container h2 {
@@ -114,7 +115,6 @@
     margin-top: 10px;
 }
 
-/* Latest Reply Styles */
 .latest-reply {
     background: rgba(224, 193, 109, 0.1);
     border: 1px solid rgba(224, 193, 109, 0.3);
@@ -137,7 +137,6 @@
     text-align: right;
 }
 
-/* Reply Section Styles */
 .reply-section {
     margin-top: 15px;
     display: flex;
@@ -170,7 +169,6 @@
     flex-wrap: wrap;
 }
 
-/* Button Styles */
 .back-button {
     background: #6c757d;
     color: #f7e7b6;
@@ -291,7 +289,6 @@
     line-height: 1.4;
 }
 
-/* My Inquiries Section */
 .my-inquiries-section {
     margin-top: 40px;
     padding-top: 30px;
@@ -308,7 +305,148 @@
     border-radius: 6px;
 }
 
-/* Responsive Design */
+.notifications-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.notifications-bell {
+    position: relative;
+    background: #4a90e2;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.notifications-bell:hover {
+    background: #357ae8;
+    transform: scale(1.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: #3d4852;
+    border: 1px solid #4a5a6a;
+    border-radius: 12px;
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    z-index: 1001;
+}
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #4a5a6a;
+    background: #2c363f;
+    border-radius: 12px 12px 0 0;
+}
+
+.notifications-header h4 {
+    margin: 0;
+    color: #e0c16d;
+    font-size: 1.1rem;
+}
+
+.clear-notifications-btn {
+    background: transparent;
+    border: 1px solid #e0c16d;
+    color: #e0c16d;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-notifications-btn:hover {
+    background: rgba(224, 193, 109, 0.1);
+}
+
+.no-notifications {
+    padding: 20px;
+    text-align: center;
+    color: #a0aec0;
+    font-style: italic;
+}
+
+.notifications-list {
+    padding: 10px;
+}
+
+.notification-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.notification-item.unread {
+    background: rgba(224, 193, 109, 0.1);
+    border-left-color: #e0c16d;
+}
+
+.notification-item.read {
+    background: rgba(255, 255, 255, 0.05);
+    opacity: 0.7;
+}
+
+.notification-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(-2px);
+}
+
+.notification-message {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    color: #f7e7b6;
+}
+
+.notification-time {
+    font-size: 0.8rem;
+    color: #a0aec0;
+    text-align: right;
+}
+
 @media (max-width: 768px) {
     .inquiries-container {
         margin: 20px;
@@ -334,6 +472,11 @@
         width: 100%;
         margin-right: 0;
     }
+
+    .notifications-dropdown {
+        width: 280px;
+        right: -50px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -352,5 +495,10 @@
 
     .inquiry-card {
         padding: 15px;
+    }
+
+    .notifications-dropdown {
+        width: 250px;
+        right: -80px;
     }
 }

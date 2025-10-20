@@ -9,6 +9,8 @@ function Inquiries() {
   const [replyMessage, setReplyMessage] = useState("");
   const [activeInquiryId, setActiveInquiryId] = useState(null);
   const [showReplies, setShowReplies] = useState({});
+  const [notifications, setNotifications] = useState([]); // ADDED: Notifications state
+  const [showNotifications, setShowNotifications] = useState(false); // ADDED: Show notifications state
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
@@ -18,7 +20,64 @@ function Inquiries() {
 
   useEffect(() => {
     fetchInquiries();
+    checkForNewReplies(); // ADDED: Check for new replies on component mount
   }, []);
+
+  const checkForNewReplies = () => {
+    const lastVisit = localStorage.getItem(`lastInquiryVisit_${userId}`) || Date.now();
+    const newNotifications = [];
+    
+    inquiries.forEach(inquiry => {
+      if (inquiry.replies && inquiry.replies.length > 0) {
+        inquiry.replies.forEach(reply => {
+          const replyTime = new Date(reply.created_at).getTime();
+          if (replyTime > lastVisit && reply.sender_user_id !== parseInt(userId)) {
+            newNotifications.push({
+              id: `reply-${reply.id}`,
+              type: 'new_reply',
+              message: `New reply from User #${reply.sender_user_id}`,
+              inquiryId: inquiry.id,
+              timestamp: reply.created_at,
+              read: false
+            });
+          }
+        });
+      }
+    });
+
+    if (newNotifications.length > 0) {
+      setNotifications(prev => [...prev, ...newNotifications]);
+    }
+  };
+
+  const markNotificationAsRead = (notificationId) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === notificationId ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    localStorage.setItem(`lastInquiryVisit_${userId}`, Date.now());
+  };
+
+  const getUnreadNotificationCount = () => {
+    return notifications.filter(notif => !notif.read).length;
+  };
+
+  useEffect(() => {
+    return () => {
+      localStorage.setItem(`lastInquiryVisit_${userId}`, Date.now());
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (inquiries.length > 0) {
+      checkForNewReplies();
+    }
+  }, [inquiries]);
 
   const fetchInquiries = async () => {
     setLoading(true);
@@ -103,6 +162,60 @@ function Inquiries() {
 
   return (
     <div className="inquiries-container">
+      <div className="notifications-container">
+        <button 
+          className="notifications-bell"
+          onClick={() => setShowNotifications(!showNotifications)}
+        >
+          🔔
+          {getUnreadNotificationCount() > 0 && (
+            <span className="notification-badge">
+              {getUnreadNotificationCount()}
+            </span>
+          )}
+        </button>
+
+        {showNotifications && (
+          <div className="notifications-dropdown">
+            <div className="notifications-header">
+              <h4>Notifications</h4>
+              {notifications.length > 0 && (
+                <button 
+                  className="clear-notifications-btn"
+                  onClick={clearAllNotifications}
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+            
+            {notifications.length === 0 ? (
+              <div className="no-notifications">No new notifications</div>
+            ) : (
+              <div className="notifications-list">
+                {notifications.map(notification => (
+                  <div 
+                    key={notification.id} 
+                    className={`notification-item ${notification.read ? 'read' : 'unread'}`}
+                    onClick={() => {
+                      markNotificationAsRead(notification.id);
+                      setShowNotifications(false);
+                    }}
+                  >
+                    <div className="notification-message">
+                      {notification.message}
+                    </div>
+                    <div className="notification-time">
+                      {new Date(notification.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <button className="back-button" onClick={handleBack}>
         ⬅ Back
       </button>
@@ -157,7 +270,6 @@ function Inquiries() {
                 </div>
               )}
 
-              {/* Reply Section */}
               {canReply && activeInquiryId === inquiry.id ? (
                 <div className="reply-section">
                   <textarea
@@ -192,7 +304,6 @@ function Inquiries() {
                 </button>
               ) : null}
 
-              {/* Show All Replies */}
               {inquiry.replies && inquiry.replies.length > 0 && (
                 <div className="replies-section">
                   <button 
