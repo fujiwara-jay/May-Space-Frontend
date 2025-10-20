@@ -97,7 +97,8 @@
   max-width: 400px;
 }
 
-.message-inquiries-btn {
+.message-inquiries-btn,
+.bookings-btn {
   position: relative;
   overflow: visible !important;
 }
@@ -121,6 +122,10 @@
   border: 2px solid #2c363f;
   z-index: 1000;
   pointer-events: none;
+}
+
+.notification-badge.bookings-badge {
+  background: #ffa502;
 }
 
 .notification-badge.inside {
@@ -166,7 +171,8 @@
   }
 }
 
-.message-inquiries-btn {
+.message-inquiries-btn,
+.bookings-btn {
   padding-right: 10px;
 }
 
