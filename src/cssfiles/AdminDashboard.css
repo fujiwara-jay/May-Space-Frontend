@@ -1,0 +1,159 @@
+.dashboard-container {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+  background-image: url('GB1.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: rgba(44, 54, 63, 0.92);
+  background-blend-mode: overlay;
+  overflow-y: auto;
+}
+
+.header {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 40px auto;
+  text-align: center;
+}
+
+.dashboard-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #eeeac4;
+  margin: 0 auto;
+  display: block;
+  max-width: 100%;
+  text-align: center;
+  background-color: rgba(241, 201, 91, 0.3);
+  padding: 12px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(206, 168, 63, 0.4);
+  transition: box-shadow 0.3s ease;
+}
+
+.dashboard-title:hover {
+  box-shadow: 0 6px 15px rgba(224, 193, 109, 0.7);
+  cursor: default;
+}
+
+.dashboard-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  gap: 20px;
+}
+
+.unit-finder-btn,
+.post-unit-btn,
+.logout-btn {
+  width: 100%;
+  padding: 14px 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  border-radius: 9px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.3s ease;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50px;
+  background-color: #e0c16d;
+  color: #2c363f;
+  position: relative; /* ADDED: For positioning the badge */
+}
+
+.unit-finder-btn:hover,
+.post-unit-btn:hover,
+.logout-btn:hover {
+  background-color: #f7e7b6;
+  color: #1a1a1a;
+  box-shadow: 0 0 8px rgba(247, 231, 182, 0.7);
+}
+
+.logout-container {
+  width: 100%;
+  max-width: 400px;
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.logout-btn {
+  width: 100%;
+  max-width: 400px;
+}
+
+.message-inquiries-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff4757;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid #2c363f;
+}
+
+@keyframes pulse {
+  0% { 
+    transform: scale(1); 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  50% { 
+    transform: scale(1.1); 
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  }
+  100% { 
+    transform: scale(1); 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 15px;
+  }
+  
+  .dashboard-title {
+    font-size: 22px;
+    padding: 10px 20px;
+  }
+  
+  .dashboard-buttons {
+    max-width: 350px;
+  }
+  
+  .notification-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    top: -6px;
+    right: -6px;
+  }
+}
