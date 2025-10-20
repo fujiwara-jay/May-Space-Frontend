@@ -148,8 +148,8 @@ function Dashboard() {
         <button className="unit-finder-btn bookings-btn" onClick={handleBookings}>
           Bookings
           {totalBookingsBadgeCount > 0 && (
-            <span className="notification-badge bookings-badge corner">
-              {totalBookingsBadgeCount > 99 ? '99+' : totalBookingsBadgeCount}
+            <span className="notification-badge corner">
+             {totalBookingsBadgeCount > 99 ? '99+' : totalBookingsBadgeCount}
             </span>
           )}
         </button>

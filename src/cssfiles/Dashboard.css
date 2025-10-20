@@ -101,7 +101,6 @@
 .bookings-btn {
   position: relative;
   overflow: visible !important;
-  padding-right: 10px;
 }
 
 .notification-badge {
@@ -123,10 +122,6 @@
   border: 2px solid #2c363f;
   z-index: 1000;
   pointer-events: none;
-}
-
-.notification-badge.bookings-badge {
-  background: #ffa502;
 }
 
 .notification-badge.corner {
