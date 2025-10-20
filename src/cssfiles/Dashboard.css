@@ -32,7 +32,6 @@
   display: block;
   max-width: 100%;
   text-align: center;
-
   background-color: rgba(241, 201, 91, 0.3);
   padding: 12px 24px;
   border-radius: 12px;
@@ -74,6 +73,7 @@
   min-height: 50px;
   background-color: #e0c16d;
   color: #2c363f;
+  position: relative;
 }
 
 .unit-finder-btn:hover,
@@ -95,4 +95,110 @@
 .logout-btn {
   width: 100%;
   max-width: 400px;
+}
+
+.message-inquiries-btn {
+  position: relative;
+  overflow: visible !important;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff4757;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid #2c363f;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.notification-badge.inside {
+  top: 8px;
+  right: 8px;
+  transform: none;
+}
+
+.notification-badge.corner {
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+}
+
+@keyframes pulse {
+  0% { 
+    transform: scale(1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  50% { 
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  }
+  100% { 
+    transform: scale(1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.notification-badge.corner {
+  animation: pulse-corner 2s infinite;
+}
+
+@keyframes pulse-corner {
+  0% { 
+    transform: translate(50%, -50%) scale(1);
+  }
+  50% { 
+    transform: translate(50%, -50%) scale(1.1);
+  }
+  100% { 
+    transform: translate(50%, -50%) scale(1);
+  }
+}
+
+.message-inquiries-btn {
+  padding-right: 10px;
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 15px;
+  }
+  
+  .dashboard-title {
+    font-size: 22px;
+    padding: 10px 20px;
+  }
+  
+  .dashboard-buttons {
+    max-width: 350px;
+  }
+  
+  .notification-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 0.6rem;
+    top: -6px;
+    right: -6px;
+  }
+  
+  .notification-badge.inside {
+    top: 6px;
+    right: 6px;
+  }
+  
+  .notification-badge.corner {
+    top: 0;
+    right: 0;
+  }
 }
