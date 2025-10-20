@@ -109,16 +109,17 @@
   background: #ff4757;
   color: white;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  font-size: 0.7rem;
+  width: 32px; 
+  height: 32px;
+  font-size: 0.85rem;
+  
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: pulse 2s infinite;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  border: 2px solid #2c363f;
+  border: 3px solid #2c363f;
   z-index: 1000;
   pointer-events: none;
 }
@@ -185,11 +186,12 @@
   }
   
   .notification-badge {
-    width: 20px;
-    height: 20px;
-    font-size: 0.6rem;
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
     top: -6px;
     right: -6px;
+    border: 3px solid #2c363f;
   }
   
   .notification-badge.inside {
