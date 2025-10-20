@@ -97,17 +97,11 @@
   max-width: 400px;
 }
 
-
-.bookings-btn {
-  position: relative;
-  overflow: visible !important;
-}
-
-
 .message-inquiries-btn,
 .bookings-btn {
   position: relative;
   overflow: visible !important;
+  padding-right: 10px;
 }
 
 .notification-badge {
@@ -131,24 +125,16 @@
   pointer-events: none;
 }
 
-
 .notification-badge.bookings-badge {
   background: #ffa502;
-}
-
-
-.notification-badge.inside {
-  top: 8px;
-  right: 8px;
-  transform: none;
 }
 
 .notification-badge.corner {
   top: 0;
   right: 0;
   transform: translate(50%, -50%);
+  animation: pulse-corner 2s infinite;
 }
-
 
 @keyframes pulse {
   0% { 
@@ -165,11 +151,6 @@
   }
 }
 
-
-.notification-badge.corner {
-  animation: pulse-corner 2s infinite;
-}
-
 @keyframes pulse-corner {
   0% { 
     transform: translate(50%, -50%) scale(1);
@@ -180,12 +161,6 @@
   100% { 
     transform: translate(50%, -50%) scale(1);
   }
-}
-
-
-.message-inquiries-btn,
-.bookings-btn {
-  padding-right: 10px;
 }
 
 @media (max-width: 480px) {
@@ -206,13 +181,6 @@
     width: 20px;
     height: 20px;
     font-size: 0.6rem;
-    top: -6px;
-    right: -6px;
-  }
-  
-  .notification-badge.inside {
-    top: 6px;
-    right: 6px;
   }
   
   .notification-badge.corner {

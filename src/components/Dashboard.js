@@ -5,7 +5,8 @@ import "../cssfiles/Dashboard.css";
 function Dashboard() {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [pendingBookingsCount, setPendingBookingsCount] = useState(0); // ADDED: State for pending bookings
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [bookingUpdatesCount, setBookingUpdatesCount] = useState(0);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
@@ -31,7 +32,9 @@ function Dashboard() {
   const handleBookings = () => {
     const userId = localStorage.getItem("userId");
     localStorage.setItem(`lastBookingVisit_${userId}`, Date.now());
-    setPendingBookingsCount(0); // ADDED: Reset count when user clicks the button
+    localStorage.setItem(`lastBookingUpdateVisit_${userId}`, Date.now());
+    setPendingBookingsCount(0);
+    setBookingUpdatesCount(0);
     navigate("/bookings");
   };
 
@@ -83,16 +86,27 @@ function Dashboard() {
         const bookings = data.bookings || [];
         
         let pendingCount = 0;
+        let updatesCount = 0;
         const lastBookingVisit = localStorage.getItem(`lastBookingVisit_${userId}`) || Date.now();
+        const lastBookingUpdateVisit = localStorage.getItem(`lastBookingUpdateVisit_${userId}`) || Date.now();
         
         bookings.forEach(booking => {
           const bookingTime = new Date(booking.created_at).getTime();
+          const updateTime = new Date(booking.updated_at || booking.created_at).getTime();
+          
           if (booking.status === 'pending' && bookingTime > lastBookingVisit) {
             pendingCount++;
+          }
+          
+          if ((booking.status === 'confirmed' || booking.status === 'denied') && 
+              updateTime > lastBookingUpdateVisit && 
+              bookingTime <= lastBookingUpdateVisit) {
+            updatesCount++;
           }
         });
         
         setPendingBookingsCount(pendingCount);
+        setBookingUpdatesCount(updatesCount);
       } catch (error) {
         console.error("Error fetching pending bookings count:", error);
       }
@@ -108,6 +122,8 @@ function Dashboard() {
     
     return () => clearInterval(interval);
   }, []);
+
+  const totalBookingsBadgeCount = pendingBookingsCount + bookingUpdatesCount;
 
   return (
     <div className="dashboard-container">
@@ -131,9 +147,9 @@ function Dashboard() {
         </button>
         <button className="unit-finder-btn bookings-btn" onClick={handleBookings}>
           Bookings
-          {pendingBookingsCount > 0 && (
+          {totalBookingsBadgeCount > 0 && (
             <span className="notification-badge bookings-badge corner">
-              {pendingBookingsCount > 99 ? '99+' : pendingBookingsCount}
+              {totalBookingsBadgeCount > 99 ? '99+' : totalBookingsBadgeCount}
             </span>
           )}
         </button>

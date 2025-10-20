@@ -9,8 +9,8 @@ function Inquiries() {
   const [replyMessage, setReplyMessage] = useState("");
   const [activeInquiryId, setActiveInquiryId] = useState(null);
   const [showReplies, setShowReplies] = useState({});
-  const [notifications, setNotifications] = useState([]); // ADDED: Notifications state
-  const [showNotifications, setShowNotifications] = useState(false); // ADDED: Show notifications state
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
@@ -20,7 +20,7 @@ function Inquiries() {
 
   useEffect(() => {
     fetchInquiries();
-    checkForNewReplies(); // ADDED: Check for new replies on component mount
+    checkForNewReplies();
   }, []);
 
   const checkForNewReplies = () => {
