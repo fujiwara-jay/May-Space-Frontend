@@ -75,7 +75,7 @@ function Inquiries() {
       
       setReplyMessage("");
       setActiveInquiryId(null);
-      fetchInquiries(); // Refresh the inquiries list
+      fetchInquiries();
     } catch (err) {
       setError(err.message);
     }
@@ -88,9 +88,7 @@ function Inquiries() {
     }));
   };
 
-  // Function to check if user can reply to an inquiry
   const canReplyToInquiry = (inquiry) => {
-    // User can reply if they are the recipient OR if they are the sender and there are existing replies
     const isRecipient = parseInt(userId) === inquiry.recipient_user_id;
     const isSender = parseInt(userId) === inquiry.sender_user_id;
     const hasReplies = inquiry.replies && inquiry.replies.length > 0;
@@ -98,7 +96,6 @@ function Inquiries() {
     return isRecipient || (isSender && hasReplies);
   };
 
-  // Function to get the latest reply for display
   const getLatestReply = (inquiry) => {
     if (!inquiry.replies || inquiry.replies.length === 0) return null;
     return inquiry.replies[inquiry.replies.length - 1];
@@ -120,7 +117,6 @@ function Inquiries() {
 
       <div className="inquiries-list">
         {inquiries.map((inquiry) => {
-          // Skip replies (only show parent inquiries)
           if (inquiry.parent_inquiry_id) return null;
 
           const isRecipient = parseInt(userId) === inquiry.recipient_user_id;
@@ -149,7 +145,6 @@ function Inquiries() {
                 </div>
               </div>
 
-              {/* Show latest reply preview */}
               {latestReply && (
                 <div className="latest-reply">
                   <strong>Latest Reply:</strong> 
@@ -233,7 +228,6 @@ function Inquiries() {
         })}
       </div>
 
-      {/* My Inquiries Section */}
       <div className="my-inquiries-section">
         <h3>My Sent Inquiries</h3>
         {inquiries.filter(
