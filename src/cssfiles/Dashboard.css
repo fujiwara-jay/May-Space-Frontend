@@ -100,7 +100,7 @@
 .message-inquiries-btn,
 .bookings-btn {
   position: relative;
-  overflow: visible !important;
+  overflow: visible !important; 
 }
 
 .notification-badge {
@@ -125,7 +125,7 @@
 }
 
 .notification-badge.bookings-badge {
-  background: #ffa502;
+  background: #ffa502; /* Distinct color for bookings */
 }
 
 .notification-badge.inside {
