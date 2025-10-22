@@ -1,18 +1,18 @@
-  import React, { useState, useEffect } from "react";
-  import { useNavigate } from "react-router-dom";
-  import "../cssfiles/AdminUnitFinderManager.css";
-  import "../cssfiles/Dashboard.css";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "../cssfiles/AdminUnitFinderManager.css";
+import "../cssfiles/Dashboard.css";
 
-  const safeParseImages = (imagesData) => {
-    if (!imagesData) return [];
-    if (Array.isArray(imagesData)) return imagesData;
-    try {
-      const parsed = JSON.parse(imagesData);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      return [];
-    }
-  };
+const safeParseImages = (imagesData) => {
+  if (!imagesData) return [];
+  if (Array.isArray(imagesData)) return imagesData;
+  try {
+    const parsed = JSON.parse(imagesData);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
 
 function AdminUnitFinderManager() {
   const [units, setUnits] = useState([]);
@@ -22,6 +22,9 @@ function AdminUnitFinderManager() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteStep, setDeleteStep] = useState(1);
   const [actionMessage, setActionMessage] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const navigate = useNavigate();
 
@@ -82,102 +85,104 @@ function AdminUnitFinderManager() {
     }
   };
 
+  const openImageModal = (unit, index = 0) => {
+    setSelectedUnit(unit);
+    setCurrentImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setSelectedUnit(null);
+    setCurrentImageIndex(0);
+  };
+
+  const nextImage = () => {
+    const images = safeParseImages(selectedUnit?.images);
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    const images = safeParseImages(selectedUnit?.images);
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
   return (
-    <div className="dashboard-container">
+    <div className="unit-finder-container">
       <button className="back-button" onClick={handleBack}>
         ⬅ Back
       </button>
 
-      <div className="header">
-        <h1 className="dashboard-title">Unit Finder Manager</h1>
+      <div className="unit-finder-header">
+        <h1>Unit Finder Manager</h1>
       </div>
 
-      <div style={{ color: "#fff", marginTop: 24 }}>
-        {loading && <div>Loading units...</div>}
-        {error && <div style={{ color: "salmon" }}>{error}</div>}
-        {actionMessage && <div style={{ color: "lightgreen" }}>{actionMessage}</div>}
-        {!loading && units.length === 0 && <div>No units found.</div>}
+      <div style={{ color: "#fff", marginTop: 24, width: "100%", maxWidth: "1200px" }}>
+        {loading && <div style={{ textAlign: "center", color: "#f7e7b6" }}>Loading units...</div>}
+        {error && <div style={{ color: "salmon", textAlign: "center" }}>{error}</div>}
+        {actionMessage && <div style={{ color: "lightgreen", textAlign: "center" }}>{actionMessage}</div>}
+        {!loading && units.length === 0 && (
+          <div style={{ textAlign: "center", color: "#f7e7b6", fontSize: "1.1rem" }}>
+            No units found.
+          </div>
+        )}
 
         <div className="unit-grid">
-          {units.map((unit) => (
-            <div
-              key={unit.id}
-              className="unit-card"
-              style={{
-                background: "#2c363f",
-                color: "#f7e7b6",
-                marginBottom: 18,
-                borderRadius: 10,
-                padding: 18,
-              }}
-            >
-              <div style={{ display: "flex", gap: 18 }}>
-                {safeParseImages(unit.images).length > 0 ? (
-                  <img
-                    src={`https://may-space-backend.onrender.com${safeParseImages(unit.images)[0]}`}
-                    alt="unit"
-                    style={{
-                      width: 120,
-                      height: 90,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                    }}
-                  />
+          {units.map((unit) => {
+            const images = safeParseImages(unit.images);
+            return (
+              <div key={unit.id} className="unit-card">
+                {images.length > 0 ? (
+                  <div className="unit-image-container">
+                    <img
+                      src={`https://may-space-backend.onrender.com${images[0]}`}
+                      alt="unit"
+                      className="unit-image"
+                      onClick={() => openImageModal(unit, 0)}
+                    />
+                    {images.length > 1 && (
+                      <div className="image-count-badge">
+                        📷 {images.length}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div
-                    style={{
-                      width: 120,
-                      height: 90,
-                      background: "#444",
-                      borderRadius: 8,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#ccc",
-                    }}
-                  >
-                    No Image
+                  <div className="unit-image-placeholder">
+                    No Image Available
                   </div>
                 )}
 
-                <div style={{ flex: 1 }}>
-                  <div>
-                    <strong>Unit:</strong> {unit.unit_number} ({unit.building_name})
+                <div className="unit-card-content">
+                  <h4>{unit.unit_number} • {unit.building_name}</h4>
+                  <p><strong>📍 Location:</strong> {unit.location}</p>
+                  <p><strong>👤 Owner:</strong> {unit.owner_username}</p>
+                  <p><strong>📧 Email:</strong> {unit.owner_email}</p>
+                  <p><strong>📞 Contact:</strong> {unit.contact_person} / {unit.phone_number}</p>
+                  <p><strong>🏠 Specs:</strong> {unit.specifications}</p>
+                  {unit.special_features && (
+                    <p><strong>⭐ Features:</strong> {unit.special_features}</p>
+                  )}
+                  
+                  <div className="unit-actions">
+                    {images.length > 0 && (
+                      <button
+                        className="view-images-btn"
+                        onClick={() => openImageModal(unit, 0)}
+                      >
+                        👁️ View Images ({images.length})
+                      </button>
+                    )}
+                    <button
+                      className="delete-unit-btn"
+                      onClick={() => openDeleteModal(unit.id)}
+                    >
+                      🗑️ Delete Unit
+                    </button>
                   </div>
-                  <div>
-                    <strong>Location:</strong> {unit.location}
-                  </div>
-                  <div>
-                    <strong>Owner:</strong> {unit.owner_username} ({unit.owner_email})
-                  </div>
-                  <div>
-                    <strong>Contact:</strong> {unit.contact_person} / {unit.phone_number}
-                  </div>
-                  <div>
-                    <strong>Specs:</strong> {unit.specifications}
-                  </div>
-                  <div>
-                    <strong>Special Features:</strong> {unit.special_features}
-                  </div>
-                  <button
-                    style={{
-                      marginTop: 10,
-                      background: "#e57373",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 6,
-                      padding: "7px 18px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => openDeleteModal(unit.id)}
-                  >
-                    Delete Unit
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -215,6 +220,53 @@ function AdminUnitFinderManager() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showImageModal && selectedUnit && (
+        <div className="image-modal-overlay" onClick={closeImageModal}>
+          <div className="image-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="image-modal-close" onClick={closeImageModal}>
+              &times;
+            </button>
+            
+            <div className="image-modal-header">
+              <h3>{selectedUnit.unit_number} • {selectedUnit.building_name}</h3>
+              <p>{selectedUnit.location}</p>
+            </div>
+
+            <div className="image-viewer">
+              <button className="nav-arrow left" onClick={prevImage}>
+                ‹
+              </button>
+              
+              <img
+                src={`https://may-space-backend.onrender.com${safeParseImages(selectedUnit.images)[currentImageIndex]}`}
+                alt={`Unit ${currentImageIndex + 1}`}
+                className="viewer-image"
+              />
+              
+              <button className="nav-arrow right" onClick={nextImage}>
+                ›
+              </button>
+              
+              <div className="image-counter">
+                {currentImageIndex + 1} / {safeParseImages(selectedUnit.images).length}
+              </div>
+            </div>
+
+            <div className="image-thumbnails">
+              {safeParseImages(selectedUnit.images).map((image, index) => (
+                <img
+                  key={index}
+                  src={`https://may-space-backend.onrender.com${image}`}
+                  alt={`Thumbnail ${index + 1}`}
+                  className={`thumbnail ${index === currentImageIndex ? 'active' : ''}`}
+                  onClick={() => setCurrentImageIndex(index)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}

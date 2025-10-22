@@ -69,57 +69,90 @@ function AdminAccountManage() {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="admin-account-manage-container">
       <button className="back-button" onClick={handleBack}>
         ⬅ Back
       </button>
 
-      <div className="header">
-        <h1 className="dashboard-title">Account Manage</h1>
+      <div className="admin-account-header">
+        <h1 className="admin-account-title">Account Management</h1>
       </div>
 
-      <div style={{ color: "#fff", marginTop: 24 }}>
-        {loading && <div>Loading users...</div>}
-        {error && <div style={{ color: "salmon" }}>{error}</div>}
-        {actionMessage && <div style={{ color: "lightgreen" }}>{actionMessage}</div>}
-        {!loading && users.length === 0 && <div>No users found.</div>}
+      <div className="admin-account-content">
+        {loading && (
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading users...</p>
+          </div>
+        )}
+        
+        {error && (
+          <div className="error-state">
+            <div className="error-icon">⚠️</div>
+            <p>{error}</p>
+            <button className="retry-btn" onClick={fetchUsers}>
+              Try Again
+            </button>
+          </div>
+        )}
+        
+        {actionMessage && (
+          <div className="action-message success">
+            <div className="message-icon">✅</div>
+            <p>{actionMessage}</p>
+          </div>
+        )}
+        
+        {!loading && users.length === 0 && !error && (
+          <div className="empty-state">
+            <div className="empty-icon">👥</div>
+            <h3>No Users Found</h3>
+            <p>There are no users in the system yet.</p>
+          </div>
+        )}
 
-        <div className="unit-grid">
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className="unit-card"
-              style={{
-                background: "#2c363f",
-                color: "#f7e7b6",
-                marginBottom: 18,
-                borderRadius: 10,
-                padding: 18,
-              }}
-            >
-              <div><strong>Username:</strong> {user.username}</div>
-              <div><strong>Email:</strong> {user.email}</div>
-              <div><strong>Contact:</strong> {user.contact_number}</div>
-              <div><strong>Created:</strong> {new Date(user.created_at).toLocaleString()}</div>
+        {!loading && users.length > 0 && (
+          <div className="users-grid">
+            {users.map((user) => (
+              <div key={user.id} className="user-card">
+                <div className="user-header">
+                  <h3 className="user-name">{user.username}</h3>
+                  <div className="user-badge">User</div>
+                </div>
+                
+                <div className="user-info">
+                  <div className="info-item">
+                    <span className="info-label">Email:</span>
+                    <span className="info-value">{user.email}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Contact:</span>
+                    <span className="info-value">{user.contact_number || "Not provided"}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Joined:</span>
+                    <span className="info-value">
+                      {new Date(user.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
 
-              <button
-                style={{
-                  marginTop: 10,
-                  background: "#e57373",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 6,
-                  padding: "7px 18px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-                onClick={() => openDeleteModal(user.id)}
-              >
-                Delete User
-              </button>
-            </div>
-          ))}
-        </div>
+                <div className="user-actions">
+                  <button
+                    className="delete-user-btn"
+                    onClick={() => openDeleteModal(user.id)}
+                  >
+                    Delete Account
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {showDeleteModal && (
@@ -132,10 +165,10 @@ function AdminAccountManage() {
             {deleteStep === 1 && (
               <>
                 <h2>Delete Account</h2>
-                <p>Do you confirm to delete this account?</p>
+                <p>Are you sure you want to delete this user account? This action cannot be undone.</p>
                 <div className="admin-modal-actions">
                   <button className="admin-modal-btn confirm" onClick={handleDeleteConfirm}>
-                    Yes, Continue
+                    Continue to Delete
                   </button>
                   <button className="admin-modal-btn cancel" onClick={closeDeleteModal}>
                     Cancel
@@ -146,8 +179,9 @@ function AdminAccountManage() {
 
             {deleteStep === 2 && (
               <>
-                <h2>Warning</h2>
-                <p>This will be deleted in the database and cannot be recovered. Proceed?</p>
+                <div className="modal-icon warning">⚠️</div>
+                <h2>Final Warning</h2>
+                <p>This will permanently delete the user account and all associated data from the database. This action cannot be recovered.</p>
                 <div className="admin-modal-actions">
                   <button className="admin-modal-btn danger" onClick={handleDeleteFinal}>
                     Delete Permanently

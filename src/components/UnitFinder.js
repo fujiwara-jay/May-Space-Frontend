@@ -598,7 +598,7 @@ const UnitFinder = () => {
             className="back-button"
             onClick={() => navigate(isGuest ? "/home" : "/dashboard")}
           >
-            🏠 {isGuest ? "Go to Login" : "Back to Dashboard"}
+            {isGuest ? "Go to Login" : "Back to Dashboard"}
           </button>
 
           {!isGuest && (
@@ -607,7 +607,7 @@ const UnitFinder = () => {
               onClick={handleLogout}
               title="Log out"
             >
-              🚪 Log Out
+              Log Out
             </button>
           )}
         </div>
@@ -663,23 +663,30 @@ const UnitFinder = () => {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === "Enter") setModalUnit(unit); }}
             >
-              {unit.images?.length > 0 ? (
-                <img
-                  src={unit.images[0]}
-                  alt={`${unit.building_name} ${unit.unit_number}`}
-                  className="unit-image"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleImageClick(unit.images[0], unit, 0);
-                  }}
-                />
-              ) : (
-                <div className="unit-image-placeholder">No Image Available</div>
-              )}
+              <div className="unit-image-container">
+                {unit.images?.length > 0 ? (
+                  <img
+                    src={unit.images[0]}
+                    alt={`${unit.building_name} ${unit.unit_number}`}
+                    className="unit-image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleImageClick(unit.images[0], unit, 0);
+                    }}
+                  />
+                ) : (
+                  <div className="unit-image-placeholder">No Image Available</div>
+                )}
+                {unit.images?.length > 1 && (
+                  <div className="image-count-badge">
+                    📷 {unit.images.length}
+                  </div>
+                )}
+              </div>
               <div className="unit-card-content">
-                <h4>{unit.unit_number} in {unit.location}</h4>
-                <p><strong>Building:</strong> {unit.building_name}</p>
-                <p><strong>Contact:</strong> {unit.contact_person}</p>
+                <h4>{unit.unit_number} • {unit.building_name}</h4>
+                <p><strong>Location:</strong> {unit.location}</p>
+                <p><strong>Contact Person:</strong> {unit.contact_person}</p>
                 <p><strong>Price:</strong> {formatPrice(unit.unitPrice || unit.price)}</p>
               </div>
             </div>
@@ -696,14 +703,50 @@ const UnitFinder = () => {
       )}
 
       {selectedImage && modalUnit && (
-        <div className="modal-overlay" onClick={closeViewer}>
-          <div className="modal-content image-viewer" onClick={(e) => e.stopPropagation()}>
-            <button className="nav-arrow left" onClick={showPrevImage}>‹</button>
-            <img src={selectedImage} alt="Unit preview" className="viewer-image" />
-            <button className="nav-arrow right" onClick={showNextImage}>›</button>
-            <button className="close-image-btn" onClick={closeViewer}>×</button>
-            <div className="image-counter">
-              {currentImageIndex + 1} / {modalUnit.images.length}
+        <div className="image-modal-overlay" onClick={closeViewer}>
+          <div className="image-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="image-modal-close" onClick={closeViewer}>
+              &times;
+            </button>
+            
+            <div className="image-modal-header">
+              <h3>{modalUnit.unit_number} • {modalUnit.building_name}</h3>
+              <p>{modalUnit.location}</p>
+            </div>
+
+            <div className="image-viewer">
+              <button className="nav-arrow left" onClick={showPrevImage}>
+                ‹
+              </button>
+              
+              <img
+                src={selectedImage}
+                alt={`Unit ${currentImageIndex + 1}`}
+                className="viewer-image"
+              />
+              
+              <button className="nav-arrow right" onClick={showNextImage}>
+                ›
+              </button>
+              
+              <div className="image-counter">
+                {currentImageIndex + 1} / {modalUnit.images.length}
+              </div>
+            </div>
+
+            <div className="image-thumbnails">
+              {modalUnit.images.map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`Thumbnail ${index + 1}`}
+                  className={`thumbnail ${index === currentImageIndex ? 'active' : ''}`}
+                  onClick={() => {
+                    setCurrentImageIndex(index);
+                    setSelectedImage(image);
+                  }}
+                />
+              ))}
             </div>
           </div>
         </div>
