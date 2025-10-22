@@ -197,8 +197,8 @@ const UnitFinder = () => {
     navigate("/about");
   };
 
-  const handlePTCClick = () => {
-    navigate("/ptc");
+  const handleStudentProjectsClick = () => {
+    navigate("/studentProjects");
   };
 
   const handleProjectToolsClick = () => {
@@ -209,7 +209,7 @@ const UnitFinder = () => {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
     }
-    const locationUrl = "https://maps.app.goo.gl/FEgrDs1nwstUb7iJ7";
+    const locationUrl = "https://maps.app.goo.gl/Hk3iwYC7tftpJZuG8";
     window.open(locationUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -726,9 +726,9 @@ const UnitFinder = () => {
           </button>
           <button 
             className="footer-btn" 
-            onClick={handlePTCClick}
+            onClick={handleStudentProjectsClick}
           >
-            PTC
+            StudentProjects
           </button>
           <button 
             className="footer-btn" 

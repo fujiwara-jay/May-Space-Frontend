@@ -9,7 +9,7 @@ import PostUnits from "./components/PostUnits";
 import Bookings from "./components/Bookings";
 import Inquiries from "./components/Inquiries";
 import ForgotPassword from "./components/ForgotPassword";
-import PTC from "./components/PTC";
+import StudentProjects from './components/StudentProjects';
 import ProjectTools from "./components/ProjectTools";
 import AdminRegister from "./components/AdminRegister";
 import UserRegister from "./components/UserRegister";
@@ -47,7 +47,7 @@ function App() {
           <Route path="/admin/account-manage" element={<AdminAccountManage />} />
 
           {/* Project-related pages */}
-          <Route path="/ptc" element={<PTC />} />
+          <Route path="/StudentProjects" element={<StudentProjects />} />
           <Route path="/tools" element={<ProjectTools />} />
         </Routes>
       </Router>
