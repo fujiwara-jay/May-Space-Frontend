@@ -679,7 +679,7 @@ const UnitFinder = () => {
                 )}
                 {unit.images?.length > 1 && (
                   <div className="image-count-badge">
-                    📷 {unit.images.length}
+                    View {unit.images.length}
                   </div>
                 )}
               </div>

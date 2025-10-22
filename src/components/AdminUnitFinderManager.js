@@ -142,7 +142,7 @@ function AdminUnitFinderManager() {
                     />
                     {images.length > 1 && (
                       <div className="image-count-badge">
-                        📷 {images.length}
+                        images {images.length}
                       </div>
                     )}
                   </div>
@@ -169,14 +169,14 @@ function AdminUnitFinderManager() {
                         className="view-images-btn"
                         onClick={() => openImageModal(unit, 0)}
                       >
-                        👁️ View Images ({images.length})
+                        View Images ({images.length})
                       </button>
                     )}
                     <button
                       className="delete-unit-btn"
                       onClick={() => openDeleteModal(unit.id)}
                     >
-                      🗑️ Delete Unit
+                        Delete Unit
                     </button>
                   </div>
                 </div>
