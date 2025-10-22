@@ -12,20 +12,30 @@ function About() {
   return (
     <div className="about-container">
       <button className="back-button" onClick={handleBackClick}>
-         ⬅ Back
+        ⬅ Back
       </button>
-      <h2>
-        Discover <span className="highlight">exclusive apartments</span> today!
-      </h2>
-      <p>
-        Welcome to our <span className="highlight">special rental units</span> finder platform.
-      </p>
-      <p>
-        May Space is a capstone project developed by Group 8. Our goal was to create a seamless, user-friendly platform that allows users to easily find available rental units for their needs. Whether it's an apartment, condo, or house, May Space provides a variety of options to choose from, along with detailed specifications and features of each unit.
-      </p>
-      <p>
-        This project is designed to simplify the process of renting a space, providing users with all the necessary information such as pricing, amenities, location, and contact details of property owners. We aim to help users make more informed decisions when choosing a rental property, and we hope our platform serves as a useful tool for both renters and property owners.
-      </p>
+
+      <div className="about-content">
+        <h2>
+          Discover <span className="highlight">exclusive apartments</span> today!
+        </h2>
+        
+        <p>
+          Welcome to our <span className="highlight">special rental units</span> finder platform.
+        </p>
+        
+        <p>
+          May Space is a Capstone Project Developed by the Students of Pateros Technological College, IICT Department.
+          Our mission is to build a seamless and user-friendly platform that helps users easily find available rental units suited to their needs. Whether it’s an apartment, condominium, or house, May Space provides a wide range of options — each with detailed specifications and unique features.
+        </p>
+        
+        <p>
+          This platform is designed to simplify the process of renting a space by giving users complete information such as pricing, amenities, location, and contact details of property owners.
+          By bringing transparency and convenience together, May Space empower users to make informed rental decisions with confidence.
+
+          Ultimately, we hope that May Space serves as a useful tool for both renters and property owners, bridging the gap between finding and offering a home with ease and reliability.
+        </p>
+      </div>
     </div>
   );
 }
