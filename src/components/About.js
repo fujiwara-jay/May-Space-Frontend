@@ -32,7 +32,6 @@ function About() {
         <p>
           This platform is designed to simplify the process of renting a space by giving users complete information such as pricing, amenities, location, and contact details of property owners.
           By bringing transparency and convenience together, May Space empower users to make informed rental decisions with confidence.
-
           Ultimately, we hope that May Space serves as a useful tool for both renters and property owners, bridging the gap between finding and offering a home with ease and reliability.
         </p>
       </div>

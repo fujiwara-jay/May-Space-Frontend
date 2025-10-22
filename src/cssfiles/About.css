@@ -22,25 +22,25 @@ body {
 }
 
 .about-container {
-  position: relative;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 40px 20px;
   background-image: url('GB1.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-color: rgba(44, 54, 63, 0.92);
   background-blend-mode: overlay;
-  overflow-y: auto;
+  color: #f7e7b6;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .back-button {
+  position: fixed;
+  top: 30px;
+  left: 20px;
   background: rgba(44, 54, 63, 0.8);
   color: #f7e7b6;
   border: 2px solid #3d4852;
@@ -48,11 +48,10 @@ body {
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
-  margin-bottom: 30px;
   transition: all 0.3s ease;
   text-shadow: 1px 1px 3px rgba(44, 54, 63, 0.7);
-  align-self: flex-start;
-  margin-left: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  z-index: 1000; 
 }
 
 .back-button:hover {
@@ -101,22 +100,23 @@ body {
   .about-container {
     padding: 20px 15px;
   }
-  
+
   .about-container h2 {
     font-size: 24px;
   }
-  
+
   .about-container p {
     font-size: 16px;
   }
-  
+
   .about-content {
     padding: 30px 20px;
     margin-bottom: 30px;
   }
-  
+
   .back-button {
-    margin-left: 10px;
+    top: 20px;
+    left: 15px;
     padding: 10px 20px;
     font-size: 14px;
   }
@@ -126,17 +126,19 @@ body {
   .about-container h2 {
     font-size: 20px;
   }
-  
+
   .about-container p {
     font-size: 14px;
   }
-  
+
   .about-content {
     padding: 20px 15px;
     margin-bottom: 20px;
   }
-  
+
   .back-button {
+    top: 15px;
+    left: 10px;
     padding: 8px 16px;
     font-size: 12px;
   }
