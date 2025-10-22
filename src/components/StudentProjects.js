@@ -18,7 +18,7 @@ function StudentProjects() {
     {
       id: 1,
       name: "Jeymar Calimposan",
-      role: "Leader na Maasim",
+      role: "Leader",
       image: Jeymar,
       description: "“Together, we grow, we learn, and we achieve. Every challenge we face becomes a lesson, and every success we celebrate becomes a reminder of what teamwork can accomplish. We may come from different paths, but our shared passion and dedication unite us toward one goal. Through trust, perseverance, and faith in one another, we turn dreams into reality and ideas into meaningful achievements.",
     },
