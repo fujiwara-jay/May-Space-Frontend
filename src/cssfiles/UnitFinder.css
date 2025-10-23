@@ -6,7 +6,7 @@
   align-items: center;
   padding: 20px;
   font-family: Arial, sans-serif;
-  background: rgba(44, 54, 63, 0.85) url('GB1.png') center/cover no-repeat fixed;
+  background: rgba(44, 54, 63, 0.85) url('Sample.jpg') center/cover no-repeat fixed;
   background-blend-mode: multiply;
   overflow-y: auto;
 }
@@ -106,20 +106,21 @@
 
 .unit-card-content {
   padding: 15px;
+  text-align: center;
 }
 
 .unit-card-content h4 {
   font-size: 1.1rem;
   color: #e0c16d;
   margin: 5px 0;
-  text-align: left;
+  text-align: center;
   letter-spacing: normal;
 }
 
 .unit-card-content p {
   font-size: 0.9rem;
   margin: 5px 0;
-  text-align: left;
+  text-align: center;
 }
 
 .unit-image-container {
@@ -322,7 +323,7 @@
 .book-now-btn,
 .inquire-btn,
 .location-btn,
-.close-btn,
+.unitclose-btn,
 .view-images-btn {
   font-size: 1rem;
   padding: 12px 20px;
@@ -364,12 +365,12 @@
   transform: translateY(-2px);
 }
 
-.close-btn {
+.unitclose-btn {
   background: #6c757d;
   color: #f7e7b6;
 }
 
-.close-btn:hover {
+.unitclose-btn:hover {
   background: #5a6268;
   transform: translateY(-2px);
 }
@@ -448,13 +449,14 @@ button:disabled {
 .property-info h3 {
   color: #e0c16d;
   margin-bottom: 15px;
-  text-align: left;
+  text-align: center;
   letter-spacing: normal;
 }
 
 .property-details p {
   margin: 8px 0;
   line-height: 1.4;
+  text-align: center;
 }
 
 .unit-images-gallery {
@@ -464,7 +466,7 @@ button:disabled {
 .unit-images-gallery h4 {
   color: #e0c16d;
   margin-bottom: 10px;
-  text-align: left;
+  text-align: center;
   letter-spacing: normal;
 }
 
@@ -580,6 +582,7 @@ button:disabled {
   border-radius: 6px;
   margin-bottom: 15px;
   border-left: 4px solid #007bff;
+  text-align: center;
 }
 
 .inquiry-info p {
@@ -593,6 +596,7 @@ button:disabled {
   border-radius: 4px;
   border: 1px solid #f5c6cb;
   margin: 10px 0;
+  text-align: center;
 }
 
 .success-message {
@@ -602,6 +606,7 @@ button:disabled {
   border-radius: 4px;
   border: 1px solid #c3e6cb;
   margin: 10px 0;
+  text-align: center;
 }
 
 .no-units {
@@ -780,7 +785,7 @@ button:disabled {
   .book-now-btn,
   .inquire-btn,
   .location-btn,
-  .close-btn,
+  .unitclose-btn,
   .view-images-btn {
     min-width: 100%;
   }

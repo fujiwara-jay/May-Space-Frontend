@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "../cssfiles/Dashboard.css";
+import "../cssfiles/AdminDashboard.css";
 
 function AdminDashboard() {
 	const navigate = useNavigate();
@@ -13,10 +13,6 @@ function AdminDashboard() {
 		navigate("/admin/account-manage");
 	};
 
-	const handleMessageInquiries = () => {
-		navigate("/admin/message-inquiries");
-	};
-
 	const handleLogout = () => {
 		localStorage.removeItem("userId");
 		localStorage.removeItem("userType");
@@ -24,20 +20,18 @@ function AdminDashboard() {
 	};
 
 	return (
-		<div className="dashboard-container">
-			<div className="header">
-				<h1 className="dashboard-title">Admin Dashboard</h1>
+		<div className="adminDashboard-container">
+			<div className="admin-header">
+				<h1 className="admin-dashboard-title">Admin Dashboard</h1>
 			</div>
-			<div className="dashboard-buttons">
+			<div className="adminDashboard-buttons">
 				<button className="unit-finder-btn" onClick={handleUnitFinderManager}>
 					Unit Finder Manager
 				</button>
-				<button className="post-unit-btn" onClick={handleAccountManage}>
+				<button className="account-manage-btn" onClick={handleAccountManage}>
 					Account Manage
 				</button>
-			</div>
-			<div className="logout-container">
-				<button className="logout-btn" onClick={handleLogout}>
+				<button className="logout-admin-btn" onClick={handleLogout}>
 					Logout
 				</button>
 			</div>

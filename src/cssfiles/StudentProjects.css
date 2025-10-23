@@ -1,15 +1,15 @@
 .student-projects-page {
   min-height: 100vh;
   padding: 40px 20px;
-  background-image: url('GB1.png');
+  background-image: url('Sample.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   background-color: rgba(44, 54, 63, 0.92);
   background-blend-mode: overlay;
   color: #f7e7b6;
   text-align: center;
-
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -136,6 +136,10 @@
 }
 
 @media (max-width: 768px) {
+  .student-projects-page {
+    background-attachment: scroll;
+  }
+  
   .students-grid {
     grid-template-columns: 1fr;
   }

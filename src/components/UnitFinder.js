@@ -584,7 +584,7 @@ const UnitFinder = () => {
             </button>
           </div>
 
-          <button className="close-btn" onClick={closeModal}>✕ Close</button>
+          <button className="unitclose-btn" onClick={closeModal}>✕ Close</button>
         </div>
       </>
     );

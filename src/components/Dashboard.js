@@ -127,7 +127,7 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      <div className="header">
+      <div className="dashboard-header">
         <h1 className="dashboard-title">May Space: A Web-Based Rental Unit Space Finder</h1>
       </div>
       <div className="dashboard-buttons">
@@ -137,7 +137,7 @@ function Dashboard() {
         <button className="post-unit-btn" onClick={handlePostUnit}>
           Post an Available Unit
         </button>
-        <button className="unit-finder-btn message-inquiries-btn" onClick={handleMessageInquiries}>
+        <button className="message-inquiries-btn" onClick={handleMessageInquiries}>
           Message Inquiries
           {unreadCount > 0 && (
             <span className="notification-badge corner">
@@ -145,7 +145,7 @@ function Dashboard() {
             </span>
           )}
         </button>
-        <button className="unit-finder-btn bookings-btn" onClick={handleBookings}>
+        <button className="bookings-btn" onClick={handleBookings}>
           Bookings
           {totalBookingsBadgeCount > 0 && (
             <span className="notification-badge corner">

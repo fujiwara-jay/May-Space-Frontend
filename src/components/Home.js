@@ -1,215 +1,245 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../cssfiles/Home.css";
 
 function Home() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("renter");
   const [error, setError] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
-    if (!username || !password) {
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedUsername || !trimmedPassword) {
       setError("Username and password are required");
+      setIsLoading(false);
       return;
     }
 
     try {
-      const endpoint = userType === "admin"
-        ? "https://may-space-backend.onrender.com/admin/login"
-        : "https://may-space-backend.onrender.com/user/login";
+      const loginPromises = [
+        fetch("https://may-space-backend.onrender.com/user/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            username: trimmedUsername, 
+            password: trimmedPassword 
+          }),
+        }),
+        fetch("https://may-space-backend.onrender.com/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            username: trimmedUsername, 
+            password: trimmedPassword 
+          }),
+        })
+      ];
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), 10000)
+      );
 
-      const data = await response.json();
-
-      if (response.ok) {
-        const userData = userType === "admin" ? data.admin : data.user;
-        localStorage.setItem("userId", userData.id);
-        localStorage.setItem("userType", userType);
-
-        if (userType === "admin") {
-          navigate("/admin-dashboard", {
-            state: { userId: userData.id, userType: "admin" },
-          });
-        } else {
-          navigate("/dashboard", {
-            state: { userId: userData.id, userType: "user" },
-          });
-        }
-      } else {
-        setError(data.message || `Login failed. Make sure you selected the correct account type.`);
+      const userResponse = await Promise.race([loginPromises[0], timeoutPromise]);
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        const user = userData.user;
+        
+        localStorage.setItem("userId", user.id);
+        localStorage.setItem("userType", "user");
+        localStorage.setItem("username", user.username || trimmedUsername);
+        
+        navigate("/dashboard", { 
+          state: { userId: user.id, userType: "user" } 
+        });
+        return;
       }
+
+      const adminResponse = await Promise.race([loginPromises[1], timeoutPromise]);
+      
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json();
+        const admin = adminData.admin;
+        
+        localStorage.setItem("userId", admin.id);
+        localStorage.setItem("userType", "admin");
+        localStorage.setItem("username", admin.username || trimmedUsername);
+        
+        navigate("/admin-dashboard", { 
+          state: { userId: admin.id, userType: "admin" } 
+        });
+        return;
+      }
+
+      setError("Invalid username or password. Please try again.");
+
     } catch (error) {
       console.error("Login error:", error);
-      setError("Failed to connect to the server");
+      if (error.message === "Request timeout") {
+        setError("Connection timeout. Please try again.");
+      } else {
+        setError("Failed to connect to the server. Please check your internet connection.");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [username, password, navigate]);
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = useCallback(() => {
     localStorage.setItem("userId", "guest");
     localStorage.setItem("userType", "guest");
+    localStorage.setItem("username", "Guest");
     navigate("/unitfinder");
-  };
+  }, [navigate]);
 
-  const handleAboutClick = () => {
-    navigate("/about");
-  };
+  const handleAboutClick = useCallback(() => navigate("/about"), [navigate]);
+  
+  const handleRegisterAsUser = useCallback(() => { 
+    setShowRegisterModal(false); 
+    navigate("/register/user"); 
+  }, [navigate]);
+  
+  const handleRegisterAsAdmin = useCallback(() => { 
+    setShowRegisterModal(false); 
+    navigate("/register/admin"); 
+  }, [navigate]);
 
+  const handleInputChange = useCallback((setter) => (e) => { 
+    if (error) setError(""); 
+    setter(e.target.value); 
+  }, [error]);
 
-  const handleRegisterAsUser = () => {
-    setUserType("user");
-    setShowRegisterModal(false);
-    navigate("/register/user");
-  };
-
-  const handleRegisterAsAdmin = () => {
-    setShowRegisterModal(false);
-    navigate("/register/admin");
-  };
+  const handleCloseModal = useCallback(() => setShowRegisterModal(false), []);
 
   return (
     <div className="home-container">
-      <header className="header">
-        <h1 className="title">May Space: A Web-Based Rental Unit Space Finder</h1>
-        <button className="about-button" onClick={handleAboutClick}>
+      <div className="header-section">
+        <h1 className="main-heading">Find your perfect place to stay</h1>
+        <button 
+          className="about-btn" 
+          onClick={handleAboutClick} 
+          disabled={isLoading}
+        >
           About
         </button>
-      </header>
+      </div>
 
-      <section className="login-box" aria-label="Login form">
-        <h1 className="login-title">MAY SPACE</h1>
-        <h2 className="login-subtitle">LOGIN</h2>
-        {error && (
-          <div className="error-message" role="alert">
-            {error}
+      <div className="login-section">
+        <div className="login-container">
+          <div className="brand-section">
+            <h2 className="brand-title">MAY SPACE</h2>
+            <h3 className="login-title">LOGIN</h3>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            aria-label="Username"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            aria-label="Password"
-          />
+          {error && (
+            <div className="error-message" role="alert">
+              {error}
+            </div>
+          )}
 
-          <div className="user-type-selector">
-            <label
-              className={`user-type-option ${
-                userType === "user" ? "active" : ""
-              }`}
-            >
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="input-group">
               <input
-                type="radio"
-                value="user"
-                checked={userType === "user"}
-                onChange={(e) => setUserType(e.target.value)}
-                className="user-type-input"
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={handleInputChange(setUsername)}
+                required
+                className="form-input"
+                disabled={isLoading}
+                autoComplete="username"
+                autoFocus
               />
-              <span className="user-type-label">User</span>
-            </label>
-            <label
-              className={`user-type-option ${
-                userType === "admin" ? "active" : ""
-              }`}
-            >
+            </div>
+
+            <div className="input-group">
               <input
-                type="radio"
-                value="admin"
-                checked={userType === "admin"}
-                onChange={(e) => setUserType(e.target.value)}
-                className="user-type-input"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={handleInputChange(setPassword)}
+                required
+                className="form-input"
+                disabled={isLoading}
+                autoComplete="current-password"
               />
-              <span className="user-type-label">Admin</span>
-            </label>
-          </div>
+            </div>
 
-          <div className="login-links">
-            <Link to="/forgot-password" className="forgot-password">
-              Forgot Password?
-            </Link>
-            <button type="button" onClick={handleGuestLogin} className="guest-login">
-              Guest
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowRegisterModal(true)}
-              className="register-button"
+            <div className="action-links">
+              <Link to="/forgot-password" className="action-link">
+                Forgot Password?
+              </Link>
+              <button 
+                type="button" 
+                onClick={handleGuestLogin} 
+                className="action-link" 
+                disabled={isLoading}
+              >
+                Guest
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setShowRegisterModal(true)} 
+                className="action-link" 
+                disabled={isLoading}
+              >
+                Register
+              </button>
+            </div>
+
+            <button 
+              type="submit" 
+              className="login-button" 
+              disabled={isLoading}
             >
-              Register
+              {isLoading ? "LOGGING IN..." : "LOGIN"}
             </button>
-          </div>
-
-          <button type="submit" className="login-button">
-            LOGIN
-          </button>
-        </form>
-      </section>
+          </form>
+        </div>
+      </div>
 
       {showRegisterModal && (
-        <div
-          className="register-modal-overlay"
-          onClick={() => setShowRegisterModal(false)}
-        >
-          <div
-            className="register-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="modal-close-btn"
-              onClick={() => setShowRegisterModal(false)}
-              aria-label="Close"
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="homeClose-btn" 
+              onClick={handleCloseModal}
+              aria-label="Close modal"
             >
               ×
             </button>
-
-            <div className="modal-header">
-              <h2>Create Account</h2>
-              <p>Choose your account type</p>
-            </div>
-
+            <h3>Create Account</h3>
+            <p>Choose your account type</p>
             <div className="register-options">
-              <div className="register-option-card">
+              <div className="register-option">
                 <div className="option-icon">👤</div>
-                <h3>Register as User</h3>
+                <h4>Register as User</h4>
                 <p>Find and book rental units</p>
-                <button
-                  className="UserRegister"
-                  onClick={handleRegisterAsUser}
+                <button 
+                  onClick={handleRegisterAsUser} 
+                  className="option-btn"
                 >
-                  Create User Account →
+                  Create User Account
                 </button>
               </div>
-
-              <div className="register-option-card">
+              <div className="register-option">
                 <div className="option-icon">⚙️</div>
-                <h3>Register as Admin</h3>
+                <h4>Register as Admin</h4>
                 <p>Manage units and system</p>
-                <button
-                  className="AdminRegister"
-                  onClick={handleRegisterAsAdmin}
+                <button 
+                  onClick={handleRegisterAsAdmin} 
+                  className="option-btn"
                 >
-                  Create Admin Account →
+                  Create Admin Account
                 </button>
               </div>
             </div>
@@ -220,4 +250,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default React.memo(Home);

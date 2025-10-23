@@ -1,14 +1,13 @@
 .dashboard-container {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   padding: 20px;
   font-family: Arial, sans-serif;
   box-sizing: border-box;
-  background-image: url('GB1.png');
+  background-image: url('Sample.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -17,11 +16,11 @@
   overflow-y: auto;
 }
 
-.header {
+.dashboard-header {
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto 40px auto;
   text-align: center;
+  margin: 0 0 40px 0;
+  padding: 20px 0;
 }
 
 .dashboard-title {
@@ -29,8 +28,7 @@
   font-weight: bold;
   color: #eeeac4;
   margin: 0 auto;
-  display: block;
-  max-width: 100%;
+  display: inline-block;
   text-align: center;
   background-color: rgba(241, 201, 91, 0.3);
   padding: 12px 24px;
@@ -51,10 +49,14 @@
   width: 100%;
   max-width: 400px;
   gap: 20px;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .unit-finder-btn,
 .post-unit-btn,
+.message-inquiries-btn,
+.bookings-btn,
 .logout-btn {
   width: 100%;
   padding: 14px 0;
@@ -78,6 +80,8 @@
 
 .unit-finder-btn:hover,
 .post-unit-btn:hover,
+.message-inquiries-btn:hover,
+.bookings-btn:hover,
 .logout-btn:hover {
   background-color: #f7e7b6;
   color: #1a1a1a;
@@ -87,7 +91,8 @@
 .logout-container {
   width: 100%;
   max-width: 400px;
-  margin-top: 30px;
+  margin-top: auto;
+  padding-bottom: 30px;
   display: flex;
   justify-content: center;
 }
@@ -172,6 +177,10 @@
     max-width: 350px;
   }
   
+  .logout-container {
+    max-width: 350px;
+  }
+  
   .notification-badge {
     width: 20px;
     height: 20px;
@@ -181,5 +190,48 @@
   .notification-badge.corner {
     top: 0;
     right: 0;
+  }
+}
+
+.unit-finder-btn:focus-visible,
+.post-unit-btn:focus-visible,
+.message-inquiries-btn:focus-visible,
+.bookings-btn:focus-visible,
+.logout-btn:focus-visible {
+  outline: 3px solid #e0c16d;
+  outline-offset: 2px;
+}
+
+.unit-finder-btn:disabled,
+.post-unit-btn:disabled,
+.message-inquiries-btn:disabled,
+.bookings-btn:disabled,
+.logout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-title,
+  .unit-finder-btn,
+  .post-unit-btn,
+  .message-inquiries-btn,
+  .bookings-btn,
+  .logout-btn {
+    transition: none;
+  }
+  
+  .dashboard-title:hover,
+  .unit-finder-btn:hover,
+  .post-unit-btn:hover,
+  .message-inquiries-btn:hover,
+  .bookings-btn:hover,
+  .logout-btn:hover {
+    transform: none;
+  }
+  
+  .notification-badge {
+    animation: none;
   }
 }

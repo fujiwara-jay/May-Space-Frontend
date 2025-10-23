@@ -1,10 +1,11 @@
 .project-tools-page {
   min-height: 100vh;
   padding: 40px 20px;
-  background-image: url('GB1.png');
+  background-image: url('Sample.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   background-color: rgba(44, 54, 63, 0.92);
   background-blend-mode: overlay;
   color: #f7e7b6;
@@ -76,7 +77,6 @@
   transform: translateY(-2px);
 }
 
-/* Highlighted text */
 .highlight {
   background-color: rgba(224, 193, 109, 0.4);
   color: #2c363f;
@@ -109,10 +109,10 @@ body {
   align-items: center;
   padding: 40px 20px;
   box-sizing: border-box;
-  background-image: url('GB1.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   background-color: rgba(44, 54, 63, 0.92);
   background-blend-mode: overlay;
   overflow-y: auto;
@@ -195,6 +195,7 @@ p {
   .project-tools-page,
   .about-container {
     padding: 20px 15px;
+    background-attachment: scroll;
   }
   
   .project-tools-page h1,
