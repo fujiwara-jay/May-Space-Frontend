@@ -127,7 +127,7 @@ function AdminRegister() {
             </button>
             <button
               type="button"
-              className="back-btn"
+              className="securityBack-btn"
               onClick={handleBack}
             >
               Back

@@ -203,7 +203,7 @@ button[type="submit"]:hover {
   color: #ffe082;
   text-decoration: none;
 }
-.back-btn {
+.securityBack-btn {
   width: 100%;
   padding: 12px 0;
   background-color: transparent;
@@ -218,7 +218,7 @@ button[type="submit"]:hover {
   margin-top: 10px;
 }
 
-.back-btn:hover {
+.securityBack-btn {
   background-color: rgba(247, 231, 182, 0.1);
   border-color: #e0c16d;
   color: #e0c16d;

@@ -461,7 +461,7 @@ const UnitFinder = () => {
             </label>
             <div className="form-actions">
               <button type="submit" className="submit-btn" disabled={loading}>Submit Booking</button>
-              <button type="button" onClick={() => setShowBookingForm(false)} className="back-btn">Back to Details</button>
+              <button type="button" onClick={() => setShowBookingForm(false)} className="backToDetails">Back to Details</button>
             </div>
           </form>
         </>
@@ -497,7 +497,7 @@ const UnitFinder = () => {
             </label>
             <div className="form-actions">
               <button type="submit" className="submit-btn" disabled={loading}>Send Inquiry</button>
-              <button type="button" onClick={() => setShowInquireForm(false)} className="back-btn">Back to Details</button>
+              <button type="button" onClick={() => setShowInquireForm(false)} className="backToDetails">Back to Details</button>
             </div>
           </form>
         </>

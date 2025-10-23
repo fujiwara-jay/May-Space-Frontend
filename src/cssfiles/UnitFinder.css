@@ -429,7 +429,7 @@ button:disabled {
 
 .modal-content {
   background: #2c363f;
-  padding: 28px 24px 90px;
+  padding: 28px 24px;
   border-radius: 12px;
   max-width: 520px;
   width: 90%;
@@ -498,6 +498,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-content label {
@@ -542,38 +544,58 @@ button:disabled {
 .form-actions {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 15px;
-  margin-top: 20px;
+  margin-top: auto;
+  padding: 20px 0 0 0;
+  border-top: 1px solid #4a5a6a;
+  width: 100%;
 }
 
 .submit-btn,
-.back-btn {
-  padding: 12px 24px;
+.backToDetails {
+  padding: 14px 28px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 160px;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 200px;
 }
 
 .submit-btn {
   background: #28a745;
   color: white;
+  border: 2px solid #28a745;
 }
 
 .submit-btn:hover {
   background: #218838;
+  border-color: #1e7e34;
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
 }
 
-.back-btn {
+.backToDetails {
   background: #6c757d;
   color: white;
+  border: 2px solid #6c757d;
 }
 
-.back-btn:hover {
+.backToDetails:hover {
   background: #5a6268;
+  border-color: #545b62;
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
 }
 
 .inquiry-info {
@@ -774,7 +796,7 @@ button:disabled {
   
   .modal-content {
     width: 95%;
-    padding: 20px 15px 80px;
+    padding: 20px 15px;
   }
   
   .unit-actions {
@@ -792,6 +814,18 @@ button:disabled {
   
   .form-actions {
     flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .submit-btn,
+  .backToDetails {
+    min-width: 100%;
+    width: 100%;
+    padding: 12px 20px;
+    height: 44px;
+    max-width: none;
+    flex: none;
   }
   
   .nav-arrow {
@@ -853,5 +887,16 @@ button:disabled {
   
   .viewer-image {
     max-height: 40vh;
+  }
+  
+  .form-actions {
+    gap: 8px;
+  }
+  
+  .submit-btn,
+  .backToDetails {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    height: 42px;
   }
 }
