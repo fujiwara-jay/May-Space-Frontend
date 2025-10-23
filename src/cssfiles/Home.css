@@ -46,7 +46,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .about-btn:hover:not(:disabled) {
@@ -187,7 +187,7 @@
   background: #e0c16d;
   color: #2c363f;
   border: none;
-  padding: 14px; /* Fixed padding */
+  padding: 14px;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 700;
@@ -195,7 +195,7 @@
   transition: all 0.3s ease;
   letter-spacing: 1px;
   text-transform: uppercase;
-  min-height: 48px; /* Ensure consistent height */
+  min-height: 48px;
 }
 
 .login-button:hover:not(:disabled) {
