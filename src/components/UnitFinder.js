@@ -598,7 +598,7 @@ const UnitFinder = () => {
             className="back-button"
             onClick={() => navigate(isGuest ? "/home" : "/dashboard")}
           >
-            {isGuest ? "Go to Login" : "Back to Dashboard"}
+            {isGuest ? "Go to Login" : "Go to Dashboard"}
           </button>
 
           {!isGuest && (
