@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../cssfiles/Home.css";
 
@@ -25,7 +25,6 @@ function Home() {
     }
 
     try {
-      // Try user login first
       const userResponse = await fetch("https://may-space-backend.onrender.com/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,7 +48,6 @@ function Home() {
         return;
       }
 
-      // If user login fails, try admin login
       const adminResponse = await fetch("https://may-space-backend.onrender.com/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,7 +92,9 @@ function Home() {
     navigate("/unitfinder");
   }, [navigate]);
 
-  const handleAboutClick = useCallback(() => navigate("/about"), [navigate]);
+  const handleAboutClick = useCallback(() => {
+    navigate("/about");
+  }, [navigate]);
   
   const handleRegisterAsUser = useCallback(() => { 
     setShowRegisterModal(false); 
@@ -111,18 +111,26 @@ function Home() {
     setter(e.target.value); 
   }, [error]);
 
-  const handleCloseModal = useCallback(() => setShowRegisterModal(false), []);
+  const handleCloseModal = useCallback(() => {
+    setShowRegisterModal(false);
+  }, []);
 
-  // Handle escape key to close modal
-  React.useEffect(() => {
+  useEffect(() => {
     const handleEscapeKey = (e) => {
       if (e.key === 'Escape' && showRegisterModal) {
         handleCloseModal();
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => document.removeEventListener('keydown', handleEscapeKey);
+    if (showRegisterModal) {
+      document.addEventListener('keydown', handleEscapeKey);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+      document.body.style.overflow = 'unset';
+    };
   }, [showRegisterModal, handleCloseModal]);
 
   return (
@@ -183,7 +191,11 @@ function Home() {
             </div>
 
             <div className="action-links">
-              <Link to="/forgot-password" className="action-link">
+              <Link 
+                to="/forgot-password" 
+                className="action-link"
+                onClick={(e) => isLoading && e.preventDefault()}
+              >
                 Forgot Password?
               </Link>
               <button 
@@ -230,7 +242,7 @@ function Home() {
             <h3>Create Account</h3>
             <p>Choose your account type</p>
             <div className="register-options">
-              <div className="register-option" onClick={handleRegisterAsUser}>
+              <div className="register-option">
                 <div className="option-icon">👤</div>
                 <h4>Register as User</h4>
                 <p>Find and book rental units</p>
@@ -238,11 +250,12 @@ function Home() {
                   onClick={handleRegisterAsUser} 
                   className="option-btn"
                   type="button"
+                  disabled={isLoading}
                 >
                   Create User Account
                 </button>
               </div>
-              <div className="register-option" onClick={handleRegisterAsAdmin}>
+              <div className="register-option">
                 <div className="option-icon">⚙️</div>
                 <h4>Register as Admin</h4>
                 <p>Manage units and system</p>
@@ -250,6 +263,7 @@ function Home() {
                   onClick={handleRegisterAsAdmin} 
                   className="option-btn"
                   type="button"
+                  disabled={isLoading}
                 >
                   Create Admin Account
                 </button>
@@ -262,4 +276,4 @@ function Home() {
   );
 }
 
-export default React.memo(Home);
+export default Home;
