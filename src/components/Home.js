@@ -25,31 +25,16 @@ function Home() {
     }
 
     try {
-      const loginPromises = [
-        fetch("https://may-space-backend.onrender.com/user/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            username: trimmedUsername, 
-            password: trimmedPassword 
-          }),
+      // Try user login first
+      const userResponse = await fetch("https://may-space-backend.onrender.com/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          username: trimmedUsername, 
+          password: trimmedPassword 
         }),
-        fetch("https://may-space-backend.onrender.com/admin/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            username: trimmedUsername, 
-            password: trimmedPassword 
-          }),
-        })
-      ];
+      });
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Request timeout")), 10000)
-      );
-
-      const userResponse = await Promise.race([loginPromises[0], timeoutPromise]);
-      
       if (userResponse.ok) {
         const userData = await userResponse.json();
         const user = userData.user;
@@ -64,7 +49,15 @@ function Home() {
         return;
       }
 
-      const adminResponse = await Promise.race([loginPromises[1], timeoutPromise]);
+      // If user login fails, try admin login
+      const adminResponse = await fetch("https://may-space-backend.onrender.com/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          username: trimmedUsername, 
+          password: trimmedPassword 
+        }),
+      });
       
       if (adminResponse.ok) {
         const adminData = await adminResponse.json();
@@ -84,10 +77,10 @@ function Home() {
 
     } catch (error) {
       console.error("Login error:", error);
-      if (error.message === "Request timeout") {
-        setError("Connection timeout. Please try again.");
-      } else {
+      if (error.name === "TypeError" || error.message.includes("Network")) {
         setError("Failed to connect to the server. Please check your internet connection.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -120,6 +113,18 @@ function Home() {
 
   const handleCloseModal = useCallback(() => setShowRegisterModal(false), []);
 
+  // Handle escape key to close modal
+  React.useEffect(() => {
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape' && showRegisterModal) {
+        handleCloseModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [showRegisterModal, handleCloseModal]);
+
   return (
     <div className="home-container">
       <div className="header-section">
@@ -128,6 +133,7 @@ function Home() {
           className="about-btn" 
           onClick={handleAboutClick} 
           disabled={isLoading}
+          type="button"
         >
           About
         </button>
@@ -146,7 +152,7 @@ function Home() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="login-form">
+          <form onSubmit={handleSubmit} className="login-form" noValidate>
             <div className="input-group">
               <input
                 type="text"
@@ -158,6 +164,7 @@ function Home() {
                 disabled={isLoading}
                 autoComplete="username"
                 autoFocus
+                aria-label="Username"
               />
             </div>
 
@@ -171,6 +178,7 @@ function Home() {
                 className="form-input"
                 disabled={isLoading}
                 autoComplete="current-password"
+                aria-label="Password"
               />
             </div>
 
@@ -200,6 +208,7 @@ function Home() {
               type="submit" 
               className="login-button" 
               disabled={isLoading}
+              aria-label={isLoading ? "Logging in" : "Login"}
             >
               {isLoading ? "LOGGING IN..." : "LOGIN"}
             </button>
@@ -214,30 +223,33 @@ function Home() {
               className="homeClose-btn" 
               onClick={handleCloseModal}
               aria-label="Close modal"
+              type="button"
             >
               ×
             </button>
             <h3>Create Account</h3>
             <p>Choose your account type</p>
             <div className="register-options">
-              <div className="register-option">
+              <div className="register-option" onClick={handleRegisterAsUser}>
                 <div className="option-icon">👤</div>
                 <h4>Register as User</h4>
                 <p>Find and book rental units</p>
                 <button 
                   onClick={handleRegisterAsUser} 
                   className="option-btn"
+                  type="button"
                 >
                   Create User Account
                 </button>
               </div>
-              <div className="register-option">
+              <div className="register-option" onClick={handleRegisterAsAdmin}>
                 <div className="option-icon">⚙️</div>
                 <h4>Register as Admin</h4>
                 <p>Manage units and system</p>
                 <button 
                   onClick={handleRegisterAsAdmin} 
                   className="option-btn"
+                  type="button"
                 >
                   Create Admin Account
                 </button>
