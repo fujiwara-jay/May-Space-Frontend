@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../cssfiles/PostUnits.css";
 
@@ -24,6 +24,9 @@ function PostUnits() {
   const [actionMessage, setActionMessage] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [unitToDelete, setUnitToDelete] = useState(null);
+  const [showPostedUnits, setShowPostedUnits] = useState(false);
+
+  const postedUnitsRef = useRef(null);
 
   const userId = localStorage.getItem('userId');
 
@@ -324,6 +327,20 @@ function PostUnits() {
     navigate("/dashboard");
   };
 
+  const togglePostedUnitsView = () => {
+    const newShowState = !showPostedUnits;
+    setShowPostedUnits(newShowState);
+    
+    if (newShowState) {
+      setTimeout(() => {
+        postedUnitsRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
+  };
+
   const formatPrice = (price) => {
     if (!price) return "Not specified";
     
@@ -359,6 +376,24 @@ function PostUnits() {
           </div>
         </div>
       )}
+      
+      <div className="top-navigation-container">
+        <div className="back-button-top-container">
+          <button className="back-btn-top" onClick={handleBackButtonClick}>
+            Back to Dashboard
+          </button>
+        </div>
+        
+        <div className="view-posted-btn-top-container">
+          <button 
+            className={`view-posted-btn-top ${showPostedUnits ? 'hide' : 'view'}`} 
+            onClick={togglePostedUnitsView}
+          >
+            {showPostedUnits ? "Hide Posted Apartments" : "View Posted Apartments"}
+          </button>
+        </div>
+      </div>
+
       <div className="form-container">
         <h2>{editingUnitId ? "Update Unit" : "Post a New Unit"}</h2>
         {formError && <div className="error-message">{formError}</div>}
@@ -522,13 +557,12 @@ function PostUnits() {
             )}
           </div>
         </form>
-        <button className="back-btn" onClick={handleBackButtonClick}>
-          Back to Dashboard
-        </button>
       </div>
 
-      <div className="posted-units-container">
-        <h2>Posted Apartments</h2>
+      <div ref={postedUnitsRef} className={`posted-units-container ${showPostedUnits ? 'visible' : 'hidden'}`}>
+        <div className="posted-units-header">
+          <h2>Your Posted Apartments</h2>
+        </div>
         {fetchError && <div className="error-message">{fetchError}</div>}
         {units.length === 0 && !fetchError ? (
           <p>No units posted yet.</p>
