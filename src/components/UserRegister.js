@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import "../cssfiles/UserRegister.css";
 
 function UserRegister() {
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [contactNumber, setContactNumber] = useState("");
@@ -15,7 +16,8 @@ function UserRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!username || !email || !contactNumber || !password || !confirmPassword) {
+    // Basic validations
+    if (!name || !username || !email || !contactNumber || !password || !confirmPassword) {
       setError("All fields are required");
       return;
     }
@@ -31,7 +33,7 @@ function UserRegister() {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address");
       return;
@@ -41,7 +43,7 @@ function UserRegister() {
       const response = await fetch("https://may-space-backend.onrender.com/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, contactNumber, password }),
+        body: JSON.stringify({ name, username, email, contactNumber, password }),
       });
 
       const data = await response.json();
@@ -52,11 +54,13 @@ function UserRegister() {
 
         setTimeout(() => {
           setShowSuccess(false);
+          setName("");
           setUsername("");
           setEmail("");
           setContactNumber("");
           setPassword("");
           setConfirmPassword("");
+          navigate("/home");
         }, 2000);
       } else {
         setError(data.message || "User registration failed");
@@ -76,6 +80,13 @@ function UserRegister() {
           <div className="success-popup">User registration successful!</div>
         )}
         <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-label="Full Name"
+          />
           <input
             type="text"
             placeholder="Username"
@@ -116,6 +127,7 @@ function UserRegister() {
             <span>Already have an account? </span>
             <Link to="/home">Login</Link>
           </div>
+
           <button type="submit">Register</button>
         </form>
       </div>

@@ -23,6 +23,7 @@ const UnitFinder = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [modalUnit, setModalUnit] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [showInquireForm, setShowInquireForm] = useState(false);
@@ -53,6 +54,7 @@ const UnitFinder = () => {
   const [loading, setLoading] = useState(false);
 
   const userId = localStorage.getItem("userId");
+  const userType = localStorage.getItem("userType");
   const isGuest = !userId || userId === "guest";
 
   const mountedRef = useRef(true);
@@ -193,15 +195,42 @@ const UnitFinder = () => {
     setActionMessage(null);
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handlePostUnitClick = () => {
+    setSidebarOpen(false);
+    navigate("/post-unit");
+  };
+
+  const handleMessageInquiriesClick = () => {
+    setSidebarOpen(false);
+    navigate("/message-inquiries");
+  };
+
+  const handleBookingsClick = () => {
+    setSidebarOpen(false);
+    navigate("/bookings");
+  };
+
+  const handleDashboardClick = () => {
+    setSidebarOpen(false);
+    navigate("/dashboard");
+  };
+
   const handleAboutClick = () => {
+    setSidebarOpen(false);
     navigate("/about");
   };
 
   const handleStudentProjectsClick = () => {
+    setSidebarOpen(false);
     navigate("/studentProjects");
   };
 
   const handleProjectToolsClick = () => {
+    setSidebarOpen(false);
     navigate("/tools");
   };
 
@@ -592,25 +621,94 @@ const UnitFinder = () => {
 
   return (
     <div className="unit-finder-container">
-      <div className="unit-finder-header">
-        <div className="unit-finder-header-buttons">
-          <button
-            className="back-button"
-            onClick={() => navigate(isGuest ? "/home" : "/dashboard")}
-          >
-            {isGuest ? "Go to Login" : "Go to Dashboard"}
-          </button>
+      <button className="menu-toggle-btn" onClick={toggleSidebar}>
+        ☰
+      </button>
 
+      {isGuest && (
+        <button 
+          className="login-signup-btn"
+          onClick={() => navigate("/home")}
+        >
+          Login/Signup
+        </button>
+      )}
+
+      <div className={`sidebar-menu ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <h3>May Space</h3>
+          <button className="sidebar-close-btn" onClick={toggleSidebar}>
+            ✕
+          </button>
+        </div>
+        
+        <div className="sidebar-content">
+          {!isGuest ? (
+            <>
+              <button 
+                className={`sidebar-btn ${window.location.pathname === '/dashboard' ? 'active' : ''}`}
+                onClick={handleDashboardClick}
+              >
+                🏠 Dashboard
+              </button>
+              <button 
+                className="sidebar-btn"
+                onClick={handlePostUnitClick}
+              >
+                ➕ Post Unit
+              </button>
+              <button 
+                className="sidebar-btn"
+                onClick={handleMessageInquiriesClick}
+              >
+                💬 Message & Inquiries
+              </button>
+              <button 
+                className="sidebar-btn"
+                onClick={handleBookingsClick}
+              >
+                📅 Bookings
+              </button>
+              <div className="sidebar-divider"></div>
+            </>
+          ) : null}
+          
+          <button 
+            className="sidebar-btn"
+            onClick={handleAboutClick}
+          >
+            ℹ️ About
+          </button>
+          <button 
+            className="sidebar-btn"
+            onClick={handleStudentProjectsClick}
+          >
+            🎓 Student Projects
+          </button>
+          <button 
+            className="sidebar-btn"
+            onClick={handleProjectToolsClick}
+          >
+            🛠️ Project Tools
+          </button>
+          
           {!isGuest && (
-            <button
-              className="logout-button"
-              onClick={handleLogout}
-              title="Log out"
-            >
-              Log Out
-            </button>
+            <>
+              <div className="sidebar-divider"></div>
+              <button 
+                className="sidebar-btn logout-btn"
+                onClick={handleLogout}
+              >
+                🚪 Logout
+              </button>
+            </>
           )}
         </div>
+      </div>
+
+      {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
+
+      <div className="unit-finder-header">
         <h1>May Space</h1>
         <h2>A Web-Based Rental Unit Space Finder</h2>
         <h3>Available Units ({filteredUnits.length})</h3>
@@ -760,26 +858,6 @@ const UnitFinder = () => {
       )}
 
       <footer className="unit-finder-footer">
-        <div className="footer-links">
-          <button 
-            className="footer-btn" 
-            onClick={handleAboutClick}
-          >
-            About
-          </button>
-          <button 
-            className="footer-btn" 
-            onClick={handleStudentProjectsClick}
-          >
-            StudentProjects
-          </button>
-          <button 
-            className="footer-btn" 
-            onClick={handleProjectToolsClick}
-          >
-            Project Tools
-          </button>
-        </div>
         <p className="footer-copyright">
           © 2025 May Space A Web-Based Rental Unit Space Finder. Student Project BSIT-PTC
         </p>
