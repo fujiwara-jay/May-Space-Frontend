@@ -98,6 +98,7 @@ function Inquiries() {
       id: inquiry.id,
       message: inquiry.message,
       sender_user_id: inquiry.sender_user_id,
+      sender_name: inquiry.sender_name,
       created_at: inquiry.created_at,
       type: 'original'
     });
@@ -108,17 +109,35 @@ function Inquiries() {
           id: reply.id,
           message: reply.message,
           sender_user_id: reply.sender_user_id,
+          sender_name: reply.sender_name,
           created_at: reply.created_at,
           type: 'reply'
         });
       });
     }
     
+    // Sort by creation date
     return messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   };
 
   const isMyMessage = (message) => {
     return parseInt(userId) === message.sender_user_id;
+  };
+
+  const getDisplayName = (message, inquiry) => {
+    if (isMyMessage(message)) {
+      return 'You';
+    }
+    return message.sender_name || `User #${message.sender_user_id}`;
+  };
+
+  const getConversationTitle = (inquiry) => {
+    const isSender = parseInt(userId) === inquiry.sender_user_id;
+    if (isSender) {
+      return `Conversation with ${inquiry.recipient_name || `User #${inquiry.recipient_user_id}`}`;
+    } else {
+      return `Conversation with ${inquiry.sender_name || `User #${inquiry.sender_user_id}`}`;
+    }
   };
 
   const getUnreadNotificationCount = () => {
@@ -221,7 +240,7 @@ function Inquiries() {
 
               <div className="inquiry-info">
                 <div><strong>Location:</strong> {inquiry.location}</div>
-                <div><strong>Between:</strong> User #{inquiry.sender_user_id} ↔ User #{inquiry.recipient_user_id}</div>
+                <div><strong>Conversation:</strong> {getConversationTitle(inquiry)}</div>
               </div>
 
               <div className="conversation-container">
@@ -238,7 +257,7 @@ function Inquiries() {
                         {new Date(message.created_at).toLocaleString()}
                       </div>
                       <div className="message-sender">
-                        {isMyMessage(message) ? 'You' : `User #${message.sender_user_id}`}
+                        {getDisplayName(message, inquiry)}
                       </div>
                     </div>
                   ))}

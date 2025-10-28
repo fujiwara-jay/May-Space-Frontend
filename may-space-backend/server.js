@@ -357,93 +357,170 @@ app.listen(PORT, () => {
 app.post('/inquiries', async (req, res) => {
   const { unitId, message } = req.body;
   const senderUserId = req.headers['x-user-id'];
+
   if (!unitId || !message || !senderUserId) {
     return res.status(400).json({ message: 'unitId, message, and sender user ID are required' });
   }
+
   try {
     const connection = await mysql.createConnection(dbConfig);
+
     // Get the poster (owner) of the unit
-    const [unitRows] = await connection.execute('SELECT user_id FROM units WHERE id = ?', [unitId]);
+    const [unitRows] = await connection.execute(
+      'SELECT user_id FROM units WHERE id = ?',
+      [unitId]
+    );
+
     if (unitRows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found' });
     }
+
     const recipientUserId = unitRows[0].user_id;
+
     // Prevent sending inquiry to self
     if (parseInt(senderUserId) === recipientUserId) {
       await connection.end();
       return res.status(400).json({ message: 'Cannot send inquiry to yourself' });
     }
+
+    // Insert the inquiry
     await connection.execute(
       'INSERT INTO inquiries (unit_id, sender_user_id, recipient_user_id, message) VALUES (?, ?, ?, ?)',
       [unitId, senderUserId, recipientUserId, message]
     );
+
+    // Fetch sender and recipient names
+    const [[senderInfo]] = await connection.execute(
+      'SELECT id, name FROM users WHERE id = ?',
+      [senderUserId]
+    );
+
+    const [[recipientInfo]] = await connection.execute(
+      'SELECT id, name FROM users WHERE id = ?',
+      [recipientUserId]
+    );
+
     await connection.end();
-    res.status(201).json({ message: 'Inquiry sent successfully' });
+
+    res.status(201).json({
+      message: 'Inquiry sent successfully',
+      inquiryDetails: {
+        sender: {
+          id: senderInfo?.id || senderUserId,
+          name: senderInfo?.name || 'Unknown Sender',
+        },
+        recipient: {
+          id: recipientInfo?.id || recipientUserId,
+          name: recipientInfo?.name || 'Unknown Recipient',
+        },
+        unitId,
+        message,
+      },
+    });
   } catch (error) {
     console.error('Error sending inquiry:', error);
     res.status(500).json({ message: 'Failed to send inquiry' });
   }
 });
 
-// Reply to an inquiry (threaded)
-app.post('/inquiries/reply', async (req, res) => {
-  const { inquiryId, message, recipientUserId } = req.body;
-  const senderUserId = req.headers['x-user-id'];
-  if (!inquiryId || !message || !recipientUserId || !senderUserId) {
-    return res.status(400).json({ message: 'inquiryId, message, recipientUserId, and sender user ID are required' });
-  }
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    // Get the original inquiry to fetch unit_id
-    const [inquiryRows] = await connection.execute('SELECT unit_id FROM inquiries WHERE id = ?', [inquiryId]);
-    if (inquiryRows.length === 0) {
-      await connection.end();
-      return res.status(404).json({ message: 'Original inquiry not found' });
-    }
-    const unitId = inquiryRows[0].unit_id;
-    await connection.execute(
-      'INSERT INTO inquiries (unit_id, sender_user_id, recipient_user_id, message, parent_inquiry_id) VALUES (?, ?, ?, ?, ?)',
-      [unitId, senderUserId, recipientUserId, message, inquiryId]
-    );
-    await connection.end();
-    res.status(201).json({ message: 'Reply sent successfully' });
-  } catch (error) {
-    console.error('Error sending reply:', error);
-    res.status(500).json({ message: 'Failed to send reply' });
-  }
-});
-
-// Fetch all inquiries for the logged-in user (sent or received, with unit info)
+// Update the GET inquiries endpoint to include user names
 app.get('/inquiries', async (req, res) => {
   const userId = req.headers['x-user-id'];
+
   if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
+    return res.status(400).json({ message: 'User ID is required' });
   }
+
   try {
     const connection = await mysql.createConnection(dbConfig);
-    // Get all inquiries where user is sender or recipient
-    const [inquiries] = await connection.execute(
-      `SELECT i.*, u.building_name, u.unit_number, u.location
-       FROM inquiries i
-       JOIN units u ON i.unit_id = u.id
-       WHERE i.sender_user_id = ? OR i.recipient_user_id = ?
-       ORDER BY i.created_at DESC`,
-      [userId, userId]
+
+    // Get inquiries where user is either sender or recipient
+    const [inquiryRows] = await connection.execute(`
+      SELECT 
+        i.*,
+        u.building_name,
+        u.unit_number,
+        u.location,
+        sender.name as sender_name,
+        recipient.name as recipient_name
+      FROM inquiries i
+      LEFT JOIN units u ON i.unit_id = u.id
+      LEFT JOIN users sender ON i.sender_user_id = sender.id
+      LEFT JOIN users recipient ON i.recipient_user_id = recipient.id
+      WHERE i.sender_user_id = ? OR i.recipient_user_id = ?
+      ORDER BY i.created_at DESC
+    `, [userId, userId]);
+
+    // Get replies for each inquiry
+    const inquiriesWithReplies = await Promise.all(
+      inquiryRows.map(async (inquiry) => {
+        const [replyRows] = await connection.execute(`
+          SELECT 
+            r.*,
+            u.name as sender_name
+          FROM inquiry_replies r
+          LEFT JOIN users u ON r.sender_user_id = u.id
+          WHERE r.inquiry_id = ?
+          ORDER BY r.created_at ASC
+        `, [inquiry.id]);
+
+        return {
+          ...inquiry,
+          replies: replyRows
+        };
+      })
     );
-    // For each inquiry, get replies (threaded)
-    for (const inquiry of inquiries) {
-      const [replies] = await connection.execute(
-        'SELECT * FROM inquiries WHERE parent_inquiry_id = ? ORDER BY created_at ASC',
-        [inquiry.id]
-      );
-      inquiry.replies = replies;
-    }
+
     await connection.end();
-    res.status(200).json({ inquiries });
+
+    res.json({
+      inquiries: inquiriesWithReplies
+    });
   } catch (error) {
     console.error('Error fetching inquiries:', error);
     res.status(500).json({ message: 'Failed to fetch inquiries' });
+  }
+});
+
+// Update the reply endpoint to include sender name
+app.post('/inquiries/reply', async (req, res) => {
+  const { inquiryId, message, recipientUserId } = req.body;
+  const senderUserId = req.headers['x-user-id'];
+
+  if (!inquiryId || !message || !senderUserId || !recipientUserId) {
+    return res.status(400).json({ message: 'inquiryId, message, sender user ID, and recipient user ID are required' });
+  }
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+
+    // Insert the reply
+    await connection.execute(
+      'INSERT INTO inquiry_replies (inquiry_id, sender_user_id, recipient_user_id, message) VALUES (?, ?, ?, ?)',
+      [inquiryId, senderUserId, recipientUserId, message]
+    );
+
+    // Get sender name for the response
+    const [[senderInfo]] = await connection.execute(
+      'SELECT name FROM users WHERE id = ?',
+      [senderUserId]
+    );
+
+    await connection.end();
+
+    res.status(201).json({
+      message: 'Reply sent successfully',
+      reply: {
+        sender_name: senderInfo?.name || 'Unknown User',
+        sender_user_id: parseInt(senderUserId),
+        message,
+        created_at: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error sending reply:', error);
+    res.status(500).json({ message: 'Failed to send reply' });
   }
 });
 
