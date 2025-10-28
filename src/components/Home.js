@@ -42,7 +42,6 @@ function Home() {
         localStorage.setItem("userType", "user");
         localStorage.setItem("username", user.username || trimmedUsername);
         
-        // Redirect users to unitfinder instead of dashboard
         navigate("/unitfinder", { 
           state: { userId: user.id, userType: "user" } 
         });

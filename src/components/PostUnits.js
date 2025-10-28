@@ -324,7 +324,7 @@ function PostUnits() {
   };
 
   const handleBackButtonClick = () => {
-    navigate("/dashboard");
+    navigate("/unitfinder");
   };
 
   const togglePostedUnitsView = () => {
@@ -380,7 +380,7 @@ function PostUnits() {
       <div className="top-navigation-container">
         <div className="back-button-top-container">
           <button className="back-btn-top" onClick={handleBackButtonClick}>
-            Back to Dashboard
+            ⬅ Back
           </button>
         </div>
         

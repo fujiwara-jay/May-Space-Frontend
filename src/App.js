@@ -2,7 +2,6 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { UnitsProvider } from "./components/UnitsContext";
 import Home from "./components/Home";
-import Dashboard from "./components/Dashboard";
 import UnitFinder from "./components/UnitFinder";
 import About from "./components/About";
 import PostUnits from "./components/PostUnits";
@@ -34,7 +33,6 @@ function App() {
           <Route path="/register/admin" element={<AdminRegister />} />
 
           {/* Main pages */}
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/unitfinder" element={<UnitFinder />} />
           <Route path="/about" element={<About />} />
           <Route path="/post-unit" element={<PostUnits />} />

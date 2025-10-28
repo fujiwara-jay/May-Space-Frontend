@@ -127,6 +127,8 @@
   flex: 1;
   padding: 20px 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-btn {
@@ -165,14 +167,36 @@
   margin: 15px 25px;
 }
 
+.sidebar-footer {
+  margin-top: auto;
+  padding: 20px 0;
+  border-top: 1px solid rgba(224, 193, 109, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sidebar-footer .logout-btn {
+  width: auto;
+  min-width: 200px;
+  justify-content: center;
+  text-align: center;
+  border-left: 3px solid #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  margin: 0 20px;
+  border-radius: 5px;
+  padding: 12px 20px;
+}
+
 .logout-btn {
   color: #ff6b6b;
   border-left-color: #ff6b6b;
 }
 
 .logout-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(255, 107, 107, 0.2);
   border-left-color: #ff6b6b;
+  transform: translateY(-2px);
 }
 
 .sidebar-overlay {
@@ -910,6 +934,11 @@ button:disabled {
     font-size: 0.9rem;
   }
   
+  .sidebar-footer .logout-btn {
+    min-width: 180px;
+    margin: 0 15px;
+  }
+  
   .menu-toggle-btn {
     top: 15px;
     left: 15px;
@@ -1018,6 +1047,12 @@ button:disabled {
   .sidebar-btn {
     padding: 10px 15px;
     font-size: 0.85rem;
+  }
+  
+  .sidebar-footer .logout-btn {
+    min-width: 160px;
+    margin: 0 10px;
+    padding: 10px 15px;
   }
   
   .sidebar-header {

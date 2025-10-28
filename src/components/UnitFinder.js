@@ -214,11 +214,6 @@ const UnitFinder = () => {
     navigate("/bookings");
   };
 
-  const handleDashboardClick = () => {
-    setSidebarOpen(false);
-    navigate("/dashboard");
-  };
-
   const handleAboutClick = () => {
     setSidebarOpen(false);
     navigate("/about");
@@ -646,12 +641,6 @@ const UnitFinder = () => {
           {!isGuest ? (
             <>
               <button 
-                className={`sidebar-btn ${window.location.pathname === '/dashboard' ? 'active' : ''}`}
-                onClick={handleDashboardClick}
-              >
-                🏠 Dashboard
-              </button>
-              <button 
                 className="sidebar-btn"
                 onClick={handlePostUnitClick}
               >
@@ -693,15 +682,14 @@ const UnitFinder = () => {
           </button>
           
           {!isGuest && (
-            <>
-              <div className="sidebar-divider"></div>
+            <div className="sidebar-footer">
               <button 
                 className="sidebar-btn logout-btn"
                 onClick={handleLogout}
               >
                 🚪 Logout
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
