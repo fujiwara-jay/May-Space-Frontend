@@ -469,90 +469,44 @@ app.get('/inquiries', async (req, res) => {
 // Create a new booking
 app.post('/bookings', async (req, res) => {
   const userId = req.headers['x-user-id'];
-  const { unitId, name, address, contactNumber, numberOfPeople, transactionType, dateOfVisiting } = req.body;
-  
-  console.log('Booking request received:', {
-    userId,
-    unitId,
-    name,
-    address,
-    contactNumber,
-    numberOfPeople,
-    transactionType,
-    dateOfVisiting
-  });
-  
-  // Check for required fields with better error messages
-  if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' });
+  const { unitId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting } = req.body;
+  if (!userId || !unitId || !name || !address || !contactNumber || !numberOfPeople || !dateVisiting) {
+    return res.status(400).json({ message: 'All booking fields are required' });
   }
-  if (!unitId) {
-    return res.status(400).json({ message: 'Unit ID is required' });
-  }
-  if (!name) {
-    return res.status(400).json({ message: 'Name is required' });
-  }
-  if (!address) {
-    return res.status(400).json({ message: 'Address is required' });
-  }
-  if (!contactNumber) {
-    return res.status(400).json({ message: 'Contact number is required' });
-  }
-  if (!numberOfPeople) {
-    return res.status(400).json({ message: 'Number of people is required' });
-  }
-  if (!transactionType) {
-    return res.status(400).json({ message: 'Transaction type is required' });
-  }
-  if (!dateOfVisiting) {
-    return res.status(400).json({ message: 'Date of visiting is required' });
-  }
-
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
     // Check if unit exists and prevent booking own unit
     const [unitRows] = await connection.execute('SELECT * FROM units WHERE id = ?', [unitId]);
     if (unitRows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found' });
     }
-    
     if (parseInt(unitRows[0].user_id) === parseInt(userId)) {
       await connection.end();
       return res.status(400).json({ message: 'You cannot book your own unit.' });
     }
-
-    // Insert booking with transaction_type and date_of_visiting
     await connection.execute(
-      `INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, transaction_type, date_of_visiting, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-      [unitId, userId, name, address, contactNumber, numberOfPeople, transactionType, dateOfVisiting]
+      'INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [unitId, userId, name, address, contactNumber, numberOfPeople, dateVisiting]
     );
-    
     await connection.end();
     res.status(201).json({ message: 'Booking created successfully' });
   } catch (error) {
     console.error('Error creating booking:', error);
-    res.status(500).json({ message: 'Failed to create booking: ' + error.message });
+    res.status(500).json({ message: 'Failed to create booking' });
   }
 });
 
-// Other endpoints remain the same...
+// Get bookings made by the logged-in user
 app.get('/bookings/my', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
     return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
   }
-  
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT b.*, u.building_name, u.unit_number, u.location, u.unit_price 
-       FROM bookings b 
-       JOIN units u ON b.unit_id = u.id 
-       WHERE b.user_id = ? 
-       ORDER BY b.created_at DESC`,
+      `SELECT b.*, u.building_name, u.unit_number, u.location FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.user_id = ? ORDER BY b.created_at DESC`,
       [userId]
     );
     await connection.end();
@@ -563,20 +517,16 @@ app.get('/bookings/my', async (req, res) => {
   }
 });
 
+// Get bookings for units posted by the logged-in user
 app.get('/bookings/rented', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
     return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
   }
-  
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT b.*, u.building_name, u.unit_number, u.location, u.unit_price 
-       FROM bookings b 
-       JOIN units u ON b.unit_id = u.id 
-       WHERE u.user_id = ? 
-       ORDER BY b.created_at DESC`,
+      `SELECT b.*, u.building_name, u.unit_number, u.location FROM bookings b JOIN units u ON b.unit_id = u.id WHERE u.user_id = ? ORDER BY b.created_at DESC`,
       [userId]
     );
     await connection.end();
@@ -587,36 +537,29 @@ app.get('/bookings/rented', async (req, res) => {
   }
 });
 
+// Confirm or deny a booking (unit owner only)
 app.put('/bookings/:id/status', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const bookingId = req.params.id;
-  const { status } = req.body;
-  
+  const { status } = req.body; // 'confirmed' or 'denied'
   if (!userId || !bookingId || !['confirmed', 'denied'].includes(status)) {
     return res.status(400).json({ message: 'Invalid request' });
   }
-  
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+    // Check if booking exists and belongs to a unit owned by this user
     const [rows] = await connection.execute(
-      `SELECT b.*, u.user_id as unit_owner_id 
-       FROM bookings b 
-       JOIN units u ON b.unit_id = u.id 
-       WHERE b.id = ?`,
+      `SELECT b.*, u.user_id as unit_owner_id FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.id = ?`,
       [bookingId]
     );
-    
     if (rows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Booking not found' });
     }
-    
     if (parseInt(rows[0].unit_owner_id) !== parseInt(userId)) {
       await connection.end();
       return res.status(403).json({ message: 'Not authorized to update this booking' });
     }
-    
     await connection.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
     await connection.end();
     res.status(200).json({ message: `Booking ${status}` });
