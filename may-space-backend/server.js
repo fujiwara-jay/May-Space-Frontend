@@ -506,16 +506,7 @@ app.get('/bookings/my', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT 
-        b.*, 
-        u.building_name, 
-        u.unit_number, 
-        u.location,
-        u.price as unit_price
-       FROM bookings b 
-       JOIN units u ON b.unit_id = u.id 
-       WHERE b.user_id = ? 
-       ORDER BY b.created_at DESC`,
+      `SELECT b.*, u.building_name, u.unit_number, u.location FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.user_id = ? ORDER BY b.created_at DESC`,
       [userId]
     );
     await connection.end();
@@ -535,16 +526,7 @@ app.get('/bookings/rented', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT 
-        b.*, 
-        u.building_name, 
-        u.unit_number, 
-        u.location,
-        u.price as unit_price
-       FROM bookings b 
-       JOIN units u ON b.unit_id = u.id 
-       WHERE u.user_id = ? 
-       ORDER BY b.created_at DESC`,
+      `SELECT b.*, u.building_name, u.unit_number, u.location FROM bookings b JOIN units u ON b.unit_id = u.id WHERE u.user_id = ? ORDER BY b.created_at DESC`,
       [userId]
     );
     await connection.end();
@@ -567,13 +549,7 @@ app.put('/bookings/:id/status', async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     // Check if booking exists and belongs to a unit owned by this user
     const [rows] = await connection.execute(
-      `SELECT 
-        b.*, 
-        u.user_id as unit_owner_id,
-        u.price as unit_price
-       FROM bookings b 
-       JOIN units u ON b.unit_id = u.id 
-       WHERE b.id = ?`,
+      `SELECT b.*, u.user_id as unit_owner_id FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.id = ?`,
       [bookingId]
     );
     if (rows.length === 0) {

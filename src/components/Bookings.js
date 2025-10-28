@@ -4,10 +4,13 @@ import "../cssfiles/Bookings.css";
 
 function Bookings() {
   const formatPrice = (price) => {
-    console.log("Price received:", price); // Debug log
-    if (!price && price !== 0) return "Not specified";
+    console.log("Price received in formatPrice:", price, "Type:", typeof price);
+    if (price === null || price === undefined || price === '') return "Not specified";
     const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-    if (isNaN(numPrice)) return "Not specified";
+    if (isNaN(numPrice)) {
+      console.log("Price is NaN:", price);
+      return "Not specified";
+    }
     return `₱${numPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
@@ -93,20 +96,37 @@ function Bookings() {
     try {
       const headers = { "X-User-ID": userId };
       
-      console.log("Fetching bookings..."); // Debug log
+      console.log("=== FETCHING BOOKINGS ===");
       
       const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
       const myData = await myRes.json();
+      console.log("My bookings API response:", myData);
+      
       if (!myRes.ok) throw new Error(myData.message || "Failed to fetch my bookings");
-      console.log("My bookings data:", myData.bookings); // Debug log
+      
+      if (myData.bookings && myData.bookings.length > 0) {
+        myData.bookings.forEach((booking, index) => {
+          console.log(`Booking ${index} unit_price:`, booking.unit_price, "Full booking:", booking);
+        });
+      }
+      
       setMyBookings(myData.bookings || []);
 
       const rentedRes = await fetch("https://may-space-backend.onrender.com/bookings/rented", { headers });
       const rentedData = await rentedRes.json();
+      console.log("Rented units API response:", rentedData);
+      
       if (!rentedRes.ok) throw new Error(rentedData.message || "Failed to fetch rented bookings");
-      console.log("Rented units data:", rentedData.bookings); // Debug log
+      
+      if (rentedData.bookings && rentedData.bookings.length > 0) {
+        rentedData.bookings.forEach((booking, index) => {
+          console.log(`Rented booking ${index} unit_price:`, booking.unit_price, "Full booking:", booking);
+        });
+      }
+      
       setRentedUnits(rentedData.bookings || []);
     } catch (err) {
+      console.error("Error in fetchBookings:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -127,6 +147,26 @@ function Bookings() {
       checkForNewBookings();
     }
   }, [rentedUnits]);
+
+  const renderBookingInfo = (booking, isRented = false) => (
+    <div className="booking-info">
+      <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
+      <div><strong>Location:</strong> {booking.location}</div>
+      <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
+      <div><strong>Status:</strong> 
+        <span className={`status-${booking.status}`}>
+          {booking.status}
+        </span>
+      </div>
+      <div><strong>Booked By:</strong> {booking.name}</div>
+      <div><strong>Contact:</strong> {booking.contact_number}</div>
+      <div><strong>Number of People:</strong> {booking.number_of_people}</div>
+      <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
+      <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '10px' }}>
+        <strong>Debug:</strong> unit_price = {JSON.stringify(booking.unit_price)}
+      </div>
+    </div>
+  );
 
   return (
     <div className="bookings-container">
@@ -210,20 +250,7 @@ function Bookings() {
           ) : (
             myBookings.map((booking) => (
               <div key={booking.id} className="booking-card">
-                <div className="booking-info">
-                  <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
-                  <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
-                  <div><strong>Status:</strong> 
-                    <span className={`status-${booking.status}`}>
-                      {booking.status}
-                    </span>
-                  </div>
-                  <div><strong>Booked By:</strong> {booking.name}</div>
-                  <div><strong>Contact:</strong> {booking.contact_number}</div>
-                  <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
-                </div>
+                {renderBookingInfo(booking)}
               </div>
             ))
           )}
@@ -238,20 +265,7 @@ function Bookings() {
           ) : (
             rentedUnits.map((booking) => (
               <div key={booking.id} id={`booking-${booking.id}`} className="booking-card">
-                <div className="booking-info">
-                  <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
-                  <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
-                  <div><strong>Booked By:</strong> {booking.name}</div>
-                  <div><strong>Contact:</strong> {booking.contact_number}</div>
-                  <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Status:</strong> 
-                    <span className={`status-${booking.status}`}>
-                      {booking.status}
-                    </span>
-                  </div>
-                  <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
-                </div>
+                {renderBookingInfo(booking, true)}
                 <div className="booking-actions">
                   {booking.status === "pending" && (
                     <>
