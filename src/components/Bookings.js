@@ -92,40 +92,87 @@ function Bookings() {
         },
         body: JSON.stringify({ status }),
       });
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || `Failed to update booking`);
+      
+      if (!res.ok) {
+        throw new Error(data.message || `Failed to update booking: ${res.status}`);
+      }
+      
       setActionMessage(`Booking ${status}`);
       setNotifications(prev => prev.filter(notif => notif.bookingId !== bookingId));
       setTimeout(() => setActionMessage(""), 2000);
       fetchBookings();
     } catch (err) {
+      console.error("Status update error:", err);
       setActionMessage(err.message);
+      setTimeout(() => setActionMessage(""), 5000);
     }
   };
 
   const fetchBookings = async () => {
+    if (!userId) {
+      setError("User not authenticated");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const headers = { "X-User-ID": userId };
       
-      console.log("Fetching bookings...");
+      console.log("Fetching bookings for user:", userId);
       
       const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
+      
+      if (!myRes.ok) {
+        throw new Error(`Failed to fetch my bookings: ${myRes.status}`);
+      }
+      
       const myData = await myRes.json();
-      if (!myRes.ok) throw new Error(myData.message || "Failed to fetch my bookings");
-      console.log("My bookings data:", myData.bookings);
+      console.log("My bookings data:", myData);
       setMyBookings(myData.bookings || []);
 
       const rentedRes = await fetch("https://may-space-backend.onrender.com/bookings/rented", { headers });
+      
+      if (!rentedRes.ok) {
+        throw new Error(`Failed to fetch rented bookings: ${rentedRes.status}`);
+      }
+      
       const rentedData = await rentedRes.json();
-      if (!rentedRes.ok) throw new Error(rentedData.message || "Failed to fetch rented bookings");
-      console.log("Rented units data:", rentedData.bookings);
+      console.log("Rented units data:", rentedData);
       setRentedUnits(rentedData.bookings || []);
     } catch (err) {
+      console.error("Fetch bookings error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createBooking = async (bookingData) => {
+    try {
+      const res = await fetch("https://may-space-backend.onrender.com/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-ID": userId,
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || `Failed to create booking: ${res.status}`);
+      }
+
+      console.log("Booking created successfully:", data);
+      return data;
+    } catch (err) {
+      console.error("Create booking error:", err);
+      throw err;
     }
   };
 
@@ -134,6 +181,7 @@ function Bookings() {
       fetchBookings();
       localStorage.setItem(`lastBookingVisit_${userId}`, Date.now());
     } else {
+      setError("Please log in to view bookings");
       setLoading(false);
     }
   }, [userId]);
@@ -216,7 +264,11 @@ function Bookings() {
 
       {loading && <div className="loading">Loading bookings...</div>}
       {error && <div className="error-message">{error}</div>}
-      {actionMessage && <div className="success-message">{actionMessage}</div>}
+      {actionMessage && (
+        <div className={`message ${actionMessage.includes('Failed') ? 'error-message' : 'success-message'}`}>
+          {actionMessage}
+        </div>
+      )}
 
       <div className="bookings-section">
         <h3>My Bookings</h3>
@@ -236,9 +288,11 @@ function Bookings() {
                     </span>
                   </div>
                   <div><strong>Booked By:</strong> {booking.name}</div>
+                  <div><strong>Address:</strong> {booking.address}</div>
                   <div><strong>Contact:</strong> {booking.contact_number}</div>
                   <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_visiting_unit)}</div>
+                  <div><strong>Transaction Type:</strong> {booking.transaction_type}</div>
+                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_of_visiting)}</div>
                   <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
               </div>
@@ -260,9 +314,11 @@ function Bookings() {
                   <div><strong>Location:</strong> {booking.location}</div>
                   <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
                   <div><strong>Booked By:</strong> {booking.name}</div>
+                  <div><strong>Address:</strong> {booking.address}</div>
                   <div><strong>Contact:</strong> {booking.contact_number}</div>
                   <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Date Visiting :</strong> {formatDate(booking.date_visiting_unit)}</div>
+                  <div><strong>Transaction Type:</strong> {booking.transaction_type}</div>
+                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_of_visiting)}</div>
                   <div><strong>Status:</strong> 
                     <span className={`status-${booking.status}`}>
                       {booking.status}
