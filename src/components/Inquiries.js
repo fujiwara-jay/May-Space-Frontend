@@ -6,9 +6,7 @@ function Inquiries() {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [replyMessage, setReplyMessage] = useState("");
-  const [activeInquiryId, setActiveInquiryId] = useState(null);
-  const [showReplies, setShowReplies] = useState({});
+  const [replyMessages, setReplyMessages] = useState({});
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const userId = localStorage.getItem("userId");
@@ -20,64 +18,7 @@ function Inquiries() {
 
   useEffect(() => {
     fetchInquiries();
-    checkForNewReplies();
   }, []);
-
-  const checkForNewReplies = () => {
-    const lastVisit = localStorage.getItem(`lastInquiryVisit_${userId}`) || Date.now();
-    const newNotifications = [];
-    
-    inquiries.forEach(inquiry => {
-      if (inquiry.replies && inquiry.replies.length > 0) {
-        inquiry.replies.forEach(reply => {
-          const replyTime = new Date(reply.created_at).getTime();
-          if (replyTime > lastVisit && reply.sender_user_id !== parseInt(userId)) {
-            newNotifications.push({
-              id: `reply-${reply.id}`,
-              type: 'new_reply',
-              message: `New reply from User #${reply.sender_user_id}`,
-              inquiryId: inquiry.id,
-              timestamp: reply.created_at,
-              read: false
-            });
-          }
-        });
-      }
-    });
-
-    if (newNotifications.length > 0) {
-      setNotifications(prev => [...prev, ...newNotifications]);
-    }
-  };
-
-  const markNotificationAsRead = (notificationId) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId ? { ...notif, read: true } : notif
-      )
-    );
-  };
-
-  const clearAllNotifications = () => {
-    setNotifications([]);
-    localStorage.setItem(`lastInquiryVisit_${userId}`, Date.now());
-  };
-
-  const getUnreadNotificationCount = () => {
-    return notifications.filter(notif => !notif.read).length;
-  };
-
-  useEffect(() => {
-    return () => {
-      localStorage.setItem(`lastInquiryVisit_${userId}`, Date.now());
-    };
-  }, [userId]);
-
-  useEffect(() => {
-    if (inquiries.length > 0) {
-      checkForNewReplies();
-    }
-  }, [inquiries]);
 
   const fetchInquiries = async () => {
     setLoading(true);
@@ -96,16 +37,16 @@ function Inquiries() {
     }
   };
 
-  const handleReplyClick = (inquiryId) => {
-    setActiveInquiryId(inquiryId);
-    setReplyMessage("");
-  };
-
-  const handleReplyChange = (e) => {
-    setReplyMessage(e.target.value);
+  const handleReplyChange = (inquiryId, message) => {
+    setReplyMessages(prev => ({
+      ...prev,
+      [inquiryId]: message
+    }));
   };
 
   const handleSendReply = async (inquiry) => {
+    const replyMessage = replyMessages[inquiry.id] || "";
+    
     if (!replyMessage.trim()) {
       setError("Please enter a reply message");
       return;
@@ -132,32 +73,74 @@ function Inquiries() {
         throw new Error(errorData.message || "Failed to send reply");
       }
       
-      setReplyMessage("");
-      setActiveInquiryId(null);
+      // Clear the reply input for this specific inquiry
+      setReplyMessages(prev => ({
+        ...prev,
+        [inquiry.id]: ""
+      }));
+      
+      // Refresh inquiries to show the new reply
       fetchInquiries();
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const toggleReplies = (inquiryId) => {
-    setShowReplies((prev) => ({ 
-      ...prev, 
-      [inquiryId]: !prev[inquiryId] 
-    }));
-  };
-
   const canReplyToInquiry = (inquiry) => {
     const isRecipient = parseInt(userId) === inquiry.recipient_user_id;
     const isSender = parseInt(userId) === inquiry.sender_user_id;
-    const hasReplies = inquiry.replies && inquiry.replies.length > 0;
     
-    return isRecipient || (isSender && hasReplies);
+    // Allow replies if you're either the recipient OR the original sender
+    return isRecipient || isSender;
   };
 
-  const getLatestReply = (inquiry) => {
-    if (!inquiry.replies || inquiry.replies.length === 0) return null;
-    return inquiry.replies[inquiry.replies.length - 1];
+  const getAllMessages = (inquiry) => {
+    const messages = [];
+    
+    // Add the original inquiry as the first message
+    messages.push({
+      id: inquiry.id,
+      message: inquiry.message,
+      sender_user_id: inquiry.sender_user_id,
+      created_at: inquiry.created_at,
+      type: 'original'
+    });
+    
+    // Add all replies
+    if (inquiry.replies && inquiry.replies.length > 0) {
+      inquiry.replies.forEach(reply => {
+        messages.push({
+          id: reply.id,
+          message: reply.message,
+          sender_user_id: reply.sender_user_id,
+          created_at: reply.created_at,
+          type: 'reply'
+        });
+      });
+    }
+    
+    // Sort by creation date
+    return messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  };
+
+  const isMyMessage = (message) => {
+    return parseInt(userId) === message.sender_user_id;
+  };
+
+  const getUnreadNotificationCount = () => {
+    return notifications.filter(notif => !notif.read).length;
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
+
+  const markNotificationAsRead = (notificationId) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === notificationId ? { ...notif, read: true } : notif
+      )
+    );
   };
 
   return (
@@ -197,10 +180,7 @@ function Inquiries() {
                   <div 
                     key={notification.id} 
                     className={`notification-item ${notification.read ? 'read' : 'unread'}`}
-                    onClick={() => {
-                      markNotificationAsRead(notification.id);
-                      setShowNotifications(false);
-                    }}
+                    onClick={() => markNotificationAsRead(notification.id)}
                   >
                     <div className="notification-message">
                       {notification.message}
@@ -232,165 +212,70 @@ function Inquiries() {
         {inquiries.map((inquiry) => {
           if (inquiry.parent_inquiry_id) return null;
 
-          const isRecipient = parseInt(userId) === inquiry.recipient_user_id;
-          const isSender = parseInt(userId) === inquiry.sender_user_id;
           const canReply = canReplyToInquiry(inquiry);
-          const latestReply = getLatestReply(inquiry);
+          const allMessages = getAllMessages(inquiry);
+          const currentReply = replyMessages[inquiry.id] || "";
 
           return (
             <div key={inquiry.id} className="inquiry-card">
               <div className="inquiry-header">
                 <h4>{inquiry.building_name} - {inquiry.unit_number}</h4>
                 <span className="inquiry-badge">
-                  {isSender ? "Your Inquiry" : "Inquiry to You"}
+                  {parseInt(userId) === inquiry.sender_user_id ? "Your Inquiry" : "Inquiry to You"}
                 </span>
               </div>
 
               <div className="inquiry-info">
                 <div><strong>Location:</strong> {inquiry.location}</div>
-                <div><strong>From:</strong> User #{inquiry.sender_user_id}</div>
-                <div><strong>To:</strong> User #{inquiry.recipient_user_id}</div>
-                <div className="message-content">
-                  <strong>Message:</strong> {inquiry.message}
-                </div>
-                <div className="inquiry-date">
-                  {new Date(inquiry.created_at).toLocaleString()}
-                </div>
+                <div><strong>Between:</strong> User #{inquiry.sender_user_id} ↔ User #{inquiry.recipient_user_id}</div>
               </div>
 
-              {latestReply && (
-                <div className="latest-reply">
-                  <strong>Latest Reply:</strong> 
-                  <div className="reply-preview">
-                    {latestReply.message}
-                  </div>
-                  <div className="reply-date">
-                    {new Date(latestReply.created_at).toLocaleString()}
-                  </div>
-                </div>
-              )}
-
-              {canReply && activeInquiryId === inquiry.id ? (
-                <div className="reply-section">
-                  <textarea
-                    value={replyMessage}
-                    onChange={handleReplyChange}
-                    placeholder="Type your reply..."
-                    rows={3}
-                    className="reply-textarea"
-                  />
-                  <div className="reply-actions">
-                    <button 
-                      className="send-reply-btn" 
-                      onClick={() => handleSendReply(inquiry)}
-                      disabled={!replyMessage.trim()}
+              {/* Messenger-style conversation */}
+              <div className="conversation-container">
+                <div className="messages-list">
+                  {allMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`message-bubble ${isMyMessage(message) ? 'my-message' : 'other-message'}`}
                     >
-                      Send Reply
-                    </button>
-                    <button 
-                      className="cancel-reply-btn" 
-                      onClick={() => setActiveInquiryId(null)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : canReply ? (
-                <button 
-                  className="reply-btn" 
-                  onClick={() => handleReplyClick(inquiry.id)}
-                >
-                  Reply
-                </button>
-              ) : null}
-
-              {inquiry.replies && inquiry.replies.length > 0 && (
-                <div className="replies-section">
-                  <button 
-                    className="toggle-replies-btn" 
-                    onClick={() => toggleReplies(inquiry.id)}
-                  >
-                    {showReplies[inquiry.id]
-                      ? "Hide Replies"
-                      : `Show All Replies (${inquiry.replies.length})`}
-                  </button>
-                  {showReplies[inquiry.id] && (
-                    <div className="replies-list">
-                      {inquiry.replies.map((reply, index) => (
-                        <div key={reply.id} className={`reply-card ${index % 2 === 0 ? 'even' : 'odd'}`}>
-                          <div className="reply-header">
-                            <span><strong>From:</strong> User #{reply.sender_user_id}</span>
-                            <span><strong>To:</strong> User #{reply.recipient_user_id}</span>
-                          </div>
-                          <div className="reply-message">
-                            {reply.message}
-                          </div>
-                          <div className="reply-date">
-                            {new Date(reply.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="my-inquiries-section">
-        <h3>My Sent Inquiries</h3>
-        {inquiries.filter(
-          (i) => parseInt(userId) === i.sender_user_id && !i.parent_inquiry_id
-        ).length === 0 ? (
-          <div className="no-inquiries">You haven't sent any inquiries yet.</div>
-        ) : (
-          inquiries
-            .filter((i) => parseInt(userId) === i.sender_user_id && !i.parent_inquiry_id)
-            .map((inquiry) => (
-              <div key={inquiry.id} className="inquiry-card my-inquiry">
-                <div className="inquiry-header">
-                  <h4>{inquiry.building_name} - {inquiry.unit_number}</h4>
-                  <span className="inquiry-badge sent">Sent by You</span>
-                </div>
-                
-                <div className="inquiry-info">
-                  <div><strong>Location:</strong> {inquiry.location}</div>
-                  <div><strong>To:</strong> User #{inquiry.recipient_user_id}</div>
-                  <div className="message-content">
-                    <strong>Your Message:</strong> {inquiry.message}
-                  </div>
-                  <div className="inquiry-date">
-                    {new Date(inquiry.created_at).toLocaleString()}
-                  </div>
-                </div>
-
-                {inquiry.replies && inquiry.replies.length > 0 ? (
-                  <div className="replies-list">
-                    <h5>Replies ({inquiry.replies.length}):</h5>
-                    {inquiry.replies.map((reply) => (
-                      <div key={reply.id} className="reply-card">
-                        <div className="reply-header">
-                          <span><strong>From:</strong> User #{reply.sender_user_id}</span>
-                        </div>
-                        <div className="reply-message">
-                          {reply.message}
-                        </div>
-                        <div className="reply-date">
-                          {new Date(reply.created_at).toLocaleString()}
-                        </div>
+                      <div className="message-content">
+                        {message.message}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="no-replies">
-                    No replies yet.
+                      <div className="message-time">
+                        {new Date(message.created_at).toLocaleString()}
+                      </div>
+                      <div className="message-sender">
+                        {isMyMessage(message) ? 'You' : `User #${message.sender_user_id}`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Reply input - always visible if user can reply */}
+                {canReply && (
+                  <div className="reply-section">
+                    <textarea
+                      value={currentReply}
+                      onChange={(e) => handleReplyChange(inquiry.id, e.target.value)}
+                      placeholder="Type your reply..."
+                      rows={3}
+                      className="reply-textarea"
+                    />
+                    <div className="reply-actions">
+                      <button 
+                        className="send-reply-btn" 
+                        onClick={() => handleSendReply(inquiry)}
+                        disabled={!currentReply.trim()}
+                      >
+                        Send Reply
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-            ))
-        )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
