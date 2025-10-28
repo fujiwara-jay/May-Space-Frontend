@@ -238,7 +238,7 @@ function Bookings() {
                   <div><strong>Booked By:</strong> {booking.name}</div>
                   <div><strong>Contact:</strong> {booking.contact_number}</div>
                   <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_visiting)}</div>
+                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_visiting_unit)}</div>
                   <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
               </div>
@@ -262,7 +262,7 @@ function Bookings() {
                   <div><strong>Booked By:</strong> {booking.name}</div>
                   <div><strong>Contact:</strong> {booking.contact_number}</div>
                   <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_visiting)}</div>
+                  <div><strong>Date Visiting :</strong> {formatDate(booking.date_visiting_unit)}</div>
                   <div><strong>Status:</strong> 
                     <span className={`status-${booking.status}`}>
                       {booking.status}
