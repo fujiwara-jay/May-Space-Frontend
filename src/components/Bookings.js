@@ -1,163 +1,52 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../cssfiles/Bookings.css";
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 
-function Bookings() {
-  const formatPrice = (price) => {
-    console.log("Price received:", price);
-    if (!price && price !== 0) return "Not specified";
-    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-    if (isNaN(numPrice)) return "Not specified";
-    return `₱${numPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not specified";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-PH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long'
-      });
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "Invalid date";
-    }
-  };
-
-  const [myBookings, setMyBookings] = useState([]);
-  const [rentedUnits, setRentedUnits] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [actionMessage, setActionMessage] = useState("");
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const userId = localStorage.getItem("userId");
+function BookUnit() {
+  const { unitId } = useParams();
   const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    contactNumber: '',
+    numberOfPeople: '',
+    transactionType: 'Walk-in',
+    dateOfVisiting: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
-  const checkForNewBookings = () => {
-    const lastVisit = localStorage.getItem(`lastBookingVisit_${userId}`) || Date.now();
-    const newNotifications = [];
-    
-    rentedUnits.forEach(booking => {
-      const bookingTime = new Date(booking.created_at).getTime();
-      if (bookingTime > lastVisit && booking.status === 'pending') {
-        newNotifications.push({
-          id: `booking-${booking.id}`,
-          type: 'new_booking',
-          message: `New booking request for ${booking.unit_number}`,
-          bookingId: booking.id,
-          timestamp: booking.created_at,
-          read: false
-        });
-      }
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
     });
-
-    if (newNotifications.length > 0) {
-      setNotifications(prev => [...prev, ...newNotifications]);
-    }
   };
 
-  const markNotificationAsRead = (notificationId) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId ? { ...notif, read: true } : notif
-      )
-    );
-  };
-
-  const clearAllNotifications = () => {
-    setNotifications([]);
-    localStorage.setItem(`lastBookingVisit_${userId}`, Date.now());
-  };
-
-  const getUnreadNotificationCount = () => {
-    return notifications.filter(notif => !notif.read).length;
-  };
-
-  const handleStatusUpdate = async (bookingId, status) => {
-    setActionMessage("");
-    try {
-      const res = await fetch(`https://may-space-backend.onrender.com/bookings/${bookingId}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-ID": userId,
-        },
-        body: JSON.stringify({ status }),
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.message || `Failed to update booking: ${res.status}`);
-      }
-      
-      setActionMessage(`Booking ${status}`);
-      setNotifications(prev => prev.filter(notif => notif.bookingId !== bookingId));
-      setTimeout(() => setActionMessage(""), 2000);
-      fetchBookings();
-    } catch (err) {
-      console.error("Status update error:", err);
-      setActionMessage(err.message);
-      setTimeout(() => setActionMessage(""), 5000);
-    }
-  };
-
-  const fetchBookings = async () => {
-    if (!userId) {
-      setError("User not authenticated");
-      setLoading(false);
-      return;
-    }
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
     setLoading(true);
-    setError(null);
-    try {
-      const headers = { "X-User-ID": userId };
-      
-      console.log("Fetching bookings for user:", userId);
-      
-      const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
-      
-      if (!myRes.ok) {
-        throw new Error(`Failed to fetch my bookings: ${myRes.status}`);
-      }
-      
-      const myData = await myRes.json();
-      console.log("My bookings data:", myData);
-      setMyBookings(myData.bookings || []);
 
-      const rentedRes = await fetch("https://may-space-backend.onrender.com/bookings/rented", { headers });
-      
-      if (!rentedRes.ok) {
-        throw new Error(`Failed to fetch rented bookings: ${rentedRes.status}`);
-      }
-      
-      const rentedData = await rentedRes.json();
-      console.log("Rented units data:", rentedData);
-      setRentedUnits(rentedData.bookings || []);
-    } catch (err) {
-      console.error("Fetch bookings error:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createBooking = async (bookingData) => {
     try {
-      const res = await fetch("https://may-space-backend.onrender.com/bookings", {
-        method: "POST",
+      const bookingData = {
+        unitId: unitId,
+        name: formData.name,
+        address: formData.address,
+        contactNumber: formData.contactNumber,
+        numberOfPeople: parseInt(formData.numberOfPeople),
+        transactionType: formData.transactionType,
+        dateOfVisiting: formData.dateOfVisiting
+      };
+
+      console.log('Sending booking data:', bookingData);
+
+      const res = await fetch('https://may-space-backend.onrender.com/bookings', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "X-User-ID": userId,
+          'Content-Type': 'application/json',
+          'X-User-ID': userId,
         },
         body: JSON.stringify(bookingData),
       });
@@ -165,188 +54,112 @@ function Bookings() {
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.message || `Failed to create booking: ${res.status}`);
+        throw new Error(data.message || 'Failed to create booking');
       }
 
-      console.log("Booking created successfully:", data);
-      return data;
+      alert('Booking created successfully!');
+      navigate('/bookings');
     } catch (err) {
-      console.error("Create booking error:", err);
-      throw err;
+      console.error('Booking error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (userId) {
-      fetchBookings();
-      localStorage.setItem(`lastBookingVisit_${userId}`, Date.now());
-    } else {
-      setError("Please log in to view bookings");
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    if (rentedUnits.length > 0) {
-      checkForNewBookings();
-    }
-  }, [rentedUnits]);
+  // Format date for input field (YYYY-MM-DD)
+  const getTodayDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
 
   return (
-    <div className="bookings-container">
-      <div className="notifications-container">
-        <button 
-          className="notifications-bell"
-          onClick={() => setShowNotifications(!showNotifications)}
-        >
-          🔔
-          {getUnreadNotificationCount() > 0 && (
-            <span className="notification-badge">
-              {getUnreadNotificationCount()}
-            </span>
-          )}
-        </button>
-
-        {showNotifications && (
-          <div className="notifications-dropdown">
-            <div className="notifications-header">
-              <h4>Booking Notifications</h4>
-              {notifications.length > 0 && (
-                <button 
-                  className="clear-notifications-btn"
-                  onClick={clearAllNotifications}
-                >
-                  Clear All
-                </button>
-              )}
-            </div>
-            
-            {notifications.length === 0 ? (
-              <div className="no-notifications">No new booking notifications</div>
-            ) : (
-              <div className="notifications-list">
-                {notifications.map(notification => (
-                  <div 
-                    key={notification.id} 
-                    className={`notification-item ${notification.read ? 'read' : 'unread'}`}
-                    onClick={() => {
-                      markNotificationAsRead(notification.id);
-                      setShowNotifications(false);
-                      const bookingElement = document.getElementById(`booking-${notification.bookingId}`);
-                      if (bookingElement) {
-                        bookingElement.scrollIntoView({ behavior: 'smooth' });
-                        bookingElement.style.backgroundColor = 'rgba(224, 193, 109, 0.1)';
-                        setTimeout(() => {
-                          bookingElement.style.backgroundColor = '';
-                        }, 2000);
-                      }
-                    }}
-                  >
-                    <div className="notification-message">
-                      {notification.message}
-                    </div>
-                    <div className="notification-time">
-                      {new Date(notification.timestamp).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <button className="back-button" onClick={handleBack}>
-        ⬅ Back
-      </button>
-
-      <div className="bookings-header">Bookings</div>
-
-      {loading && <div className="loading">Loading bookings...</div>}
+    <div className="book-unit-container">
+      <h2>Book Unit</h2>
+      
       {error && <div className="error-message">{error}</div>}
-      {actionMessage && (
-        <div className={`message ${actionMessage.includes('Failed') ? 'error-message' : 'success-message'}`}>
-          {actionMessage}
+      
+      <form onSubmit={handleSubmit} className="booking-form">
+        <div className="form-group">
+          <label htmlFor="name">Full Name:</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
         </div>
-      )}
 
-      <div className="bookings-section">
-        <h3>My Bookings</h3>
-        <div className="booking-list">
-          {myBookings.length === 0 ? (
-            <div className="no-bookings">No bookings made yet.</div>
-          ) : (
-            myBookings.map((booking) => (
-              <div key={booking.id} className="booking-card">
-                <div className="booking-info">
-                  <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
-                  <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
-                  <div><strong>Status:</strong> 
-                    <span className={`status-${booking.status}`}>
-                      {booking.status}
-                    </span>
-                  </div>
-                  <div><strong>Booked By:</strong> {booking.name}</div>
-                  <div><strong>Address:</strong> {booking.address}</div>
-                  <div><strong>Contact:</strong> {booking.contact_number}</div>
-                  <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Transaction Type:</strong> {booking.transaction_type}</div>
-                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_of_visiting)}</div>
-                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
-                </div>
-              </div>
-            ))
-          )}
+        <div className="form-group">
+          <label htmlFor="address">Current Address:</label>
+          <textarea
+            id="address"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            required
+          />
         </div>
-      </div>
 
-      <div className="bookings-section">
-        <h3>My Rented Units (Bookings for My Units)</h3>
-        <div className="booking-list">
-          {rentedUnits.length === 0 ? (
-            <div className="no-bookings">No one has booked your units yet.</div>
-          ) : (
-            rentedUnits.map((booking) => (
-              <div key={booking.id} id={`booking-${booking.id}`} className="booking-card">
-                <div className="booking-info">
-                  <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
-                  <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
-                  <div><strong>Booked By:</strong> {booking.name}</div>
-                  <div><strong>Address:</strong> {booking.address}</div>
-                  <div><strong>Contact:</strong> {booking.contact_number}</div>
-                  <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Transaction Type:</strong> {booking.transaction_type}</div>
-                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_of_visiting)}</div>
-                  <div><strong>Status:</strong> 
-                    <span className={`status-${booking.status}`}>
-                      {booking.status}
-                    </span>
-                  </div>
-                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
-                </div>
-                <div className="booking-actions">
-                  {booking.status === "pending" && (
-                    <>
-                      <button className="confirm-btn" onClick={() => handleStatusUpdate(booking.id, "confirmed")}>Confirm</button>
-                      <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>Deny</button>
-                    </>
-                  )}
-                  {booking.status === "confirmed" && (
-                    <span className="status-confirmed">Confirmed</span>
-                  )}
-                  {booking.status === "denied" && (
-                    <span className="status-denied">Denied</span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+        <div className="form-group">
+          <label htmlFor="contactNumber">Contact Number:</label>
+          <input
+            type="tel"
+            id="contactNumber"
+            name="contactNumber"
+            value={formData.contactNumber}
+            onChange={handleChange}
+            required
+          />
         </div>
-      </div>
+
+        <div className="form-group">
+          <label htmlFor="numberOfPeople">Number of People:</label>
+          <input
+            type="number"
+            id="numberOfPeople"
+            name="numberOfPeople"
+            value={formData.numberOfPeople}
+            onChange={handleChange}
+            min="1"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="transactionType">Transaction Type:</label>
+          <select
+            id="transactionType"
+            name="transactionType"
+            value={formData.transactionType}
+            onChange={handleChange}
+            required
+          >
+            <option value="Walk-in">Walk-in Visit</option>
+            <option value="Online Transaction">Online Transaction</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="dateOfVisiting">Date Visiting Unit:</label>
+          <input
+            type="date"
+            id="dateOfVisiting"
+            name="dateOfVisiting"
+            value={formData.dateOfVisiting}
+            onChange={handleChange}
+            min={getTodayDate()}
+            required
+          />
+        </div>
+
+        <button type="submit" disabled={loading} className="submit-btn">
+          {loading ? 'Submitting...' : 'Submit Booking'}
+        </button>
+      </form>
     </div>
   );
 }
 
-export default Bookings;
+export default BookUnit;

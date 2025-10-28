@@ -471,8 +471,41 @@ app.post('/bookings', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { unitId, name, address, contactNumber, numberOfPeople, transactionType, dateOfVisiting } = req.body;
   
-  if (!userId || !unitId || !name || !address || !contactNumber || !numberOfPeople || !transactionType || !dateOfVisiting) {
-    return res.status(400).json({ message: 'All booking fields are required' });
+  console.log('Booking request received:', {
+    userId,
+    unitId,
+    name,
+    address,
+    contactNumber,
+    numberOfPeople,
+    transactionType,
+    dateOfVisiting
+  });
+  
+  // Check for required fields with better error messages
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+  if (!unitId) {
+    return res.status(400).json({ message: 'Unit ID is required' });
+  }
+  if (!name) {
+    return res.status(400).json({ message: 'Name is required' });
+  }
+  if (!address) {
+    return res.status(400).json({ message: 'Address is required' });
+  }
+  if (!contactNumber) {
+    return res.status(400).json({ message: 'Contact number is required' });
+  }
+  if (!numberOfPeople) {
+    return res.status(400).json({ message: 'Number of people is required' });
+  }
+  if (!transactionType) {
+    return res.status(400).json({ message: 'Transaction type is required' });
+  }
+  if (!dateOfVisiting) {
+    return res.status(400).json({ message: 'Date of visiting is required' });
   }
 
   try {
@@ -501,11 +534,11 @@ app.post('/bookings', async (req, res) => {
     res.status(201).json({ message: 'Booking created successfully' });
   } catch (error) {
     console.error('Error creating booking:', error);
-    res.status(500).json({ message: 'Failed to create booking' });
+    res.status(500).json({ message: 'Failed to create booking: ' + error.message });
   }
 });
 
-// Get bookings made by the logged-in user
+// Other endpoints remain the same...
 app.get('/bookings/my', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -530,7 +563,6 @@ app.get('/bookings/my', async (req, res) => {
   }
 });
 
-// Get bookings for units posted by the logged-in user
 app.get('/bookings/rented', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -555,11 +587,10 @@ app.get('/bookings/rented', async (req, res) => {
   }
 });
 
-// Confirm or deny a booking (unit owner only)
 app.put('/bookings/:id/status', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const bookingId = req.params.id;
-  const { status } = req.body; // 'confirmed' or 'denied'
+  const { status } = req.body;
   
   if (!userId || !bookingId || !['confirmed', 'denied'].includes(status)) {
     return res.status(400).json({ message: 'Invalid request' });
@@ -568,7 +599,6 @@ app.put('/bookings/:id/status', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
-    // Check if booking exists and belongs to a unit owned by this user
     const [rows] = await connection.execute(
       `SELECT b.*, u.user_id as unit_owner_id 
        FROM bookings b 
