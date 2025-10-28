@@ -16,8 +16,7 @@ function UserRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validations
-    if (!name || !username || !email || !contactNumber || !password || !confirmPassword) {
+    if (!name ||!username || !email || !contactNumber || !password || !confirmPassword) {
       setError("All fields are required");
       return;
     }
@@ -33,7 +32,7 @@ function UserRegister() {
       return;
     }
 
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address");
       return;
@@ -54,13 +53,12 @@ function UserRegister() {
 
         setTimeout(() => {
           setShowSuccess(false);
-          setName("");
           setUsername("");
+          setName("");
           setEmail("");
           setContactNumber("");
           setPassword("");
           setConfirmPassword("");
-          navigate("/home");
         }, 2000);
       } else {
         setError(data.message || "User registration failed");
@@ -127,7 +125,6 @@ function UserRegister() {
             <span>Already have an account? </span>
             <Link to="/home">Login</Link>
           </div>
-
           <button type="submit">Register</button>
         </form>
       </div>
