@@ -11,6 +11,22 @@ function Bookings() {
     return `₱${numPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not specified";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long'
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
   const [myBookings, setMyBookings] = useState([]);
   const [rentedUnits, setRentedUnits] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -222,7 +238,8 @@ function Bookings() {
                   <div><strong>Booked By:</strong> {booking.name}</div>
                   <div><strong>Contact:</strong> {booking.contact_number}</div>
                   <div><strong>Number of People:</strong> {booking.number_of_people}</div>
-                  <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
+                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_visiting)}</div>
+                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
               </div>
             ))
@@ -245,12 +262,13 @@ function Bookings() {
                   <div><strong>Booked By:</strong> {booking.name}</div>
                   <div><strong>Contact:</strong> {booking.contact_number}</div>
                   <div><strong>Number of People:</strong> {booking.number_of_people}</div>
+                  <div><strong>Date Visiting:</strong> {formatDate(booking.date_visiting)}</div>
                   <div><strong>Status:</strong> 
                     <span className={`status-${booking.status}`}>
                       {booking.status}
                     </span>
                   </div>
-                  <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
+                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
                 <div className="booking-actions">
                   {booking.status === "pending" && (

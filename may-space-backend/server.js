@@ -552,6 +552,13 @@ app.put('/bookings/:id/status', async (req, res) => {
       `SELECT b.*, u.user_id as unit_owner_id FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.id = ?`,
       [bookingId]
     );
+        // date_of_visiting column
+    await connection.execute(
+      `INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, date_of_visiting, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [unitId, userId, name, address, contactNumber, numberOfPeople, date_of_visiting]
+    );
+
     if (rows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Booking not found' });
