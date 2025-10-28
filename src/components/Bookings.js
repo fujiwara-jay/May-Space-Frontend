@@ -4,11 +4,12 @@ import "../cssfiles/Bookings.css";
 
 function Bookings() {
   const formatPrice = (price) => {
-    if (!price) return "Not specified";
+    if (!price && price !== 0) return "Not specified";
     const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-    if (isNaN(numPrice)) return price;
+    if (isNaN(numPrice)) return "Not specified";
     return `₱${numPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
+
   const [myBookings, setMyBookings] = useState([]);
   const [rentedUnits, setRentedUnits] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +91,7 @@ function Bookings() {
     setError(null);
     try {
       const headers = { "X-User-ID": userId };
+      
       const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
       const myData = await myRes.json();
       if (!myRes.ok) throw new Error(myData.message || "Failed to fetch my bookings");
@@ -199,15 +201,22 @@ function Bookings() {
         <h3>My Bookings</h3>
         <div className="booking-list">
           {myBookings.length === 0 ? (
-            <div className="no-inquiries">No bookings made yet.</div>
+            <div className="no-bookings">No bookings made yet.</div>
           ) : (
             myBookings.map((booking) => (
               <div key={booking.id} className="booking-card">
                 <div className="booking-info">
                   <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
                   <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
-                  <div><strong>Status:</strong> {booking.status}</div>
+                  <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
+                  <div><strong>Status:</strong> 
+                    <span className={`status-${booking.status}`}>
+                      {booking.status}
+                    </span>
+                  </div>
+                  <div><strong>Booked By:</strong> {booking.name}</div>
+                  <div><strong>Contact:</strong> {booking.contact_number}</div>
+                  <div><strong>Number of People:</strong> {booking.number_of_people}</div>
                   <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
               </div>
@@ -220,16 +229,22 @@ function Bookings() {
         <h3>My Rented Units (Bookings for My Units)</h3>
         <div className="booking-list">
           {rentedUnits.length === 0 ? (
-            <div className="no-inquiries">No one has booked your units yet.</div>
+            <div className="no-bookings">No one has booked your units yet.</div>
           ) : (
             rentedUnits.map((booking) => (
               <div key={booking.id} id={`booking-${booking.id}`} className="booking-card">
                 <div className="booking-info">
                   <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
                   <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
+                  <div><strong>Price:</strong> {formatPrice(booking.unit_price)}</div>
                   <div><strong>Booked By:</strong> {booking.name}</div>
-                  <div><strong>Status:</strong> {booking.status}</div>
+                  <div><strong>Contact:</strong> {booking.contact_number}</div>
+                  <div><strong>Number of People:</strong> {booking.number_of_people}</div>
+                  <div><strong>Status:</strong> 
+                    <span className={`status-${booking.status}`}>
+                      {booking.status}
+                    </span>
+                  </div>
                   <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
                 <div className="booking-actions">
@@ -239,8 +254,12 @@ function Bookings() {
                       <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>Deny</button>
                     </>
                   )}
-                  {booking.status === "confirmed" && <span style={{ color: '#4caf50', fontWeight: 700 }}>Confirmed</span>}
-                  {booking.status === "denied" && <span style={{ color: '#e57373', fontWeight: 700 }}>Denied</span>}
+                  {booking.status === "confirmed" && (
+                    <span className="status-confirmed">Confirmed</span>
+                  )}
+                  {booking.status === "denied" && (
+                    <span className="status-denied">Denied</span>
+                  )}
                 </div>
               </div>
             ))

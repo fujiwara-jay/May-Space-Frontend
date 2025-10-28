@@ -66,6 +66,21 @@ body {
   font-size: 1.05rem;
 }
 
+.status-pending {
+  color: #e0c16d;
+  font-weight: 600;
+}
+
+.status-confirmed {
+  color: #4caf50;
+  font-weight: 700;
+}
+
+.status-denied {
+  color: #e57373;
+  font-weight: 700;
+}
+
 .booking-actions {
   margin-top: 10px;
 }
@@ -197,11 +212,25 @@ body {
   background: rgba(224, 193, 109, 0.1);
 }
 
-.no-notifications {
+.no-notifications, .no-bookings, .loading, .error-message, .success-message {
   padding: 20px;
   text-align: center;
   color: #a0aec0;
   font-style: italic;
+}
+
+.error-message {
+  background: rgba(248, 215, 218, 0.1);
+  color: #f8d7da;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 198, 203, 0.3);
+}
+
+.success-message {
+  background: rgba(212, 237, 218, 0.1);
+  color: #d4edda;
+  border-radius: 8px;
+  border: 1px solid rgba(195, 230, 203, 0.3);
 }
 
 .notifications-list {
@@ -244,7 +273,22 @@ body {
   text-align: right;
 }
 
-/* Responsive Design */
+.back-button {
+  background: #6c757d;
+  color: #f7e7b6;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  transition: background 0.2s;
+}
+
+.back-button:hover {
+  background: #5a6268;
+}
+
 @media (max-width: 768px) {
   .bookings-container {
     margin: 20px;
@@ -254,6 +298,17 @@ body {
   .notifications-dropdown {
     width: 280px;
     right: -50px;
+  }
+  
+  .booking-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .confirm-btn, .deny-btn {
+    width: 100%;
+    margin-right: 0;
   }
 }
 
@@ -270,5 +325,9 @@ body {
   .notifications-dropdown {
     width: 250px;
     right: -80px;
+  }
+  
+  .booking-card {
+    padding: 15px;
   }
 }
