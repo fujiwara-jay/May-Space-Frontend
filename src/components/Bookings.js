@@ -4,6 +4,7 @@ import "../cssfiles/Bookings.css";
 
 function Bookings() {
   const formatPrice = (price) => {
+    console.log("Price received:", price); // Debug log
     if (!price && price !== 0) return "Not specified";
     const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     if (isNaN(numPrice)) return "Not specified";
@@ -92,14 +93,18 @@ function Bookings() {
     try {
       const headers = { "X-User-ID": userId };
       
+      console.log("Fetching bookings..."); // Debug log
+      
       const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
       const myData = await myRes.json();
       if (!myRes.ok) throw new Error(myData.message || "Failed to fetch my bookings");
+      console.log("My bookings data:", myData.bookings); // Debug log
       setMyBookings(myData.bookings || []);
 
       const rentedRes = await fetch("https://may-space-backend.onrender.com/bookings/rented", { headers });
       const rentedData = await rentedRes.json();
       if (!rentedRes.ok) throw new Error(rentedData.message || "Failed to fetch rented bookings");
+      console.log("Rented units data:", rentedData.bookings); // Debug log
       setRentedUnits(rentedData.bookings || []);
     } catch (err) {
       setError(err.message);
