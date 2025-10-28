@@ -116,7 +116,6 @@ function Inquiries() {
       });
     }
     
-    // Sort by creation date
     return messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   };
 
@@ -124,7 +123,7 @@ function Inquiries() {
     return parseInt(userId) === message.sender_user_id;
   };
 
-  const getDisplayName = (message, inquiry) => {
+  const getDisplayName = (message) => {
     if (isMyMessage(message)) {
       return 'You';
     }
@@ -257,7 +256,7 @@ function Inquiries() {
                         {new Date(message.created_at).toLocaleString()}
                       </div>
                       <div className="message-sender">
-                        {getDisplayName(message, inquiry)}
+                        {getDisplayName(message)}
                       </div>
                     </div>
                   ))}
