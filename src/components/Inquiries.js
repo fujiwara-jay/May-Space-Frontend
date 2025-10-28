@@ -73,13 +73,11 @@ function Inquiries() {
         throw new Error(errorData.message || "Failed to send reply");
       }
       
-      // Clear the reply input for this specific inquiry
       setReplyMessages(prev => ({
         ...prev,
         [inquiry.id]: ""
       }));
       
-      // Refresh inquiries to show the new reply
       fetchInquiries();
     } catch (err) {
       setError(err.message);
@@ -90,14 +88,12 @@ function Inquiries() {
     const isRecipient = parseInt(userId) === inquiry.recipient_user_id;
     const isSender = parseInt(userId) === inquiry.sender_user_id;
     
-    // Allow replies if you're either the recipient OR the original sender
     return isRecipient || isSender;
   };
 
   const getAllMessages = (inquiry) => {
     const messages = [];
     
-    // Add the original inquiry as the first message
     messages.push({
       id: inquiry.id,
       message: inquiry.message,
@@ -106,7 +102,6 @@ function Inquiries() {
       type: 'original'
     });
     
-    // Add all replies
     if (inquiry.replies && inquiry.replies.length > 0) {
       inquiry.replies.forEach(reply => {
         messages.push({
@@ -119,7 +114,6 @@ function Inquiries() {
       });
     }
     
-    // Sort by creation date
     return messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   };
 
@@ -230,7 +224,6 @@ function Inquiries() {
                 <div><strong>Between:</strong> User #{inquiry.sender_user_id} ↔ User #{inquiry.recipient_user_id}</div>
               </div>
 
-              {/* Messenger-style conversation */}
               <div className="conversation-container">
                 <div className="messages-list">
                   {allMessages.map((message) => (
@@ -251,7 +244,6 @@ function Inquiries() {
                   ))}
                 </div>
 
-                {/* Reply input - always visible if user can reply */}
                 {canReply && (
                   <div className="reply-section">
                     <textarea
