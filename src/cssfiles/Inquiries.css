@@ -14,15 +14,13 @@ body {
 .inquiries-container {
   max-width: 800px;
   margin: 40px auto;
-  background: rgba(44, 54, 63, 0.95);
+  background: #2c363f;
   color: #f7e7b6;
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
   padding: 36px 32px 28px 32px;
   font-family: inherit;
   position: relative;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(224, 193, 109, 0.2);
 }
 
 .inquiries-container h2 {
@@ -56,19 +54,17 @@ body {
 }
 
 .inquiry-card {
-  background: rgba(61, 72, 82, 0.8);
+  background: #3d4852;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.10);
   color: #f7e7b6;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(74, 90, 106, 0.5);
-  backdrop-filter: blur(5px);
+  transition: box-shadow 0.2s;
+  border: 1px solid #4a5a6a;
 }
 
 .inquiry-card:hover {
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
 }
 
 .inquiry-header {
@@ -77,7 +73,7 @@ body {
   align-items: center;
   margin-bottom: 15px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(74, 90, 106, 0.6);
+  border-bottom: 1px solid #4a5a6a;
 }
 
 .inquiry-header h4 {
@@ -105,7 +101,6 @@ body {
   color: #a0aec0;
 }
 
-/* Messenger-style conversation */
 .conversation-container {
   margin-top: 20px;
 }
@@ -168,7 +163,6 @@ body {
   font-weight: 600;
 }
 
-/* Reply Section */
 .reply-section {
   margin-top: 15px;
   display: flex;
@@ -179,8 +173,8 @@ body {
 .reply-textarea {
   width: 100%;
   border-radius: 12px;
-  border: 1px solid rgba(74, 90, 106, 0.6);
-  background: rgba(35, 43, 51, 0.8);
+  border: 1px solid #4a5a6a;
+  background: #232b33;
   color: #f7e7b6;
   padding: 12px 16px;
   font-size: 1rem;
@@ -193,8 +187,7 @@ body {
 .reply-textarea:focus {
   outline: none;
   border-color: #e0c16d;
-  box-shadow: 0 0 8px rgba(224, 193, 109, 0.3);
-  background: rgba(35, 43, 51, 0.9);
+  box-shadow: 0 0 8px rgba(224, 193, 109, 0.5);
 }
 
 .reply-actions {
@@ -203,26 +196,19 @@ body {
 }
 
 .back-button {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  background: linear-gradient(135deg, #e0c16d, #d4af37);
-  color: #2c363f;
+  background: #6c757d;
+  color: #f7e7b6;
   border: none;
-  padding: 12px 20px;
-  border-radius: 25px;
+  padding: 10px 20px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(224, 193, 109, 0.3);
+  margin-bottom: 20px;
+  transition: background 0.2s;
 }
 
 .back-button:hover {
-  background: linear-gradient(135deg, #d4af37, #c19b2e);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(224, 193, 109, 0.4);
+  background: #5a6268;
 }
 
 .send-reply-btn {
@@ -251,9 +237,8 @@ body {
   box-shadow: none;
 }
 
-/* Notifications */
 .notifications-container {
-  position: fixed;
+  position: absolute;
   top: 20px;
   right: 20px;
   z-index: 1000;
@@ -261,7 +246,7 @@ body {
 
 .notifications-bell {
   position: relative;
-  background: linear-gradient(135deg, #4a90e2, #357ae8);
+  background: #4a90e2;
   border: none;
   border-radius: 50%;
   width: 50px;
@@ -272,38 +257,35 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  color: white;
-  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
 .notifications-bell:hover {
-  background: linear-gradient(135deg, #357ae8, #2d6bc6);
-  transform: scale(1.1) rotate(10deg);
-  box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+  background: #357ae8;
+  transform: scale(1.1);
 }
 
 .notification-badge {
   position: absolute;
   top: -5px;
   right: -5px;
-  background: linear-gradient(135deg, #ff4757, #ff3742);
+  background: #ff4757;
   color: white;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   font-size: 0.7rem;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: pulse 2s infinite;
-  box-shadow: 0 2px 6px rgba(255, 71, 87, 0.4);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   border: 2px solid #2c363f;
 }
 
 @keyframes pulse {
   0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+  50% { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
 
@@ -311,24 +293,23 @@ body {
   position: absolute;
   top: 60px;
   right: 0;
-  background: rgba(61, 72, 82, 0.95);
-  border: 1px solid rgba(74, 90, 106, 0.6);
+  background: #3d4852;
+  border: 1px solid #4a5a6a;
   border-radius: 12px;
-  width: 320px;
+  width: 300px;
   max-height: 400px;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   z-index: 1001;
-  backdrop-filter: blur(10px);
 }
 
 .notifications-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid rgba(74, 90, 106, 0.6);
-  background: rgba(44, 54, 63, 0.9);
+  padding: 15px;
+  border-bottom: 1px solid #4a5a6a;
+  background: #2c363f;
   border-radius: 12px 12px 0 0;
 }
 
@@ -336,112 +317,79 @@ body {
   margin: 0;
   color: #e0c16d;
   font-size: 1.1rem;
-  font-weight: 700;
 }
 
 .clear-notifications-btn {
   background: transparent;
   border: 1px solid #e0c16d;
   color: #e0c16d;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 6px;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
-  font-weight: 600;
 }
 
 .clear-notifications-btn:hover {
-  background: rgba(224, 193, 109, 0.15);
-  transform: translateY(-1px);
+  background: rgba(224, 193, 109, 0.1);
 }
 
 .no-notifications {
-  padding: 30px 20px;
+  padding: 20px;
   text-align: center;
   color: #a0aec0;
   font-style: italic;
-  font-size: 0.9rem;
 }
 
 .notifications-list {
-  padding: 12px;
+  padding: 10px;
 }
 
 .notification-item {
-  padding: 14px;
-  margin-bottom: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-left: 4px solid transparent;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
 }
 
 .notification-item.unread {
-  background: rgba(224, 193, 109, 0.15);
+  background: rgba(224, 193, 109, 0.1);
   border-left-color: #e0c16d;
-  box-shadow: 0 2px 8px rgba(224, 193, 109, 0.2);
 }
 
 .notification-item.read {
-  background: rgba(255, 255, 255, 0.08);
-  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0.7;
 }
 
 .notification-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateX(-3px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-2px);
 }
 
 .notification-message {
   font-size: 0.9rem;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   color: #f7e7b6;
-  line-height: 1.4;
 }
 
 .notification-time {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #a0aec0;
   text-align: right;
-  font-weight: 500;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
-  body {
-    background-attachment: scroll;
-    padding: 10px;
-  }
-  
   .inquiries-container {
-    margin: 20px auto;
+    margin: 20px;
     padding: 24px 20px;
-    backdrop-filter: blur(5px);
-  }
-  
-  .back-button {
-    top: 15px;
-    left: 15px;
-    padding: 10px 16px;
-    font-size: 0.9rem;
-  }
-  
-  .notifications-container {
-    top: 15px;
-    right: 15px;
-  }
-  
-  .notifications-bell {
-    width: 45px;
-    height: 45px;
-    font-size: 1.3rem;
   }
   
   .notifications-dropdown {
     width: 280px;
-    right: -40px;
+    right: -50px;
   }
   
   .message-bubble {
@@ -457,40 +405,21 @@ body {
 
 @media (max-width: 480px) {
   .inquiries-container {
-    margin: 10px auto;
-    padding: 20px 16px;
-    border-radius: 12px;
+    margin: 10px;
+    padding: 20px 15px;
   }
   
   .inquiries-container h2 {
     font-size: 1.4rem;
   }
   
-  .back-button {
-    top: 10px;
-    left: 10px;
-    padding: 8px 14px;
-    font-size: 0.8rem;
-  }
-  
   .inquiry-card {
     padding: 15px;
   }
   
-  .notifications-container {
-    top: 10px;
-    right: 10px;
-  }
-  
-  .notifications-bell {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
-  
   .notifications-dropdown {
-    width: 260px;
-    right: -60px;
+    width: 250px;
+    right: -80px;
   }
   
   .message-bubble {
