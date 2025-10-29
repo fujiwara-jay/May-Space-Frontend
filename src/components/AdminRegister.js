@@ -6,7 +6,7 @@ function AdminRegister() {
   const [showPinPrompt, setShowPinPrompt] = useState(true);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
-  const SECURITY_PIN = "12345678";
+  const SECURITY_PIN = "00000000";
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [contactNumber, setContactNumber] = useState("");
