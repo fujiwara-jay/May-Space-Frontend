@@ -229,6 +229,11 @@ const UnitFinder = () => {
     navigate("/tools");
   };
 
+  const handleMyAccountClick = () => {
+    setSidebarOpen(false);
+    navigate("/my-account");
+  };
+
   const handleOpenLocation = (e) => {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
@@ -657,6 +662,12 @@ const UnitFinder = () => {
                 onClick={handleBookingsClick}
               >
                 📅 Bookings
+              </button>
+              <button 
+                className="sidebar-btn"
+                onClick={handleMyAccountClick}
+              >
+                👤 My Account
               </button>
               <div className="sidebar-divider"></div>
             </>
