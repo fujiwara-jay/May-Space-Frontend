@@ -33,126 +33,12 @@ const safeParseImages = (imagesData) => {
   }
 };
 
-// --- User Profile Endpoints ---
-
-// Get user profile
-app.get('/user/profile', async (req, res) => {
-  const userId = req.headers['x-user-id'];
-  
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized: User ID not provided' });
-  }
-
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [users] = await connection.execute(
-      'SELECT id, name, username, email, contact_number, user_type, created_at FROM users WHERE id = ?',
-      [userId]
-    );
-    
-    await connection.end();
-    
-    if (users.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const user = users[0];
-    const userData = {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      contactNumber: user.contact_number,
-      userType: user.user_type,
-      createdAt: user.created_at
-    };
-
-    res.status(200).json({ user: userData });
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    res.status(500).json({ message: 'Failed to fetch user profile' });
-  }
-});
-
-// Update user profile
-app.put('/user/profile', async (req, res) => {
-  const userId = req.headers['x-user-id'];
-  const { name, email, contactNumber } = req.body;
-
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized: User ID not provided' });
-  }
-
-  if (!name || !email || !contactNumber) {
-    return res.status(400).json({ message: 'Name, email, and contact number are required' });
-  }
-
-  // Validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: 'Please enter a valid email address' });
-  }
-
-  const phoneRegex = /^[0-9]{10,15}$/;
-  if (!phoneRegex.test(contactNumber)) {
-    return res.status(400).json({ message: 'Please enter a valid contact number (10-15 digits)' });
-  }
-
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    
-    // Check if email already exists for another user
-    const [existing] = await connection.execute(
-      'SELECT id FROM users WHERE email = ? AND id != ?',
-      [email, userId]
-    );
-    
-    if (existing.length > 0) {
-      await connection.end();
-      return res.status(409).json({ message: 'Email already exists' });
-    }
-
-    // Update user profile
-    await connection.execute(
-      'UPDATE users SET name = ?, email = ?, contact_number = ? WHERE id = ?',
-      [name, email, contactNumber, userId]
-    );
-
-    // Get updated user data
-    const [users] = await connection.execute(
-      'SELECT id, name, username, email, contact_number, user_type, created_at FROM users WHERE id = ?',
-      [userId]
-    );
-    
-    await connection.end();
-
-    const updatedUser = users[0];
-    const userData = {
-      id: updatedUser.id,
-      name: updatedUser.name,
-      username: updatedUser.username,
-      email: updatedUser.email,
-      contactNumber: updatedUser.contact_number,
-      userType: updatedUser.user_type,
-      createdAt: updatedUser.created_at
-    };
-
-    res.status(200).json({ 
-      message: 'Profile updated successfully', 
-      user: userData 
-    });
-  } catch (error) {
-    console.error('Error updating user profile:', error);
-    res.status(500).json({ message: 'Failed to update profile' });
-  }
-});
-
 // --- Registration Endpoints ---
 
 // User Registration
 app.post('/user/register', async (req, res) => {
   const { name, username, email, contactNumber, password } = req.body;
-  if (!name || !username || !email || !contactNumber || !password) {
+  if (!name |!username || !email || !contactNumber || !password) {
     return res.status(400).json({ message: 'All fields are required' });
   }
   try {
@@ -170,10 +56,7 @@ app.post('/user/register', async (req, res) => {
       'INSERT INTO users (name, username, email, contact_number, password) VALUES (?, ?, ?, ?, ?)',
       [name, username, email, contactNumber, hashedPassword]
     );
-    const [userRows] = await connection.execute(
-      'SELECT id, name, username, email, contact_number, user_type, created_at FROM users WHERE id = ?', 
-      [result.insertId]
-    );
+    const [userRows] = await connection.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
     await connection.end();
     res.status(201).json({ message: 'User registered successfully', user: userRows[0] });
   } catch (error) {
@@ -235,20 +118,7 @@ app.post('/user/login', async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
-    
-    const userResponse = {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      contactNumber: user.contact_number,
-      userType: user.user_type
-    };
-    
-    res.status(200).json({ 
-      message: 'Login successful', 
-      user: userResponse 
-    });
+    res.status(200).json({ message: 'Login successful', user: { id: user.id, username: user.username, email: user.email } });
   } catch (error) {
     console.error('User login error:', error);
     res.status(500).json({ message: 'Failed to log in' });
@@ -473,6 +343,11 @@ app.get('/public/units', async (req, res) => {
     console.error('Error fetching all units for public view:', error);
     res.status(500).json({ message: 'Failed to fetch available units' });
   }
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 // --- Inquiries Endpoints ---
@@ -778,14 +653,10 @@ app.delete('/admin/units/:id', async (req, res) => {
     }
     await connection.execute('DELETE FROM units WHERE id = ?', [unitId]);
     await connection.end();
-    res.status(200).json({ message: 'Unit deleted successfully' });
-  } catch (error) {
-    console.error('Admin: Error deleting unit', error);
-    res.status(500).json({ message: 'Failed to delete unit' });
-  }
-});
+res.status(200).json({ message: 'Unit deleted successfully' });
+} catch (error) {
+  console.error('Admin: Error deleting unit', error);
+  res.status(500).json({ message: 'Failed to delete unit' });
+}
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
 });
