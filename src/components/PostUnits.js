@@ -93,7 +93,7 @@ function PostUnits() {
     Promise.all(files.map(file => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result); // base64 string
+        reader.onload = () => resolve(reader.result);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
@@ -132,7 +132,6 @@ function PostUnits() {
     }
 
     setUploading(true);
-    // Prepare payload for backend
     const payload = {
       buildingName: unitDetails.buildingName,
       unitNumber: unitDetails.unitNumber,
@@ -142,7 +141,7 @@ function PostUnits() {
       unitPrice: unitDetails.unitPrice,
       contactPerson: unitDetails.contactPerson,
       phoneNumber: unitDetails.phoneNumber,
-      images: unitDetails.newImages // array of base64 strings
+      images: unitDetails.newImages
     };
 
     try {
@@ -231,7 +230,6 @@ function PostUnits() {
     }
 
     setUploading(true);
-    // Prepare payload for backend (merge existing and new images)
     const payload = {
       buildingName: unitDetails.buildingName,
       unitNumber: unitDetails.unitNumber,
@@ -241,10 +239,9 @@ function PostUnits() {
       unitPrice: unitDetails.unitPrice,
       contactPerson: unitDetails.contactPerson,
       phoneNumber: unitDetails.phoneNumber,
-      images: [...unitDetails.existingImages, ...unitDetails.newImages], // array of base64 strings
+      images: [...unitDetails.existingImages, ...unitDetails.newImages],
     };
 
-    // Debug: log payload and headers
     console.log('PUT /units/:id payload:', payload);
     console.log('Headers:', { ...getAuthHeaders(), 'Content-Type': 'application/json' });
 
@@ -355,7 +352,7 @@ function PostUnits() {
   };
 
   const handleBackButtonClick = () => {
-    navigate("/unitfinder");
+    navigate(-1);
   };
 
   const togglePostedUnitsView = () => {
