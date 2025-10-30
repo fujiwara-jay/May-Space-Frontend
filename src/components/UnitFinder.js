@@ -199,9 +199,9 @@ const UnitFinder = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const handlePostUnitClick = () => {
+  const handleMyAccountClick = () => {
     setSidebarOpen(false);
-    navigate("/post-unit");
+    navigate("/my-account");
   };
 
   const handleMessageInquiriesClick = () => {
@@ -642,9 +642,9 @@ const UnitFinder = () => {
             <>
               <button 
                 className="sidebar-btn"
-                onClick={handlePostUnitClick}
+                onClick={handleMyAccountClick}
               >
-                ➕ Post Unit
+                👤 Dashboard Account
               </button>
               <button 
                 className="sidebar-btn"
