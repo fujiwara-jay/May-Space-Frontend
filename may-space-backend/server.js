@@ -174,19 +174,22 @@ const authenticate = async (req, res, next) => {
   next();
 };
 
-// Post a new unit
-app.post('/units', authenticate, upload.array('images', 5), async (req, res) => {
+// Post a new unit (store images as base64 in DB)
+app.post('/units', authenticate, async (req, res) => {
   const userId = req.userId;
-  const { buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber } = req.body;
-  const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+  const { buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, images } = req.body;
   if (!buildingName || !unitNumber || !specs) {
     return res.status(400).json({ message: 'Building Name, Unit Number, and Specifications are required' });
   }
+  if (!Array.isArray(images) || images.length === 0) {
+    return res.status(400).json({ message: 'At least one image is required.' });
+  }
   try {
     const connection = await mysql.createConnection(dbConfig);
+    // Store images as JSON array of base64 strings
     await connection.execute(
       'INSERT INTO units (user_id, building_name, unit_number, location, specifications, special_features, unit_price, contact_person, phone_number, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, JSON.stringify(imagePaths)]
+      [userId, buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, JSON.stringify(images)]
     );
     await connection.end();
     res.status(201).json({ message: 'Unit posted successfully!' });
@@ -503,11 +506,11 @@ app.get('/inquiries', async (req, res) => {
 
 // --- Bookings Endpoints ---
 
-// Create a new booking
+// Create a new booking (with transaction_type and date_of_visiting)
 app.post('/bookings', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { unitId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting } = req.body;
-  if (!userId || !unitId || !name || !address || !contactNumber || !numberOfPeople || !dateVisiting) {
+  if (!userId || !unitId || !name || !address || !contactNumber || !numberOfPeople || !transaction || !dateVisiting) {
     return res.status(400).json({ message: 'All booking fields are required' });
   }
   try {
@@ -523,8 +526,8 @@ app.post('/bookings', async (req, res) => {
       return res.status(400).json({ message: 'You cannot book your own unit.' });
     }
     await connection.execute(
-      'INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [unitId, userId, name, address, contactNumber, numberOfPeople, dateVisiting]
+      'INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, transaction_type, date_of_visiting) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [unitId, userId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting]
     );
     await connection.end();
     res.status(201).json({ message: 'Booking created successfully' });
@@ -534,7 +537,7 @@ app.post('/bookings', async (req, res) => {
   }
 });
 
-// Get bookings made by the logged-in user
+// Get bookings made by the logged-in user (include transaction_type and date_of_visiting)
 app.get('/bookings/my', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -543,7 +546,7 @@ app.get('/bookings/my', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT b.*, u.building_name, u.unit_number, u.location FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.user_id = ? ORDER BY b.created_at DESC`,
+      `SELECT b.*, u.building_name, u.unit_number, u.location, b.transaction_type, b.date_of_visiting FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.user_id = ? ORDER BY b.created_at DESC`,
       [userId]
     );
     await connection.end();
@@ -554,7 +557,7 @@ app.get('/bookings/my', async (req, res) => {
   }
 });
 
-// Get bookings for units posted by the logged-in user
+// Get bookings for units posted by the logged-in user (include transaction_type and date_of_visiting)
 app.get('/bookings/rented', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -563,7 +566,7 @@ app.get('/bookings/rented', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT b.*, u.building_name, u.unit_number, u.location FROM bookings b JOIN units u ON b.unit_id = u.id WHERE u.user_id = ? ORDER BY b.created_at DESC`,
+      `SELECT b.*, u.building_name, u.unit_number, u.location, b.transaction_type, b.date_of_visiting FROM bookings b JOIN units u ON b.unit_id = u.id WHERE u.user_id = ? ORDER BY b.created_at DESC`,
       [userId]
     );
     await connection.end();

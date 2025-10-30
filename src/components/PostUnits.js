@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 const API_BASE = process.env.REACT_APP_API_URL || "https://may-space-backend.onrender.com";
 
+
 const Postunit = () => {
 	const [buildingName, setBuildingName] = useState("");
 	const [unitNumber, setUnitNumber] = useState("");
@@ -12,10 +13,20 @@ const Postunit = () => {
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [images, setImages] = useState([]);
 	const [message, setMessage] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [imageError, setImageError] = useState("");
+
+	const MAX_IMAGES = 5;
 
 	const handleImageChange = (e) => {
+		setImageError("");
 		const files = Array.from(e.target.files);
-		Promise.all(files.map(file => {
+		if (files.length > MAX_IMAGES) {
+			setImageError(`You can upload up to ${MAX_IMAGES} images only.`);
+			return;
+		}
+		const imageFiles = files.filter(file => file.type.startsWith("image/"));
+		Promise.all(imageFiles.map(file => {
 			return new Promise((resolve, reject) => {
 				const reader = new FileReader();
 				reader.onload = () => resolve(reader.result); // base64 string
@@ -30,9 +41,11 @@ const Postunit = () => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setMessage("");
+		setLoading(true);
 		const userId = localStorage.getItem("userId");
 		if (!userId) {
 			setMessage("Please log in to post a unit.");
+			setLoading(false);
 			return;
 		}
 		try {
@@ -72,6 +85,7 @@ const Postunit = () => {
 		} catch (err) {
 			setMessage("Error posting unit: " + err.message);
 		}
+		setLoading(false);
 	};
 
 	return (
@@ -87,8 +101,10 @@ const Postunit = () => {
 				<input type="text" placeholder="Contact Person" value={contactPerson} onChange={e => setContactPerson(e.target.value)} required />
 				<input type="text" placeholder="Phone Number" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required />
 				<input type="file" multiple accept="image/*" onChange={handleImageChange} />
-				<button type="submit">Post Unit</button>
+				{imageError && <div style={{ color: "red", marginBottom: 8 }}>{imageError}</div>}
+				<button type="submit" disabled={loading}>Post Unit</button>
 			</form>
+			{loading && <div style={{ color: "#f7e7b6", marginBottom: 12 }}>Posting unit...</div>}
 			{message && <div className="postunit-message">{message}</div>}
 			{images.length > 0 && (
 				<div className="preview-images">
