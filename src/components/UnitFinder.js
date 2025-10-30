@@ -656,7 +656,7 @@ const UnitFinder = () => {
                 className="sidebar-btn"
                 onClick={handleBookingsClick}
               >
-                📅 Bookings
+                📅 View Bookings
               </button>
               <div className="sidebar-divider"></div>
             </>
