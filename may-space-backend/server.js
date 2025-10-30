@@ -174,20 +174,63 @@ const authenticate = async (req, res, next) => {
   next();
 };
 
+//-----------------------------------
+
 // Post a new unit
+// Serve unit images as base64
+app.get('/api/units/:unitId/images', async (req, res) => {
+  const unitId = req.params.unitId;
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [results] = await connection.execute('SELECT images FROM units WHERE id = ?', [unitId]);
+    await connection.end();
+
+    if (!results.length || !results[0].images) {
+      return res.status(404).json({ error: 'No images found for this unit' });
+    }
+
+    const imagesData = JSON.parse(results[0].images);
+    
+    // Convert all images to base64
+    const base64Images = imagesData.map(image => ({
+      base64: `data:${image.mimetype};base64,${image.data.toString('base64')}`,
+      mimetype: image.mimetype,
+      originalname: image.originalname
+    }));
+
+    res.json({ images: base64Images });
+    
+  } catch (error) {
+    console.error('Error fetching unit images:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Updated POST route for units
 app.post('/units', authenticate, upload.array('images', 5), async (req, res) => {
   const userId = req.userId;
   const { buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber } = req.body;
-  const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+  
   if (!buildingName || !unitNumber || !specs) {
     return res.status(400).json({ message: 'Building Name, Unit Number, and Specifications are required' });
   }
+
   try {
     const connection = await mysql.createConnection(dbConfig);
+    
+    // Store images as BLOB data with metadata
+    const imageData = JSON.stringify(req.files.map(file => ({
+      data: file.buffer,
+      mimetype: file.mimetype,
+      originalname: file.originalname
+    })));
+
     await connection.execute(
       'INSERT INTO units (user_id, building_name, unit_number, location, specifications, special_features, unit_price, contact_person, phone_number, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, JSON.stringify(imagePaths)]
+      [userId, buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, imageData]
     );
+    
     await connection.end();
     res.status(201).json({ message: 'Unit posted successfully!' });
   } catch (error) {
@@ -195,6 +238,8 @@ app.post('/units', authenticate, upload.array('images', 5), async (req, res) => 
     res.status(500).json({ message: 'Failed to post unit' });
   }
 });
+
+//-----------------------------------
 
 // Get all units for the logged-in user
 app.get('/units', authenticate, async (req, res) => {
