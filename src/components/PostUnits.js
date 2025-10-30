@@ -55,19 +55,6 @@ function PostUnits() {
     }
   };
 
-  const fetchUnitImages = async (unitId) => {
-    try {
-      const response = await fetch(`https://may-space-backend.onrender.com/api/units/${unitId}/images`);
-      if (response.ok) {
-        const data = await response.json();
-        return data.images || [];
-      }
-    } catch (error) {
-      console.error(`Error fetching images for unit ${unitId}:`, error);
-    }
-    return [];
-  };
-
   const fetchPostedUnits = async () => {
     setFetchError(null);
     try {
@@ -79,19 +66,10 @@ function PostUnits() {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      
-      // Fetch images for each unit
-      const unitsWithImages = await Promise.all(
-        data.units.map(async (unit) => {
-          const images = await fetchUnitImages(unit.id);
-          return {
-            ...unit,
-            images: images.length > 0 ? images : safeParseImages(unit.images)
-          };
-        })
-      );
-      
-      setUnits(unitsWithImages);
+      setUnits(data.units.map(unit => ({
+        ...unit,
+        images: safeParseImages(unit.images)
+      })));
     } catch (error) {
       console.error("Error fetching posted units:", error);
       setFetchError(`Failed to fetch your units: ${error.message}`);
@@ -122,10 +100,10 @@ function PostUnits() {
     }));
   };
 
-  const handleRemoveExistingImage = (indexToRemove) => {
+  const handleRemoveExistingImage = (imageToRemove) => {
     setUnitDetails((prev) => ({
       ...prev,
-      existingImages: prev.existingImages.filter((_, index) => index !== indexToRemove),
+      existingImages: prev.existingImages.filter((img) => img !== imageToRemove),
     }));
   };
 
@@ -205,10 +183,6 @@ function PostUnits() {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      
-      // Fetch unit images as base64
-      const unitImages = await fetchUnitImages(id);
-      
       setUnitDetails({
         buildingName: data.unit.building_name,
         unitNumber: data.unit.unit_number,
@@ -219,7 +193,7 @@ function PostUnits() {
         contactPerson: data.unit.contact_person,
         phoneNumber: data.unit.phone_number,
         newImages: [],
-        existingImages: unitImages,
+        existingImages: data.unit.images || [],
       });
       setEditingUnitId(data.unit.id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -295,7 +269,6 @@ function PostUnits() {
     }
   };
 
-  // ADDED MISSING FUNCTIONS
   const handleDeleteUnit = (id) => {
     setUnitToDelete(id);
     setShowDeleteModal(true);
@@ -556,14 +529,14 @@ function PostUnits() {
                 {unitDetails.existingImages.map((img, index) => (
                   <div key={`existing-${index}`} className="image-preview-item">
                     <img
-                      src={img.base64 || img} // Use base64 if available, fallback to URL
+                      src={`https://may-space-backend.onrender.com${img}`}
                       alt={`Existing ${index + 1}`}
                       style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "4px" }}
                     />
                     <button
                       type="button"
                       className="remove-image-btn"
-                      onClick={() => handleRemoveExistingImage(index)}
+                      onClick={() => handleRemoveExistingImage(img)}
                     >
                       ×
                     </button>
@@ -602,7 +575,7 @@ function PostUnits() {
                     {unit.images.map((img, imgIndex) => (
                       <img
                         key={imgIndex}
-                        src={img.base64 || `https://may-space-backend.onrender.com${img}`}
+                        src={`https://may-space-backend.onrender.com${img}`}
                         alt={`${unit.building_name} - ${unit.unit_number} (${imgIndex + 1})`}
                         className="unit-image"
                       />

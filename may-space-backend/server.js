@@ -177,37 +177,6 @@ const authenticate = async (req, res, next) => {
 //-----------------------------------
 
 // Post a new unit
-// Serve unit images as base64
-app.get('/api/units/:unitId/images', async (req, res) => {
-  const unitId = req.params.unitId;
-  
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [results] = await connection.execute('SELECT images FROM units WHERE id = ?', [unitId]);
-    await connection.end();
-
-    if (!results.length || !results[0].images) {
-      return res.status(404).json({ error: 'No images found for this unit' });
-    }
-
-    const imagesData = JSON.parse(results[0].images);
-    
-    // Convert all images to base64
-    const base64Images = imagesData.map(image => ({
-      base64: `data:${image.mimetype};base64,${image.data.toString('base64')}`,
-      mimetype: image.mimetype,
-      originalname: image.originalname
-    }));
-
-    res.json({ images: base64Images });
-    
-  } catch (error) {
-    console.error('Error fetching unit images:', error);
-    res.status(500).json({ error: 'Database error' });
-  }
-});
-
-// Updated POST route for units
 app.post('/units', authenticate, upload.array('images', 5), async (req, res) => {
   const userId = req.userId;
   const { buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber } = req.body;
@@ -219,11 +188,15 @@ app.post('/units', authenticate, upload.array('images', 5), async (req, res) => 
   try {
     const connection = await mysql.createConnection(dbConfig);
     
-    // Store images as BLOB data with metadata
-    const imageData = JSON.stringify(req.files.map(file => ({
-      data: file.buffer,
-      mimetype: file.mimetype,
-      originalname: file.originalname
+    // Convert uploaded files to base64 strings
+    const imageBuffers = req.files.map(file => ({
+      buffer: file.buffer, // assuming you're using memoryStorage
+      mimetype: file.mimetype
+    }));
+    
+    const imageData = JSON.stringify(imageBuffers.map(img => ({
+      base64: `data:${img.mimetype};base64,${img.buffer.toString('base64')}`,
+      mimetype: img.mimetype
     })));
 
     await connection.execute(
@@ -236,6 +209,29 @@ app.post('/units', authenticate, upload.array('images', 5), async (req, res) => 
   } catch (error) {
     console.error('Error posting unit:', error);
     res.status(500).json({ message: 'Failed to post unit' });
+  }
+});
+
+// Serve unit images from LONGBLOB as base64
+app.get('/api/units/:id/images', async (req, res) => {
+  const unitId = req.params.id;
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [results] = await connection.execute('SELECT images FROM units WHERE id = ?', [unitId]);
+    await connection.end();
+
+    if (!results.length || !results[0].images) {
+      return res.status(404).json({ error: 'No images found for this unit' });
+    }
+
+    // Parse the stored image data
+    const imagesData = JSON.parse(results[0].images);
+    res.json({ images: imagesData });
+    
+  } catch (error) {
+    console.error('Error fetching unit images:', error);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
