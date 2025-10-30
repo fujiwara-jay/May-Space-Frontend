@@ -517,7 +517,7 @@ function PostUnits() {
                 {unitDetails.newImages.map((img, index) => (
                   <div key={`new-${index}`} className="image-preview-item">
                     <img
-                      src={URL.createObjectURL(img)}
+                      src={img}
                       alt={`New Preview ${index + 1}`}
                       style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "4px" }}
                     />
@@ -541,7 +541,7 @@ function PostUnits() {
                 {unitDetails.existingImages.map((img, index) => (
                   <div key={`existing-${index}`} className="image-preview-item">
                     <img
-                      src={`https://may-space-backend.onrender.com${img}`}
+                      src={img}
                       alt={`Existing ${index + 1}`}
                       style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "4px" }}
                     />
