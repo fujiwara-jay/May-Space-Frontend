@@ -126,7 +126,9 @@ const UnitFinder = () => {
       
       const normalized = (data.units || []).map((u) => {
         const imgs = safeParseImages(u.images);
-        const images = imgs.map((p) => (p && p.startsWith("/") ? `${API_BASE}${p}` : p));
+        const images = imgs
+          .filter((p) => typeof p === "string" && p.trim() !== "")
+          .map((p) => (p.startsWith("/") ? `${API_BASE}${p}` : p));
         const unitPrice = u.unitPrice || u.price || null;
         return {
           ...u,
