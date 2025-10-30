@@ -257,7 +257,6 @@ function PostUnits() {
 
       setUploading(false);
 
-      // Debug: log response status and body
       console.log('PUT /units/:id response status:', response.status);
       let responseBody;
       try {

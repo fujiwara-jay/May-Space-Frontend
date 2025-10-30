@@ -9,6 +9,7 @@ body {
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-color: #1a2026;
+  color: #f7e7b6;
 }
 
 .bookings-container {
@@ -17,10 +18,10 @@ body {
   background: #2c363f;
   color: #f7e7b6;
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
   padding: 36px 32px 28px 32px;
-  font-family: inherit;
   position: relative;
+  font-family: inherit;
 }
 
 .bookings-header {
@@ -30,6 +31,7 @@ body {
   font-size: 1.6rem;
   font-weight: 900;
   letter-spacing: 0.25em;
+  text-transform: uppercase;
 }
 
 .bookings-section {
@@ -44,60 +46,87 @@ body {
 .booking-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 25px;
 }
 
 .booking-card {
   background: #3d4852;
   border-radius: 12px;
-  padding: 18px 22px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.10);
-  color: #f7e7b6;
-  transition: box-shadow 0.2s;
+  padding: 20px;
   border: 1px solid #4a5a6a;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
+  color: #f7e7b6;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border-left: 4px solid #e0c16d;
 }
 
 .booking-card:hover {
-  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
-.booking-info > div {
-  margin-bottom: 6px;
-  font-size: 1.05rem;
+.booking-info div {
+  margin-bottom: 8px;
+  line-height: 1.4;
+  font-size: 1rem;
 }
 
-.booking-actions {
-  margin-top: 10px;
+.transaction-type {
+  font-weight: 600;
+  color: #e0c16d;
+  text-transform: capitalize;
+}
+
+.visit-date {
+  font-weight: 500;
+  color: #a0aec0;
+}
+
+.status-pending {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.status-confirmed {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.status-denied {
+  color: #f44336;
+  font-weight: 600;
 }
 
 .confirm-btn, .deny-btn {
-  padding: 8px 18px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   margin-right: 10px;
-  margin-top: 4px;
-  transition: background 0.2s, color 0.2s;
+  margin-top: 8px;
+  transition: all 0.3s ease;
 }
 
 .confirm-btn {
-  background: #4caf50;
-  color: #fff;
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
 }
 
 .confirm-btn:hover {
-  background: #388e3c;
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: scale(1.05);
 }
 
 .deny-btn {
-  background: #e57373;
-  color: #fff;
+  background: linear-gradient(135deg, #e57373, #d32f2f);
+  color: white;
 }
 
 .deny-btn:hover {
-  background: #c62828;
+  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  transform: scale(1.05);
 }
 
 .notifications-container {
@@ -142,8 +171,8 @@ body {
   align-items: center;
   justify-content: center;
   animation: pulse 2s infinite;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   border: 2px solid #2c363f;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes pulse {
@@ -162,7 +191,7 @@ body {
   width: 300px;
   max-height: 400px;
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 1001;
 }
 
@@ -195,13 +224,6 @@ body {
 
 .clear-notifications-btn:hover {
   background: rgba(224, 193, 109, 0.1);
-}
-
-.no-notifications {
-  padding: 20px;
-  text-align: center;
-  color: #a0aec0;
-  font-style: italic;
 }
 
 .notifications-list {
@@ -249,7 +271,7 @@ body {
     margin: 20px;
     padding: 24px 20px;
   }
-  
+
   .notifications-dropdown {
     width: 280px;
     right: -50px;
@@ -261,48 +283,13 @@ body {
     margin: 10px;
     padding: 20px 15px;
   }
-  
+
   .bookings-header {
     font-size: 1.4rem;
   }
-  
+
   .notifications-dropdown {
     width: 250px;
     right: -80px;
   }
-}
-
-.transaction-type {
-  font-weight: 600;
-  color: #333;
-  text-transform: capitalize;
-}
-
-.visit-date {
-  font-weight: 500;
-  color: #555;
-}
-
-.status-pending {
-  color: #ff9800;
-  font-weight: 600;
-}
-
-.status-confirmed {
-  color: #4caf50;
-  font-weight: 600;
-}
-
-.status-denied {
-  color: #f44336;
-  font-weight: 600;
-}
-
-.booking-info div {
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.booking-card {
-  border-left: 4px solid #e0c16d;
 }
