@@ -11,6 +11,17 @@
   overflow-y: auto;
 }
 
+.loading-message {
+  color: #f7e7b6;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 50px;
+  background: rgba(44, 54, 63, 0.9);
+  border-radius: 10px;
+  margin: 20px;
+  border: 1px solid #4a5a6a;
+}
+
 .menu-toggle-btn {
   position: fixed;
   top: 20px;
@@ -194,7 +205,6 @@
   opacity: 0.9;
 }
 
-/* Tab Navigation */
 .account-tabs {
   display: flex;
   margin-bottom: 30px;
@@ -582,6 +592,11 @@
     padding: 12px 15px;
     font-size: 0.9rem;
   }
+  
+  .loading-message {
+    font-size: 1.1rem;
+    padding: 40px 20px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -640,5 +655,42 @@
   
   .change-password-btn {
     width: 100%;
+  }
+  
+  .loading-message {
+    font-size: 1rem;
+    padding: 30px 15px;
+  }
+}
+
+@media print {
+  .menu-toggle-btn,
+  .sidebar-menu,
+  .sidebar-overlay {
+    display: none;
+  }
+  
+  .my-account-container {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .account-content {
+    margin-top: 0;
+  }
+  
+  .profile-card,
+  .password-card,
+  .stat-card {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+  }
+  
+  .detail-row label,
+  .detail-row span,
+  .security-note h4,
+  .security-note p {
+    color: black !important;
   }
 }

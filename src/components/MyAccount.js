@@ -27,7 +27,7 @@ const MyAccount = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("profile"); // "profile" or "password"
+  const [activeTab, setActiveTab] = useState("profile");
 
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType");
@@ -119,7 +119,6 @@ const MyAccount = () => {
     setError("");
     setSuccess("");
 
-    // Validation
     if (!editedData.name?.trim()) {
       setError("Name is required");
       setSaving(false);
@@ -211,7 +210,6 @@ const MyAccount = () => {
     setError("");
     setSuccess("");
 
-    // Validation
     if (!passwordData.currentPassword) {
       setError("Current password is required");
       setChangingPassword(false);
@@ -350,14 +348,13 @@ const MyAccount = () => {
   if (loading) {
     return (
       <div className="my-account-container">
-        <div className="loading-spinner">Loading your account...</div>
+        <div className="loading-message">Loading your account...</div>
       </div>
     );
   }
 
   return (
     <div className="my-account-container">
-      {/* Sidebar Menu */}
       <button className="menu-toggle-btn" onClick={toggleSidebar}>
         ☰ Menu
       </button>
@@ -371,7 +368,6 @@ const MyAccount = () => {
         </div>
         
         <div className="sidebar-content">
-          {/* My Account button moved to top */}
           <button 
             className="sidebar-btn active"
           >
@@ -437,7 +433,6 @@ const MyAccount = () => {
 
       {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
 
-      {/* Main Content */}
       <div className="account-content">
         <div className="account-header">
           <h1>My Account</h1>
@@ -447,7 +442,6 @@ const MyAccount = () => {
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
 
-        {/* Tab Navigation */}
         <div className="account-tabs">
           <button 
             className={`tab-btn ${activeTab === "profile" ? "active" : ""}`}
@@ -463,7 +457,6 @@ const MyAccount = () => {
           </button>
         </div>
 
-        {/* Profile Tab */}
         {activeTab === "profile" && (
           <div className="profile-card">
             <div className="profile-header">
@@ -564,7 +557,6 @@ const MyAccount = () => {
           </div>
         )}
 
-        {/* Password Tab */}
         {activeTab === "password" && (
           <div className="password-card">
             <div className="password-header">
