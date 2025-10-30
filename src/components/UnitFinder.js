@@ -617,7 +617,7 @@ const UnitFinder = () => {
   return (
     <div className="unit-finder-container">
       <button className="menu-toggle-btn" onClick={toggleSidebar}>
-        ☰
+        ☰ Menu
       </button>
 
       {isGuest && (
