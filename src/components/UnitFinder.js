@@ -152,6 +152,28 @@ const UnitFinder = () => {
     }
   };
 
+  // Example: fetch base64 image for a unit
+  const fetchUnitImage = async (unitId, imgIndex) => {
+    const res = await fetch(`${API_BASE}/api/unit/${unitId}/image/${imgIndex}`);
+    const data = await res.json();
+    return data.base64 || '';
+  };
+
+  // Usage in UnitFinder.js
+  useEffect(() => {
+    const loadImages = async () => {
+      const unitsWithImages = await Promise.all(filteredUnits.map(async (unit) => {
+        const images = [];
+        for (let i = 0; i < (unit.images?.length || 0); i++) {
+          images.push(await fetchUnitImage(unit.id, i));
+        }
+        return { ...unit, images };
+      }));
+      setFilteredUnits(unitsWithImages);
+    };
+    if (filteredUnits.length) loadImages();
+  }, [filteredUnits]);
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
