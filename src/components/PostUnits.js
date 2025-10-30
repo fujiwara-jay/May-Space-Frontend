@@ -90,7 +90,16 @@ function PostUnits() {
 
   const handleNewImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setUnitDetails((prev) => ({ ...prev, newImages: [...prev.newImages, ...files] }));
+    Promise.all(files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result); // base64 string
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    })).then(base64Images => {
+      setUnitDetails((prev) => ({ ...prev, newImages: [...prev.newImages, ...base64Images] }));
+    });
   };
 
   const handleRemoveNewImage = (indexToRemove) => {
@@ -123,24 +132,27 @@ function PostUnits() {
     }
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('buildingName', unitDetails.buildingName);
-    formData.append('unitNumber', unitDetails.unitNumber);
-    formData.append('location', unitDetails.location);
-    formData.append('specs', unitDetails.specs);
-    formData.append('specialFeatures', unitDetails.specialFeatures);
-    formData.append('unitPrice', unitDetails.unitPrice);
-    formData.append('contactPerson', unitDetails.contactPerson);
-    formData.append('phoneNumber', unitDetails.phoneNumber);
-    unitDetails.newImages.forEach((image) => {
-      formData.append('images', image);
-    });
+    // Prepare payload for backend
+    const payload = {
+      buildingName: unitDetails.buildingName,
+      unitNumber: unitDetails.unitNumber,
+      location: unitDetails.location,
+      specs: unitDetails.specs,
+      specialFeatures: unitDetails.specialFeatures,
+      unitPrice: unitDetails.unitPrice,
+      contactPerson: unitDetails.contactPerson,
+      phoneNumber: unitDetails.phoneNumber,
+      images: unitDetails.newImages // array of base64 strings
+    };
 
     try {
       const response = await fetch('https://may-space-backend.onrender.com/units', {
         method: 'POST',
-        headers: getAuthHeaders(),
-        body: formData,
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
       setUploading(false);
