@@ -3,7 +3,7 @@ body {
   padding: 0;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-image: url('GB2.jpg');
+  background-image: url('Sample.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -59,21 +59,12 @@ body {
   padding: 20px;
   box-shadow: 0 1px 5px rgba(0,0,0,0.10);
   color: #f7e7b6;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s;
   border: 1px solid #4a5a6a;
 }
 
 .inquiry-card:hover {
   box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-}
-
-@keyframes highlight {
-  0% { background-color: rgba(224, 193, 109, 0.2); }
-  100% { background-color: transparent; }
-}
-
-.inquiry-card.highlight {
-  animation: highlight 2s ease;
 }
 
 .inquiry-header {
@@ -124,24 +115,6 @@ body {
   padding: 10px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-}
-
-.messages-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.messages-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.messages-list::-webkit-scrollbar-thumb {
-  background: #e0c16d;
-  border-radius: 3px;
-}
-
-.messages-list::-webkit-scrollbar-thumb:hover {
-  background: #d4af37;
 }
 
 .message-bubble {
@@ -331,24 +304,6 @@ body {
   z-index: 1001;
 }
 
-.notifications-dropdown::-webkit-scrollbar {
-  width: 6px;
-}
-
-.notifications-dropdown::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.notifications-dropdown::-webkit-scrollbar-thumb {
-  background: #e0c16d;
-  border-radius: 3px;
-}
-
-.notifications-dropdown::-webkit-scrollbar-thumb:hover {
-  background: #d4af37;
-}
-
 .notifications-header {
   display: flex;
   justify-content: space-between;
@@ -398,24 +353,11 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   border-left: 3px solid transparent;
-  position: relative;
 }
 
 .notification-item.unread {
   background: rgba(224, 193, 109, 0.1);
   border-left-color: #e0c16d;
-}
-
-.notification-item.unread::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  background: #e0c16d;
-  border-radius: 50%;
 }
 
 .notification-item.read {
@@ -432,14 +374,12 @@ body {
   font-size: 0.9rem;
   margin-bottom: 5px;
   color: #f7e7b6;
-  padding-left: 15px;
 }
 
 .notification-time {
   font-size: 0.8rem;
   color: #a0aec0;
   text-align: right;
-  padding-left: 15px;
 }
 
 @media (max-width: 768px) {
@@ -485,38 +425,5 @@ body {
   
   .message-bubble {
     max-width: 90%;
-  }
-  
-  .notification-message,
-  .notification-time {
-    padding-left: 10px;
-  }
-}
-
-.send-reply-btn:focus,
-.back-button:focus,
-.notifications-bell:focus,
-.clear-notifications-btn:focus {
-  outline: 2px solid #e0c16d;
-  outline-offset: 2px;
-}
-
-.reply-textarea:focus {
-  outline: 2px solid #e0c16d;
-  outline-offset: -2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .inquiry-card,
-  .message-bubble,
-  .notifications-bell,
-  .notification-item,
-  .send-reply-btn {
-    transition: none;
-    animation: none;
-  }
-  
-  .notification-badge {
-    animation: none;
   }
 }

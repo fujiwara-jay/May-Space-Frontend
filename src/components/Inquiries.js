@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../cssfiles/Inquiries.css";
 
@@ -11,20 +11,6 @@ function Inquiries() {
   const [showNotifications, setShowNotifications] = useState(false);
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
-  const notificationRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setShowNotifications(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const handleBack = () => {
     navigate(-1);
@@ -32,8 +18,6 @@ function Inquiries() {
 
   useEffect(() => {
     fetchInquiries();
-    const interval = setInterval(fetchInquiries, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const fetchInquiries = async () => {
@@ -46,61 +30,10 @@ function Inquiries() {
       if (!res.ok) throw new Error("Failed to fetch inquiries");
       const data = await res.json();
       setInquiries(data.inquiries || []);
-      
-      generateNotifications(data.inquiries || []);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const generateNotifications = (inquiries) => {
-    const newNotifications = [];
-    
-    inquiries.forEach(inquiry => {
-      if (inquiry.replies && inquiry.replies.length > 0) {
-        inquiry.replies.forEach(reply => {
-          if (reply.sender_user_id !== parseInt(userId)) {
-            const existingNotification = notifications.find(
-              notif => notif.id === `reply-${reply.id}`
-            );
-            
-            if (!existingNotification) {
-              newNotifications.push({
-                id: `reply-${reply.id}`,
-                type: 'new_reply',
-                message: `New reply from ${reply.sender_name || 'User'} in ${inquiry.building_name}`,
-                inquiryId: inquiry.id,
-                timestamp: reply.created_at,
-                read: false
-              });
-            }
-          }
-        });
-      }
-      
-      if (inquiry.recipient_user_id === parseInt(userId) && 
-          inquiry.sender_user_id !== parseInt(userId)) {
-        const existingNotification = notifications.find(
-          notif => notif.id === `inquiry-${inquiry.id}`
-        );
-        
-        if (!existingNotification) {
-          newNotifications.push({
-            id: `inquiry-${inquiry.id}`,
-            type: 'new_inquiry',
-            message: `New inquiry from ${inquiry.sender_name || 'User'} about ${inquiry.building_name}`,
-            inquiryId: inquiry.id,
-            timestamp: inquiry.created_at,
-            read: false
-          });
-        }
-      }
-    });
-    
-    if (newNotifications.length > 0) {
-      setNotifications(prev => [...newNotifications, ...prev]);
     }
   };
 
@@ -144,8 +77,6 @@ function Inquiries() {
         ...prev,
         [inquiry.id]: ""
       }));
-      
-      markNotificationsAsReadByInquiryId(inquiry.id);
       
       fetchInquiries();
     } catch (err) {
@@ -224,42 +155,9 @@ function Inquiries() {
     );
   };
 
-  const markNotificationsAsReadByInquiryId = (inquiryId) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.inquiryId === inquiryId ? { ...notif, read: true } : notif
-      )
-    );
-  };
-
-  const handleNotificationClick = (notification) => {
-    markNotificationAsRead(notification.id);
-    setShowNotifications(false);
-    
-    const inquiryElement = document.getElementById(`inquiry-${notification.inquiryId}`);
-    if (inquiryElement) {
-      inquiryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      inquiryElement.style.backgroundColor = 'rgba(224, 193, 109, 0.2)';
-      setTimeout(() => {
-        inquiryElement.style.backgroundColor = '';
-      }, 2000);
-    }
-  };
-
-  const formatNotificationTime = (timestamp) => {
-    const now = new Date();
-    const notificationTime = new Date(timestamp);
-    const diffInMinutes = Math.floor((now - notificationTime) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
-  };
-
   return (
     <div className="inquiries-container">
-      <div className="notifications-container" ref={notificationRef}>
+      <div className="notifications-container">
         <button 
           className="notifications-bell"
           onClick={() => setShowNotifications(!showNotifications)}
@@ -294,13 +192,13 @@ function Inquiries() {
                   <div 
                     key={notification.id} 
                     className={`notification-item ${notification.read ? 'read' : 'unread'}`}
-                    onClick={() => handleNotificationClick(notification)}
+                    onClick={() => markNotificationAsRead(notification.id)}
                   >
                     <div className="notification-message">
                       {notification.message}
                     </div>
                     <div className="notification-time">
-                      {formatNotificationTime(notification.timestamp)}
+                      {new Date(notification.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
                 ))}
@@ -331,7 +229,7 @@ function Inquiries() {
           const currentReply = replyMessages[inquiry.id] || "";
 
           return (
-            <div key={inquiry.id} id={`inquiry-${inquiry.id}`} className="inquiry-card">
+            <div key={inquiry.id} className="inquiry-card">
               <div className="inquiry-header">
                 <h4>{inquiry.building_name} - {inquiry.unit_number}</h4>
                 <span className="inquiry-badge">

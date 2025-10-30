@@ -15,6 +15,7 @@ import UserRegister from "./components/UserRegister";
 import AdminDashboard from "./components/AdminDashboard";
 import AdminUnitFinderManager from "./components/AdminUnitFinderManager";
 import AdminAccountManage from "./components/AdminAccountManage";
+import MyAccount from "./components/MyAccount";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
           <Route path="/post-unit" element={<PostUnits />} />
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/message-inquiries" element={<Inquiries />} />
+          <Route path="/my-account" element={<MyAccount/>} />
 
           {/* Admin dashboard and management pages */}
           <Route path="/admin-dashboard" element={<AdminDashboard />} />

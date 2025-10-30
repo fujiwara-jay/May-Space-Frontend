@@ -6,7 +6,7 @@
   align-items: center;
   padding: 20px;
   font-family: Arial, sans-serif;
-  background: rgba(44, 54, 63, 0.85) url('GB2.jpg') center/cover no-repeat fixed;
+  background: rgba(44, 54, 63, 0.85) url('Sample.jpg') center/cover no-repeat fixed;
   background-blend-mode: multiply;
   overflow-y: auto;
 }
