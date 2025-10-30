@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../cssfiles/UnitFinder.css";
 
+const fetchUnitImageBase64 = async (unitId, imgIndex) => {
+  try {
+    const res = await fetch(`${API_BASE}/api/unit/${unitId}/image/${imgIndex}`);
+    const data = await res.json();
+    return data.base64 || "";
+  } catch {
+    return "";
+  }
+};
+
 const safeParseImages = (imagesData) => {
   if (!imagesData) return [];
   if (Array.isArray(imagesData)) return imagesData;
@@ -109,26 +119,19 @@ const UnitFinder = () => {
   const fetchAllUnits = async () => {
     setFetchError(null);
     setLoading(true);
-    
-    const controller = new AbortController();
-    
     try {
-      const res = await fetch(`${API_BASE}/public/units`, { 
-        signal: controller.signal 
-      });
-      
+      const res = await fetch(`${API_BASE}/public/units`);
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || `HTTP ${res.status}`);
       }
-      
       const data = await res.json();
-      
-      const normalized = (data.units || []).map((u) => {
+      // For each unit, fetch base64 images
+      const normalized = await Promise.all((data.units || []).map(async (u) => {
         const imgs = safeParseImages(u.images);
-        const images = imgs
-          .filter((p) => typeof p === "string" && p.trim() !== "")
-          .map((p) => (p.startsWith("/") ? `${API_BASE}${p}` : p));
+        const images = await Promise.all(
+          imgs.map(async (_img, idx) => await fetchUnitImageBase64(u.id, idx))
+        );
         const unitPrice = u.unitPrice || u.price || null;
         return {
           ...u,
@@ -136,8 +139,7 @@ const UnitFinder = () => {
           unitPrice,
           price: unitPrice
         };
-      });
-
+      }));
       if (mountedRef.current) {
         setAllUnits(normalized);
         setFilteredUnits(normalized);
@@ -151,29 +153,7 @@ const UnitFinder = () => {
       if (mountedRef.current) setLoading(false);
     }
   };
-
-  // Example: fetch base64 image for a unit
-  const fetchUnitImage = async (unitId, imgIndex) => {
-    const res = await fetch(`${API_BASE}/api/unit/${unitId}/image/${imgIndex}`);
-    const data = await res.json();
-    return data.base64 || '';
-  };
-
-  // Usage in UnitFinder.js
-  useEffect(() => {
-    const loadImages = async () => {
-      const unitsWithImages = await Promise.all(filteredUnits.map(async (unit) => {
-        const images = [];
-        for (let i = 0; i < (unit.images?.length || 0); i++) {
-          images.push(await fetchUnitImage(unit.id, i));
-        }
-        return { ...unit, images };
-      }));
-      setFilteredUnits(unitsWithImages);
-    };
-    if (filteredUnits.length) loadImages();
-  }, [filteredUnits]);
-
+  
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
@@ -876,6 +856,6 @@ const UnitFinder = () => {
       </footer>
     </div>
   );
-};
+}
 
 export default UnitFinder;
