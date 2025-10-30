@@ -355,20 +355,32 @@ app.get('/api/unit/:unitId/image/:imgIndex', async (req, res) => {
     if (!units.length || !units[0].images) {
       return res.status(404).json({ error: 'No image found' });
     }
-    // If images is a JSON array of base64 blobs, parse it
     let imagesArr;
     try {
       imagesArr = JSON.parse(units[0].images);
     } catch {
-      imagesArr = [units[0].images]; // fallback: single image
+      imagesArr = [units[0].images];
     }
-    const imgBuffer = Buffer.from(imagesArr[imgIndex], 'base64');
-    // You may want to store mimeType in DB, but default to jpeg
-    const mimeType = 'image/jpeg';
-    const base64Img = imgBuffer.toString('base64');
+    const imgPath = imagesArr[imgIndex];
+    if (!imgPath) {
+      return res.status(404).json({ error: 'Image index not found' });
+    }
+    // Read image file from disk and convert to base64
+    const filePath = path.join(__dirname, imgPath);
+    let fileBuffer;
+    try {
+      fileBuffer = await fs.readFile(filePath);
+    } catch (err) {
+      return res.status(404).json({ error: 'Image file not found on disk' });
+    }
+    const base64Img = fileBuffer.toString('base64');
+    // Optionally detect mime type from extension
+    let mimeType = 'image/jpeg';
+    if (imgPath.endsWith('.png')) mimeType = 'image/png';
+    else if (imgPath.endsWith('.gif')) mimeType = 'image/gif';
     res.json({ base64: `data:${mimeType};base64,${base64Img}` });
   } catch (err) {
-    res.status(500).json({ error: 'Database error' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -706,5 +718,60 @@ app.get('/user/profile', async (req, res) => {
   } catch (error) {
     console.error('Error fetching user profile:', error);
     res.status(500).json({ message: 'Failed to fetch user profile' });
+  }
+});
+
+// Change user password
+app.put('/user/change-password', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  const { currentPassword, newPassword } = req.body;
+  if (!userId || !currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Missing required fields.' });
+  }
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [users] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    const user = users[0];
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!passwordMatch) {
+      await connection.end();
+      return res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await connection.execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+    await connection.end();
+    res.status(200).json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to change password.' });
+  }
+});
+
+// Update user profile
+app.put('/user/profile', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  const { name, email, contactNumber } = req.body;
+  if (!userId || !name || !email || !contactNumber) {
+    return res.status(400).json({ message: 'Missing required fields.' });
+  }
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [users] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    await connection.execute(
+      'UPDATE users SET name = ?, email = ?, contact_number = ? WHERE id = ?',
+      [name, email, contactNumber, userId]
+    );
+    const [updatedUserRows] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    await connection.end();
+    res.status(200).json({ user: updatedUserRows[0], message: 'Profile updated successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update profile.' });
   }
 });

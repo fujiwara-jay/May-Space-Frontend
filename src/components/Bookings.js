@@ -9,6 +9,20 @@ function Bookings() {
     if (isNaN(numPrice)) return price;
     return `₱${numPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not specified";
+    try {
+      return new Date(dateString).toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   const [myBookings, setMyBookings] = useState([]);
   const [rentedUnits, setRentedUnits] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -207,8 +221,22 @@ function Bookings() {
                   <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
                   <div><strong>Location:</strong> {booking.location}</div>
                   <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
-                  <div><strong>Status:</strong> {booking.status}</div>
-                  <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
+                  <div><strong>Status:</strong> 
+                    <span className={`status-${booking.status}`}>
+                      {booking.status}
+                    </span>
+                  </div>
+                  <div><strong>Transaction Type:</strong> 
+                    <span className="transaction-type">
+                      {booking.transaction_type || "Not specified"}
+                    </span>
+                  </div>
+                  <div><strong>Date of Visiting:</strong> 
+                    <span className="visit-date">
+                      {formatDate(booking.date_of_visiting)}
+                    </span>
+                  </div>
+                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
               </div>
             ))
@@ -229,8 +257,22 @@ function Bookings() {
                   <div><strong>Location:</strong> {booking.location}</div>
                   <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
                   <div><strong>Booked By:</strong> {booking.name}</div>
-                  <div><strong>Status:</strong> {booking.status}</div>
-                  <div><strong>Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
+                  <div><strong>Status:</strong> 
+                    <span className={`status-${booking.status}`}>
+                      {booking.status}
+                    </span>
+                  </div>
+                  <div><strong>Transaction Type:</strong> 
+                    <span className="transaction-type">
+                      {booking.transaction_type || "Not specified"}
+                    </span>
+                  </div>
+                  <div><strong>Date of Visiting:</strong> 
+                    <span className="visit-date">
+                      {formatDate(booking.date_of_visiting)}
+                    </span>
+                  </div>
+                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
                 <div className="booking-actions">
                   {booking.status === "pending" && (
