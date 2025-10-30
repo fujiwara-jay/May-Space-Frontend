@@ -246,28 +246,40 @@ app.get('/units/:id', authenticate, async (req, res) => {
 });
 
 // Update a unit
-app.put('/units/:id', authenticate, upload.array('images', 10), async (req, res) => {
+app.put('/units/:id', authenticate, async (req, res) => {
   const unitId = req.params.id;
   const userId = req.userId;
-  const {
-    buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, existingImages
-  } = req.body;
 
-  const newImagePaths = req.files.map(file => `/uploads/${file.filename}`);
-  const parsedExistingImages = safeParseImages(existingImages);
-  const imagesToStore = parsedExistingImages.concat(newImagePaths);
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ message: 'Missing or invalid JSON payload.' });
+  }
+
+  const {
+    buildingName,
+    unitNumber,
+    location,
+    specs,
+    specialFeatures,
+    unitPrice,
+    contactPerson,
+    phoneNumber,
+    images // array of base64 strings
+  } = req.body;
 
   if (!buildingName || !unitNumber || !specs) {
     return res.status(400).json({
       message: 'Building Name, Unit Number, and Specifications are required'
     });
   }
+  if (!Array.isArray(images) || images.length === 0) {
+    return res.status(400).json({ message: 'At least one image is required.' });
+  }
 
   try {
     const connection = await mysql.createConnection(dbConfig);
 
     const [existingUnitRows] = await connection.execute(
-      'SELECT images FROM units WHERE id = ? AND user_id = ?',
+      'SELECT id FROM units WHERE id = ? AND user_id = ?',
       [unitId, userId]
     );
 
@@ -282,7 +294,17 @@ app.put('/units/:id', authenticate, upload.array('images', 10), async (req, res)
       `UPDATE units 
        SET building_name = ?, unit_number = ?, location = ?, specifications = ?, special_features = ?, unit_price = ?, contact_person = ?, phone_number = ?, images = ? WHERE id = ? AND user_id = ?`,
       [
-        buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, JSON.stringify(imagesToStore), unitId, userId
+        buildingName,
+        unitNumber,
+        location,
+        specs,
+        specialFeatures,
+        unitPrice,
+        contactPerson,
+        phoneNumber,
+        JSON.stringify(images),
+        unitId,
+        userId
       ]
     );
 
@@ -290,7 +312,7 @@ app.put('/units/:id', authenticate, upload.array('images', 10), async (req, res)
     res.status(200).json({ message: 'Unit updated successfully' });
   } catch (error) {
     console.error('Error updating unit:', error);
-    res.status(500).json({ message: 'Failed to update unit' });
+    res.status(500).json({ message: 'Failed to update unit', error: error.message, stack: error.stack });
   }
 });
 

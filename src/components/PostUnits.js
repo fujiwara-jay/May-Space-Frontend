@@ -231,32 +231,51 @@ function PostUnits() {
     }
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('buildingName', unitDetails.buildingName);
-    formData.append('unitNumber', unitDetails.unitNumber);
-    formData.append('location', unitDetails.location);
-    formData.append('specs', unitDetails.specs);
-    formData.append('specialFeatures', unitDetails.specialFeatures);
-    formData.append('unitPrice', unitDetails.unitPrice); 
-    formData.append('contactPerson', unitDetails.contactPerson);
-    formData.append('phoneNumber', unitDetails.phoneNumber);
-    formData.append('existingImages', JSON.stringify(unitDetails.existingImages));
-    unitDetails.newImages.forEach((image) => {
-      formData.append('images', image);
-    });
+    // Prepare payload for backend (merge existing and new images)
+    const payload = {
+      buildingName: unitDetails.buildingName,
+      unitNumber: unitDetails.unitNumber,
+      location: unitDetails.location,
+      specs: unitDetails.specs,
+      specialFeatures: unitDetails.specialFeatures,
+      unitPrice: unitDetails.unitPrice,
+      contactPerson: unitDetails.contactPerson,
+      phoneNumber: unitDetails.phoneNumber,
+      images: [...unitDetails.existingImages, ...unitDetails.newImages], // array of base64 strings
+    };
+
+    // Debug: log payload and headers
+    console.log('PUT /units/:id payload:', payload);
+    console.log('Headers:', { ...getAuthHeaders(), 'Content-Type': 'application/json' });
 
     try {
       const response = await fetch(`https://may-space-backend.onrender.com/units/${editingUnitId}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
-        body: formData,
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
       setUploading(false);
 
+      // Debug: log response status and body
+      console.log('PUT /units/:id response status:', response.status);
+      let responseBody;
+      try {
+        responseBody = await response.clone().json();
+      } catch (err) {
+        responseBody = await response.clone().text();
+      }
+      console.log('PUT /units/:id response body:', responseBody);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        if (typeof responseBody === 'object' && responseBody.message) {
+          throw new Error(responseBody.message);
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
       }
 
       setActionMessage("Unit updated successfully!");
@@ -587,7 +606,7 @@ function PostUnits() {
                     {unit.images.map((img, imgIndex) => (
                       <img
                         key={imgIndex}
-                        src={`https://may-space-backend.onrender.com${img}`}
+                        src={img}
                         alt={`${unit.building_name} - ${unit.unit_number} (${imgIndex + 1})`}
                         className="unit-image"
                       />
