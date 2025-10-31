@@ -134,7 +134,7 @@ function AdminUnitFinderManager() {
                 {images.length > 0 ? (
                   <div className="unit-image-container">
                     <img
-                      src={`https://may-space-backend.onrender.com${images[0]}`}
+                      src={images[0]}
                       alt="unit"
                       className="unit-image"
                       onClick={() => openImageModal(unit, 0)}
@@ -241,7 +241,7 @@ function AdminUnitFinderManager() {
               </button>
               
               <img
-                src={`https://may-space-backend.onrender.com${safeParseImages(selectedUnit.images)[currentImageIndex]}`}
+                src={safeParseImages(selectedUnit.images)[currentImageIndex]}
                 alt={`Unit ${currentImageIndex + 1}`}
                 className="viewer-image"
               />
@@ -259,7 +259,7 @@ function AdminUnitFinderManager() {
               {safeParseImages(selectedUnit.images).map((image, index) => (
                 <img
                   key={index}
-                  src={`https://may-space-backend.onrender.com${image}`}
+                  src={image}
                   alt={`Thumbnail ${index + 1}`}
                   className={`thumbnail ${index === currentImageIndex ? 'active' : ''}`}
                   onClick={() => setCurrentImageIndex(index)}
