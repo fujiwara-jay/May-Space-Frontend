@@ -303,16 +303,29 @@ const UnitFinder = () => {
     setActionMessage(null);
 
     const { name, address, contact, numberOfPeople, transaction, date, unitId } = bookingDetails;
-    // Strict validation: all fields must be non-empty, unitId must be a valid number
+    // Strict validation: all fields must be non-empty, unitId must be a valid number, numberOfPeople must be a positive integer
+    const isValidNumberOfPeople = Number.isInteger(Number(numberOfPeople)) && Number(numberOfPeople) > 0;
+    const isValidTransaction = transaction === "Online" || transaction === "Walk-in";
     if (
       !name?.trim() ||
       !address?.trim() ||
       !contact?.trim() ||
-      !numberOfPeople ||
-      !transaction?.trim() ||
+      !isValidNumberOfPeople ||
+      !isValidTransaction ||
       !date?.trim() ||
       unitId === null || unitId === undefined || isNaN(Number(unitId))
     ) {
+      console.log("Validation failed:", {
+        name,
+        address,
+        contact,
+        numberOfPeople,
+        transaction,
+        date,
+        unitId,
+        isValidNumberOfPeople,
+        isValidTransaction
+      });
       setBookingError("All booking fields are required.");
       return;
     }
