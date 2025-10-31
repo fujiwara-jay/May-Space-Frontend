@@ -63,11 +63,6 @@ const MyAccount = () => {
         }
       });
 
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("text/html")) {
-        throw new Error("Server error: Received HTML instead of JSON response");
-      }
-
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = `HTTP ${response.status}`;
@@ -85,8 +80,20 @@ const MyAccount = () => {
       const data = await response.json();
       
       if (mountedRef.current) {
-        setUserData(data.user || data);
-        setEditedData(data.user || data);
+        const user = data.user || data;
+        setUserData({
+          name: user.name || "",
+          username: user.username || "",
+          email: user.email || "",
+          contactNumber: user.contactNumber || user.contact_number || "",
+          userType: user.userType || user.user_type || "",
+          createdAt: user.createdAt || user.created_at || ""
+        });
+        setEditedData({
+          name: user.name || "",
+          email: user.email || "",
+          contactNumber: user.contactNumber || user.contact_number || ""
+        });
       }
     } catch (err) {
       if (mountedRef.current) {
@@ -144,8 +151,9 @@ const MyAccount = () => {
       return;
     }
 
-    const phoneRegex = /^[0-9]{10,15}$/;
-    if (!phoneRegex.test(editedData.contactNumber)) {
+    const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
+    const cleanPhone = editedData.contactNumber.replace(/[-\s()]/g, '');
+    if (!/^[0-9]{10,15}$/.test(cleanPhone)) {
       setError("Please enter a valid contact number (10-15 digits)");
       setSaving(false);
       return;
@@ -159,16 +167,11 @@ const MyAccount = () => {
           "X-User-ID": userId
         },
         body: JSON.stringify({
-          name: editedData.name,
-          email: editedData.email,
-          contactNumber: editedData.contactNumber
+          name: editedData.name.trim(),
+          email: editedData.email.trim(),
+          contactNumber: editedData.contactNumber.trim()
         })
       });
-
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("text/html")) {
-        throw new Error("Server error: Received HTML instead of JSON response");
-      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -187,7 +190,13 @@ const MyAccount = () => {
       const data = await response.json();
       
       if (mountedRef.current) {
-        setUserData(data.user || editedData);
+        const updatedUser = data.user || data;
+        setUserData(prev => ({
+          ...prev,
+          name: updatedUser.name || editedData.name,
+          email: updatedUser.email || editedData.email,
+          contactNumber: updatedUser.contactNumber || editedData.contactNumber
+        }));
         setSuccess("Profile updated successfully!");
         setEditMode(false);
         
@@ -247,11 +256,6 @@ const MyAccount = () => {
         })
       });
 
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("text/html")) {
-        throw new Error("Server error: Received HTML instead of JSON response");
-      }
-
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = `HTTP ${response.status}`;
@@ -291,7 +295,11 @@ const MyAccount = () => {
   };
 
   const handleCancel = () => {
-    setEditedData(userData);
+    setEditedData({
+      name: userData.name,
+      email: userData.email,
+      contactNumber: userData.contactNumber
+    });
     setEditMode(false);
     setError("");
   };
@@ -368,9 +376,7 @@ const MyAccount = () => {
         </div>
         
         <div className="sidebar-content">
-          <button 
-            className="sidebar-btn active"
-          >
+          <button className="sidebar-btn active">
             👤 Dashboard Account
           </button>
           
@@ -390,7 +396,7 @@ const MyAccount = () => {
             className="sidebar-btn"
             onClick={handleMessageInquiriesClick}
           >
-            💬  Message & Inquiries
+            💬 Message & Inquiries
           </button>
           <button 
             className="sidebar-btn"
@@ -542,7 +548,7 @@ const MyAccount = () => {
                     value={editedData.contactNumber || ""}
                     onChange={handleInputChange}
                     className="edit-input"
-                    placeholder="Enter your contact number"
+                    placeholder="Enter your contact number (e.g., 09123456789)"
                   />
                 ) : (
                   <span>{userData.contactNumber || "Not provided"}</span>
@@ -584,7 +590,7 @@ const MyAccount = () => {
                   value={passwordData.newPassword}
                   onChange={handlePasswordChange}
                   className="password-input"
-                  placeholder="Enter new password (min. 6 characters and numbers)"
+                  placeholder="Enter new password (min. 6 characters)"
                 />
               </div>
 
@@ -616,7 +622,7 @@ const MyAccount = () => {
         <div className="account-stats">
           <div className="stat-card">
             <h3>Account Created</h3>
-            <p>{userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+            <p>{userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}</p>
           </div>
           <div className="stat-card">
             <h3>Status</h3>
