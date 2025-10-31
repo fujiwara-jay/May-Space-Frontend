@@ -347,7 +347,7 @@ const UnitFinder = () => {
         address: address.trim(),
         contactNumber: contact.trim(),
         numberOfPeople: parseInt(numberOfPeople, 10),
-        transaction: transaction,
+        transaction: transaction === "Online" ? "Online Transaction" : transaction,
         dateVisiting: date.trim(),
       };
       console.log("Booking payload:", payload);
