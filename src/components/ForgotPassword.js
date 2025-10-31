@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "../cssfiles/ForgotPassword.css";
 
 const ForgotPassword = () => {
@@ -73,7 +73,7 @@ const ForgotPassword = () => {
 
       if (response.ok) {
         setMessage("Password reset successful! Redirecting to login...");
-        setTimeout(() => navigate("/login"), 2000);
+        setTimeout(() => navigate("/"), 1000);
       } else {
         setError(data.message || "Failed to reset password.");
       }
@@ -82,6 +82,10 @@ const ForgotPassword = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBackToLogin = () => {
+    navigate("/");
   };
 
   return (
@@ -167,7 +171,7 @@ const ForgotPassword = () => {
           <button
             type="button"
             className="back-login-btn"
-            onClick={() => navigate("/home")}
+            onClick={handleBackToLogin}
           >
             ← Back to Login
           </button>
