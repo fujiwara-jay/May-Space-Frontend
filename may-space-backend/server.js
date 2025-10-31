@@ -35,6 +35,92 @@ const safeParseImages = (imagesData) => {
 
 // --- Registration Endpoints ---
 
+// --- Forgot Password OTP Endpoint ---
+const { sendOtpEmail } = require('./Mailer.js');
+const crypto = require('crypto');
+
+// Helper: Save OTP to DB (simple example, you may want to use your otp_codes table)
+async function saveOtpToDb(email, otp) {
+  // Find user by email
+  const connection = await mysql.createConnection(dbConfig);
+  const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
+  if (users.length === 0) {
+    await connection.end();
+    throw new Error('No user found with that email');
+  }
+  const userId = users[0].id;
+  // Save OTP to otp_codes table (expires in 10 minutes)
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min from now
+  await connection.execute(
+    'INSERT INTO otp_codes (user_id, otp_code, expires_at, used) VALUES (?, ?, ?, ?)',
+    [userId, otp, expiresAt, false]
+  );
+  await connection.end();
+}
+
+// Helper: Validate OTP
+async function validateOtp(email, otp) {
+  const connection = await mysql.createConnection(dbConfig);
+  const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
+  if (users.length === 0) {
+    await connection.end();
+    return false;
+  }
+  const userId = users[0].id;
+  const [rows] = await connection.execute(
+    'SELECT * FROM otp_codes WHERE user_id = ? AND otp_code = ? AND used = FALSE AND expires_at > NOW()',
+    [userId, otp]
+  );
+  if (rows.length === 0) {
+    await connection.end();
+    return false;
+  }
+  // Mark OTP as used
+  await connection.execute('UPDATE otp_codes SET used = TRUE WHERE id = ?', [rows[0].id]);
+  await connection.end();
+  return true;
+}
+
+// POST /api/auth/forgot-password
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+  // Generate secure OTP (6 digits)
+  const otp = crypto.randomInt(100000, 999999).toString();
+
+  try {
+    await saveOtpToDb(email, otp);
+    await sendOtpEmail(email, otp, { type: 'forgot-password' });
+    res.status(200).json({ message: 'OTP sent to your email.' });
+  } catch (err) {
+    console.error('Failed to send OTP:', err);
+    res.status(500).json({ message: err.message || 'Failed to send OTP email.' });
+  }
+});
+
+// POST /api/auth/reset-password
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: 'Email, OTP, and new password are required.' });
+  }
+  try {
+    const valid = await validateOtp(email, otp);
+    if (!valid) return res.status(400).json({ message: 'Invalid or expired OTP.' });
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
+    await connection.end();
+    res.status(200).json({ message: 'Password reset successful.' });
+  } catch (err) {
+    console.error('Failed to reset password:', err);
+    res.status(500).json({ message: err.message || 'Failed to reset password.' });
+  }
+});
+
 // User Registration
 app.post('/user/register', async (req, res) => {
   const { name, username, email, contactNumber, password } = req.body;
