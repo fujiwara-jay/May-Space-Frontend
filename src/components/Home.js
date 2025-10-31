@@ -38,12 +38,20 @@ function Home() {
         const userData = await userResponse.json();
         const user = userData.user;
         
+        console.log("User login successful:", user);
+        
         localStorage.setItem("userId", user.id);
-        localStorage.setItem("userType", "user");
+        localStorage.setItem("userType", user.user_type || "user");
         localStorage.setItem("username", user.username || trimmedUsername);
+        localStorage.setItem("userEmail", user.email || "");
+        localStorage.setItem("userName", user.name || "");
         
         navigate("/unitfinder", { 
-          state: { userId: user.id, userType: "user" } 
+          state: { 
+            userId: user.id, 
+            userType: user.user_type || "user",
+            username: user.username || trimmedUsername
+          } 
         });
         return;
       }
@@ -61,21 +69,42 @@ function Home() {
         const adminData = await adminResponse.json();
         const admin = adminData.admin;
         
+        console.log("Admin login successful:", admin);
+        
         localStorage.setItem("userId", admin.id);
-        localStorage.setItem("userType", "admin");
+        localStorage.setItem("userType", admin.user_type || "admin");
         localStorage.setItem("username", admin.username || trimmedUsername);
+        localStorage.setItem("userEmail", admin.email || "");
+        localStorage.setItem("userName", admin.name || "");
         
         navigate("/admin-dashboard", { 
-          state: { userId: admin.id, userType: "admin" } 
+          state: { 
+            userId: admin.id, 
+            userType: admin.user_type || "admin",
+            username: admin.username || trimmedUsername
+          } 
         });
         return;
       }
 
-      setError("Invalid username or password. Please try again.");
+      let errorMessage = "Invalid username or password. Please try again.";
+      
+      if (!userResponse.ok) {
+        try {
+          const errorData = await userResponse.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch {
+
+        }
+      }
+      
+      setError(errorMessage);
 
     } catch (error) {
       console.error("Login error:", error);
-      if (error.name === "TypeError" || error.message.includes("Network")) {
+      if (error.name === "TypeError" || error.message.includes("Network") || error.message.includes("Failed to fetch")) {
         setError("Failed to connect to the server. Please check your internet connection.");
       } else {
         setError("An unexpected error occurred. Please try again.");
@@ -89,6 +118,8 @@ function Home() {
     localStorage.setItem("userId", "guest");
     localStorage.setItem("userType", "guest");
     localStorage.setItem("username", "Guest");
+    localStorage.setItem("userEmail", "");
+    localStorage.setItem("userName", "Guest User");
     navigate("/unitfinder");
   }, [navigate]);
 
@@ -132,6 +163,8 @@ function Home() {
       document.body.style.overflow = 'unset';
     };
   }, [showRegisterModal, handleCloseModal]);
+   useEffect(() => {
+  }, []);
 
   return (
     <div className="home-container">
@@ -164,7 +197,7 @@ function Home() {
             <div className="input-group">
               <input
                 type="text"
-                placeholder="Username"
+                placeholder="Username or Email"
                 value={username}
                 onChange={handleInputChange(setUsername)}
                 required
@@ -172,7 +205,7 @@ function Home() {
                 disabled={isLoading}
                 autoComplete="username"
                 autoFocus
-                aria-label="Username"
+                aria-label="Username or Email"
               />
             </div>
 
