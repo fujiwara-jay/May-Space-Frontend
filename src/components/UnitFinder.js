@@ -342,8 +342,8 @@ const UnitFinder = () => {
         contact: "",
         numberOfPeople: "",
         transaction: "Online",
-        date: "",
-        unitId: null,
+            contact_number: contact,
+            date_of_visiting: date,
       });
 
       setTimeout(() => {
