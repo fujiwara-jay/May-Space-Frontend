@@ -342,7 +342,7 @@ const UnitFinder = () => {
 
     try {
       const payload = {
-        unitId: Number(unitId),
+        unit_id: Number(unitId),
         name: name.trim(),
         address: address.trim(),
         contact_number: contact.trim(),
