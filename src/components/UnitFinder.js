@@ -303,29 +303,7 @@ const UnitFinder = () => {
     setActionMessage(null);
 
     const { name, address, contact, numberOfPeople, transaction, date, unitId } = bookingDetails;
-    // Strict validation: all fields must be non-empty, unitId must be a valid number, numberOfPeople must be a positive integer
-    const isValidNumberOfPeople = Number.isInteger(Number(numberOfPeople)) && Number(numberOfPeople) > 0;
-    const isValidTransaction = transaction === "Online" || transaction === "Walk-in";
-    if (
-      !name?.trim() ||
-      !address?.trim() ||
-      !contact?.trim() ||
-      !isValidNumberOfPeople ||
-      !isValidTransaction ||
-      !date?.trim() ||
-      unitId === null || unitId === undefined || isNaN(Number(unitId))
-    ) {
-      console.log("Validation failed:", {
-        name,
-        address,
-        contact,
-        numberOfPeople,
-        transaction,
-        date,
-        unitId,
-        isValidNumberOfPeople,
-        isValidTransaction
-      });
+    if (!name || !address || !contact || !numberOfPeople || !transaction || !date) {
       setBookingError("All booking fields are required.");
       return;
     }
@@ -338,24 +316,19 @@ const UnitFinder = () => {
       return;
     }
 
-    // Prepare payload
-    const payload = {
-      unitId: Number(unitId),
-      name: name.trim(),
-      address: address.trim(),
-      contact_number: contact.trim(),
-      number_of_people: parseInt(numberOfPeople, 10),
-      transaction_type: transaction.trim(),
-      date_of_visiting: date.trim(),
-    };
-    // Debug log
-    console.log("Booking payload:", payload);
-
     try {
       const res = await fetch(`${API_BASE}/bookings`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          unitId,
+          name,
+          address,
+          contactNumber: contact,
+          numberOfPeople: parseInt(numberOfPeople, 10),
+          transaction,
+          dateVisiting: date,
+        }),
       });
       
       const data = await res.json().catch(() => ({}));
