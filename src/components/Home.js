@@ -25,7 +25,6 @@ function Home() {
     }
 
     try {
-      // Try user login first
       const userResponse = await fetch("https://may-space-backend.onrender.com/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,7 +48,6 @@ function Home() {
         return;
       }
 
-      // If user login fails, try admin login
       const adminResponse = await fetch("https://may-space-backend.onrender.com/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,18 +71,11 @@ function Home() {
         return;
       }
 
-      // If both logins fail, provide specific error messages
-      if (userResponse.status === 401 || adminResponse.status === 401) {
-        setError("Invalid username or password. Please try again.");
-      } else if (userResponse.status === 500 || adminResponse.status === 500) {
-        setError("Server error. Please try again later.");
-      } else {
-        setError("Login failed. Please check your credentials and try again.");
-      }
+      setError("Invalid username or password. Please try again.");
 
     } catch (error) {
       console.error("Login error:", error);
-      if (error.name === "TypeError" || error.message.includes("Network") || error.message.includes("Failed to fetch")) {
+      if (error.name === "TypeError" || error.message.includes("Network")) {
         setError("Failed to connect to the server. Please check your internet connection.");
       } else {
         setError("An unexpected error occurred. Please try again.");
@@ -123,13 +114,6 @@ function Home() {
   const handleCloseModal = useCallback(() => {
     setShowRegisterModal(false);
   }, []);
-
-  // Handle Enter key for form submission
-  const handleKeyPress = useCallback((e) => {
-    if (e.key === 'Enter' && !isLoading) {
-      handleSubmit(e);
-    }
-  }, [isLoading, handleSubmit]);
 
   useEffect(() => {
     const handleEscapeKey = (e) => {
@@ -183,14 +167,12 @@ function Home() {
                 placeholder="Username"
                 value={username}
                 onChange={handleInputChange(setUsername)}
-                onKeyPress={handleKeyPress}
                 required
                 className="form-input"
                 disabled={isLoading}
                 autoComplete="username"
                 autoFocus
                 aria-label="Username"
-                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 
@@ -200,13 +182,11 @@ function Home() {
                 placeholder="Password"
                 value={password}
                 onChange={handleInputChange(setPassword)}
-                onKeyPress={handleKeyPress}
                 required
                 className="form-input"
                 disabled={isLoading}
                 autoComplete="current-password"
                 aria-label="Password"
-                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 
@@ -215,7 +195,6 @@ function Home() {
                 to="/forgot-password" 
                 className="action-link"
                 onClick={(e) => isLoading && e.preventDefault()}
-                aria-disabled={isLoading}
               >
                 Forgot Password?
               </Link>
@@ -257,7 +236,6 @@ function Home() {
               onClick={handleCloseModal}
               aria-label="Close modal"
               type="button"
-              disabled={isLoading}
             >
               ×
             </button>
