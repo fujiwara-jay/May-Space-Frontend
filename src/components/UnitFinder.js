@@ -303,7 +303,31 @@ const UnitFinder = () => {
     setActionMessage(null);
 
     const { name, address, contact, numberOfPeople, transaction, date, unitId } = bookingDetails;
-    if (!name || !address || !contact || !numberOfPeople || !transaction || !date) {
+    // Strict validation: all fields must be non-empty, unitId must be a valid number, transaction_type must be valid
+    const isValidNumberOfPeople = Number.isInteger(Number(numberOfPeople)) && Number(numberOfPeople) > 0;
+    const isValidTransaction = transaction === "Online" || transaction === "Walk-in";
+    const isValidUnitId = unitId !== null && unitId !== undefined && !isNaN(Number(unitId));
+    if (
+      !name?.trim() ||
+      !address?.trim() ||
+      !contact?.trim() ||
+      !isValidNumberOfPeople ||
+      !isValidTransaction ||
+      !date?.trim() ||
+      !isValidUnitId
+    ) {
+      console.log("Validation failed:", {
+        name,
+        address,
+        contact,
+        numberOfPeople,
+        transaction,
+        date,
+        unitId,
+        isValidNumberOfPeople,
+        isValidTransaction,
+        isValidUnitId
+      });
       setBookingError("All booking fields are required.");
       return;
     }
@@ -318,14 +342,15 @@ const UnitFinder = () => {
 
     try {
       const payload = {
-        unitId,
-        name,
-        address,
-        contact_number: contact,
+        unitId: Number(unitId),
+        name: name.trim(),
+        address: address.trim(),
+        contact_number: contact.trim(),
         number_of_people: parseInt(numberOfPeople, 10),
         transaction_type: transaction,
-        date_of_visiting: date,
+        date_of_visiting: date.trim(),
       };
+      console.log("Booking payload:", payload);
       const res = await fetch(`${API_BASE}/bookings`, {
         method: "POST",
         headers: getAuthHeaders(),
