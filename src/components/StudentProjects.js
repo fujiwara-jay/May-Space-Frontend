@@ -48,7 +48,7 @@ function StudentProjects() {
       name: "Genzel Khate Soliven",
       role: "Member",
       image: Genzel,
-      description: "If I were as foolish as a dromas, perhaps I'd throw myself down and prostrate before their greatness, begging for the gods prophetic wisdom. Well, sorry to disappoint, but I'm no dromas. Alas, I am a human, standing tall on two feet, possessing both intellect and pride — Anaxagoras",
+      description: "A motivated learner who believes that intelligence and curiosity shape who we become. I approach every challenge as a chance to think deeper and grow wiser. “It is by having intelligence that we are called intelligent beings.” — Anaxagoras",
     }
   ];
 
