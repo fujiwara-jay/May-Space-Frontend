@@ -472,7 +472,7 @@ const MyAccount = () => {
                   className="edit-btn"
                   onClick={() => setEditMode(true)}
                 >
-                  ✏️ Edit Profile
+                    Edit Profile
                 </button>
               ) : (
                 <div className="edit-actions">
