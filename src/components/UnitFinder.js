@@ -342,13 +342,13 @@ const UnitFinder = () => {
 
     try {
       const payload = {
-        unit_id: Number(unitId),
+        unitId: Number(unitId),
         name: name.trim(),
         address: address.trim(),
-        contact_number: contact.trim(),
-        number_of_people: parseInt(numberOfPeople, 10),
-        transaction_type: transaction,
-        date_of_visiting: date.trim(),
+        contactNumber: contact.trim(),
+        numberOfPeople: parseInt(numberOfPeople, 10),
+        transaction: transaction,
+        dateVisiting: date.trim(),
       };
       console.log("Booking payload:", payload);
       const res = await fetch(`${API_BASE}/bookings`, {
