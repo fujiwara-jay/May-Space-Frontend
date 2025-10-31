@@ -317,18 +317,19 @@ const UnitFinder = () => {
     }
 
     try {
+      const payload = {
+        unitId,
+        name,
+        address,
+        contact_number: contact,
+        number_of_people: parseInt(numberOfPeople, 10),
+        transaction_type: transaction,
+        date_of_visiting: date,
+      };
       const res = await fetch(`${API_BASE}/bookings`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({
-          unitId,
-          name,
-          address,
-          contactNumber: contact,
-          numberOfPeople: parseInt(numberOfPeople, 10),
-          transaction,
-          dateVisiting: date,
-        }),
+        body: JSON.stringify(payload),
       });
       
       const data = await res.json().catch(() => ({}));
