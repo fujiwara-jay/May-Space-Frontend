@@ -324,10 +324,10 @@ const UnitFinder = () => {
           unitId,
           name,
           address,
-          contactNumber: contact,
-          numberOfPeople: parseInt(numberOfPeople, 10),
-          transaction,
-          dateVisiting: date,
+          contact_number: contact,
+          number_of_people: parseInt(numberOfPeople, 10),
+          transaction_type: transaction,
+          date_of_visiting: date,
         }),
       });
       
@@ -342,8 +342,8 @@ const UnitFinder = () => {
         contact: "",
         numberOfPeople: "",
         transaction: "Online",
-            contact_number: contact,
-            date_of_visiting: date,
+        date: "",
+        unitId: null,
       });
 
       setTimeout(() => {
