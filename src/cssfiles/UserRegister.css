@@ -12,6 +12,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   background-color: rgba(44, 54, 63, 0.92);
   background-blend-mode: overlay;
   overflow-y: auto;
@@ -163,4 +164,10 @@ button[type="submit"]:hover {
 .register-links a:hover {
   color: #ffe082;
   text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .renter-register-container {
+    background-attachment: scroll;
+  }
 }

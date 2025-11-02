@@ -83,6 +83,15 @@
   justify-items: center;
 }
 
+.student-card:nth-child(4),
+.student-card:nth-child(5) {
+  grid-column: span 1;
+}
+
+.students-grid:has(.student-card:nth-child(5):last-child) {
+  justify-content: center;
+}
+
 .student-card {
   background: rgba(44, 54, 63, 0.7);
   border-radius: 16px;
@@ -142,6 +151,7 @@
   
   .students-grid {
     grid-template-columns: 1fr;
+    justify-items: center;
   }
 
   .student-card {
@@ -150,5 +160,26 @@
 
   .back-button {
     margin-left: 10px;
+  }
+}
+
+@media (min-width: 769px) {
+  .students-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+  }
+  
+  .student-card {
+    flex: 0 0 calc(33.333% - 30px);
+    max-width: 350px;
+  }
+}
+
+
+@media (min-width: 1200px) {
+  .student-card {
+    flex: 0 0 calc(25% - 30px);
   }
 }

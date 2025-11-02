@@ -25,7 +25,7 @@ function StudentProjects() {
     {
       id: 2,
       name: "Julian Jr. Gazzingan",
-      role: "Member 'Developer' ",
+      role: "Member",
       image: Jayr,
       description: "Builds clean and funtional web projects with React and Nodes.js.",
     },
