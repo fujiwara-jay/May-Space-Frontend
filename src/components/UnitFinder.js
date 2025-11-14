@@ -28,6 +28,7 @@ const UnitFinder = () => {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [showInquireForm, setShowInquireForm] = useState(false);
   const [showGuestPopup, setShowGuestPopup] = useState(false);
+  const [showLocationMap, setShowLocationMap] = useState(false);
 
   const [bookingDetails, setBookingDetails] = useState({
     name: "",
@@ -195,6 +196,10 @@ const UnitFinder = () => {
     setActionMessage(null);
   };
 
+  const closeLocationMap = () => {
+    setShowLocationMap(false);
+  };
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -233,8 +238,7 @@ const UnitFinder = () => {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
     }
-    const locationUrl = "https://maps.app.goo.gl/Hk3iwYC7tftpJZuG8";
-    window.open(locationUrl, "_blank", "noopener,noreferrer");
+    setShowLocationMap(true);
   };
 
   const handleBookNowClick = (e, unit) => {
@@ -303,7 +307,6 @@ const UnitFinder = () => {
     setActionMessage(null);
 
     const { name, address, contact, numberOfPeople, transaction, date, unitId } = bookingDetails;
-    // Strict validation: all fields must be non-empty, unitId must be a valid number, transaction_type must be valid
     const isValidNumberOfPeople = Number.isInteger(Number(numberOfPeople)) && Number(numberOfPeople) > 0;
     const isValidTransaction = transaction === "Online" || transaction === "Walk-in";
     const isValidUnitId = unitId !== null && unitId !== undefined && !isNaN(Number(unitId));
@@ -640,6 +643,51 @@ const UnitFinder = () => {
     );
   };
 
+  const renderLocationMap = () => {
+    return (
+      <div className="location-modal-overlay" onClick={closeLocationMap}>
+        <div className="location-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="location-modal-header">
+            <h3>📍 Gumaro Building Location</h3>
+            <button className="location-modal-close" onClick={closeLocationMap}>
+              &times;
+            </button>
+          </div>
+          <div className="map-container">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.735174026987!2d121.0479489!3d14.4988713!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397cfab380b0201%3A0xb89d0451207c5c3c!2sGumaro%20Building!5e0!3m2!1sen!2sph!4v1700000000000!5m2!1sen!2sph"
+              width="100%"
+              height="400"
+              style={{ border: 0, borderRadius: "8px" }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Gumaro Building Location"
+            ></iframe>
+          </div>
+          <div className="location-info">
+            <p><strong>Address:</strong> Gumaro Building, Metro Manila, Philippines</p>
+            <p><strong>Contact:</strong> Available for viewing by appointment</p>
+          </div>
+          <div className="location-actions">
+            <button 
+              className="location-close-btn" 
+              onClick={closeLocationMap}
+            >
+              Close Map
+            </button>
+            <button 
+              className="location-open-btn"
+              onClick={() => window.open("https://www.google.com/maps/place/Gumaro+building/@14.4988713,121.0479489,701m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3397cfab380b0201:0xb89d0451207c5c3c!8m2!3d14.4988661!4d121.0505238!16s%2Fg%2F11vcm53x_3?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D", "_blank")}
+            >
+              Open in Google Maps
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="unit-finder-container">
       <button className="menu-toggle-btn" onClick={toggleSidebar}>
@@ -713,7 +761,7 @@ const UnitFinder = () => {
                 className="sidebar-btn logout-btn"
                 onClick={handleLogout}
               >
-                🚪 Logout
+                🏠︎ Logout
               </button>
             </div>
           )}
@@ -863,6 +911,8 @@ const UnitFinder = () => {
           </div>
         </div>
       )}
+
+      {showLocationMap && renderLocationMap()}
 
       {showGuestPopup && (
         <div className="guest-popup">
