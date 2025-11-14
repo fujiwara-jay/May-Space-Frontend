@@ -666,7 +666,7 @@ const UnitFinder = () => {
             ></iframe>
           </div>
           <div className="location-info">
-            <p><strong>Address:</strong> Gumaro Building, Metro Manila, Philippines</p>
+            <p><strong>Address:</strong> Gumaro Building, Brgy. Upper Bicutan, Taguig City, Metro Manila, Philippines</p>
             <p><strong>Contact:</strong> Available for viewing by appointment</p>
           </div>
           <div className="location-actions">
