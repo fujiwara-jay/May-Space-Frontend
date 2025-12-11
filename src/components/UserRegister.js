@@ -11,13 +11,86 @@ function UserRegister() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+
+  // Function to check password strength
+  const checkPasswordStrength = (password) => {
+    if (password.length === 0) return "";
+    
+    // Check password requirements
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const lengthValid = password.length >= 10 && password.length <= 30;
+    
+    const requirementsMet = [
+      hasUpperCase,
+      hasLowerCase,
+      hasNumbers,
+      hasSpecialChar,
+      lengthValid
+    ].filter(Boolean).length;
+    
+    if (requirementsMet >= 4) return "strong";
+    if (requirementsMet >= 3) return "medium";
+    return "weak";
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 10 || password.length > 30) {
+      return "Password must be between 10-30 characters";
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one lowercase letter";
+    }
+    
+    if (!/\d/.test(password)) {
+      return "Password must contain at least one number";
+    }
+    
+    // Optional: Uncomment if you want special characters
+    // if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    //   return "Password must contain at least one special character";
+    // }
+    
+    return "";
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setPasswordStrength(checkPasswordStrength(newPassword));
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name ||!username || !email || !contactNumber || !password || !confirmPassword) {
+    if (!name || !username || !email || !contactNumber || !password || !confirmPassword) {
       setError("All fields are required");
+      return;
+    }
+
+    // Validate password
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -50,6 +123,7 @@ function UserRegister() {
       if (response.ok) {
         setShowSuccess(true);
         setError("");
+        setPasswordStrength("");
 
         setTimeout(() => {
           setShowSuccess(false);
@@ -59,6 +133,8 @@ function UserRegister() {
           setContactNumber("");
           setPassword("");
           setConfirmPassword("");
+          setShowPassword(false);
+          setShowConfirmPassword(false);
         }, 2000);
       } else {
         setError(data.message || "User registration failed");
@@ -106,20 +182,66 @@ function UserRegister() {
             onChange={(e) => setContactNumber(e.target.value)}
             aria-label="Contact Number"
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            aria-label="Password"
-          />
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            aria-label="Confirm Password"
-          />
+          
+          <div className="password-input-container">
+            <div className="password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password (10-30 characters with uppercase, lowercase & numbers)"
+                value={password}
+                onChange={handlePasswordChange}
+                aria-label="Password"
+                maxLength={30}
+              />
+              <button 
+                type="button"
+                className="toggle-password"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+            {password && (
+              <div className={`password-strength ${passwordStrength}`}>
+                <span>Password Strength: </span>
+                <span className="strength-text">
+                  {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                </span>
+                <div className="strength-bar">
+                  <div className={`strength-fill ${passwordStrength}`}></div>
+                </div>
+              </div>
+            )}
+            <div className="password-requirements">
+              <small>Password must be 10-30 characters with at least:</small>
+              <small>• One uppercase letter (A-Z)</small>
+              <small>• One lowercase letter (a-z)</small>
+              <small>• One number (0-9)</small>
+              <small>• One special character (!@#$%^&*)</small>
+            </div>
+          </div>
+          
+          <div className="password-input-container">
+            <div className="password-wrapper">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                aria-label="Confirm Password"
+                maxLength={30}
+              />
+              <button 
+                type="button"
+                className="toggle-password"
+                onClick={toggleConfirmPasswordVisibility}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
 
           <div className="register-links">
             <span>Already have an account? </span>
