@@ -16,11 +16,9 @@ function UserRegister() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Function to check password strength
   const checkPasswordStrength = (password) => {
     if (password.length === 0) return "";
     
-    // Check password requirements
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
@@ -56,12 +54,7 @@ function UserRegister() {
     if (!/\d/.test(password)) {
       return "Password must contain at least one number";
     }
-    
-    // Optional: Uncomment if you want special characters
-    // if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-    //   return "Password must contain at least one special character";
-    // }
-    
+      
     return "";
   };
 
@@ -87,7 +80,6 @@ function UserRegister() {
       return;
     }
 
-    // Validate password
     const passwordError = validatePassword(password);
     if (passwordError) {
       setError(passwordError);
@@ -255,3 +247,4 @@ function UserRegister() {
 }
 
 export default UserRegister;
+

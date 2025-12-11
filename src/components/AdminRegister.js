@@ -14,7 +14,66 @@ function AdminRegister() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+
+  const checkPasswordStrength = (password) => {
+    if (password.length === 0) return "";
+    
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const lengthValid = password.length >= 10 && password.length <= 30;
+    
+    const requirementsMet = [
+      hasUpperCase,
+      hasLowerCase,
+      hasNumbers,
+      hasSpecialChar,
+      lengthValid
+    ].filter(Boolean).length;
+    
+    if (requirementsMet >= 4) return "strong";
+    if (requirementsMet >= 3) return "medium";
+    return "weak";
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 10 || password.length > 30) {
+      return "Password must be between 10-30 characters";
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one lowercase letter";
+    }
+    
+    if (!/\d/.test(password)) {
+      return "Password must contain at least one number";
+    }
+    
+    return "";
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setPasswordStrength(checkPasswordStrength(newPassword));
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const handleBack = () => {
     if (showPinPrompt) {
@@ -31,6 +90,12 @@ function AdminRegister() {
 
     if (!username || !email || !contactNumber || !password || !confirmPassword) {
       setError("All fields are required");
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -63,6 +128,7 @@ function AdminRegister() {
       if (response.ok) {
         setShowSuccess(true);
         setError("");
+        setPasswordStrength("");
 
         setTimeout(() => {
           setShowSuccess(false);
@@ -71,6 +137,8 @@ function AdminRegister() {
           setContactNumber("");
           setPassword("");
           setConfirmPassword("");
+          setShowPassword(false);
+          setShowConfirmPassword(false);
         }, 2000);
       } else {
         setError(data.message || "Admin registration failed");
@@ -86,15 +154,15 @@ function AdminRegister() {
       <div className="register-box">
         {showPinPrompt ? (
           <>
-            <h2 style={{ color: '#f7e7b6', fontWeight: 900, letterSpacing: '0.35em', fontSize: '1.6rem', marginBottom: '1.5rem' }}>Admin Security Pin</h2>
-            <div style={{ background: 'rgba(255,0,0,0.13)', color: '#ff6666', fontWeight: 'bold', borderRadius: '6px', padding: '0.7rem', marginBottom: '1rem', textAlign: 'center', fontSize: '15px' }}>
-              <span style={{ fontSize: '16px', textTransform: 'uppercase' }}>Security Notice</span><br />
+            <h2 className="security-title">Admin Security Pin</h2>
+            <div className="security-notice">
+              <span className="security-notice-title">Security Notice</span><br />
               <span>
                 The creation of admin accounts is strictly controlled and protected by a security pin.<br /><br />
                 Only authorized personnel should proceed. Unauthorized attempts to create an admin account are prohibited and may be logged for review.
               </span>
             </div>
-            <div style={{ marginBottom: 18, fontSize: '15px', color: '#e0c16d', textAlign: 'center' }}>
+            <div className="security-instruction">
               Please enter the security pin to proceed.
             </div>
             <input
@@ -162,20 +230,66 @@ function AdminRegister() {
                 onChange={(e) => setContactNumber(e.target.value)}
                 aria-label="Admin Contact Number"
               />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-label="Admin Password"
-              />
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                aria-label="Confirm Admin Password"
-              />
+              
+              <div className="password-input-container">
+                <div className="password-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password (10-30 characters with uppercase, lowercase & numbers)"
+                    value={password}
+                    onChange={handlePasswordChange}
+                    aria-label="Admin Password"
+                    maxLength={30}
+                  />
+                  <button 
+                    type="button"
+                    className="toggle-password"
+                    onClick={togglePasswordVisibility}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
+                {password && (
+                  <div className={`password-strength ${passwordStrength}`}>
+                    <span>Password Strength: </span>
+                    <span className="strength-text">
+                      {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                    </span>
+                    <div className="strength-bar">
+                      <div className={`strength-fill ${passwordStrength}`}></div>
+                    </div>
+                  </div>
+                )}
+                <div className="password-requirements">
+                  <small>Password must be 10-30 characters with at least:</small>
+                  <small>• One uppercase letter (A-Z)</small>
+                  <small>• One lowercase letter (a-z)</small>
+                  <small>• One number (0-9)</small>
+                  <small>• One special character (!@#$%^&*)</small>
+                </div>
+              </div>
+              
+              <div className="password-input-container">
+                <div className="password-wrapper">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    aria-label="Confirm Admin Password"
+                    maxLength={30}
+                  />
+                  <button 
+                    type="button"
+                    className="toggle-password"
+                    onClick={toggleConfirmPasswordVisibility}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
+              </div>
 
               <div className="register-links">
                 <span>Already have an account? </span>

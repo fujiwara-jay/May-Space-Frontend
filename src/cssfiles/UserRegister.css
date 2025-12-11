@@ -111,7 +111,6 @@ button[type="submit"]:hover {
   color: #1a1a1a;
 }
 
-/* Password Input Container */
 .password-input-container {
   position: relative;
   width: 100%;
@@ -146,7 +145,6 @@ button[type="submit"]:hover {
   background-color: rgba(224, 193, 109, 0.2);
 }
 
-/* Password Strength Indicator */
 .password-strength {
   margin-top: 8px;
   padding: 8px 12px;
@@ -211,7 +209,6 @@ button[type="submit"]:hover {
   background-color: #4caf50;
 }
 
-/* Password Requirements */
 .password-requirements {
   margin-top: 8px;
   padding: 10px;
@@ -235,7 +232,6 @@ button[type="submit"]:hover {
   margin-bottom: 4px;
 }
 
-/* Error and Success Messages */
 .error-message {
   background-color: rgba(255, 87, 87, 0.15);
   color: #ff8a8a;
@@ -280,7 +276,6 @@ button[type="submit"]:hover {
   }
 }
 
-/* Register Links */
 .register-links {
   display: flex;
   justify-content: center;
@@ -308,7 +303,6 @@ button[type="submit"]:hover {
   text-decoration: none;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .renter-register-container {
     background-attachment: scroll;
@@ -358,7 +352,6 @@ button[type="submit"]:hover {
   }
 }
 
-/* Character Counter */
 .char-counter {
   position: absolute;
   right: 10px;
