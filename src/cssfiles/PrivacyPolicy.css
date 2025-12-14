@@ -1,0 +1,329 @@
+.privacy-policy-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: rgba(44, 54, 63, 0.85) url('GB2.jpg') center/cover no-repeat fixed;
+  background-blend-mode: multiply;
+  overflow-y: auto;
+  color: #f7e7b6;
+}
+
+.privacy-policy-header {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  margin-top: 60px;
+  position: relative;
+}
+
+.privacy-policy-header h1 {
+  color: #f7e7b6;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  margin: 0 0 30px;
+  font-size: 2.2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.back-button {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  background: #6c757d;
+  color: #f7e7b6;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.privacy-policy-content {
+  max-width: 1000px;
+  width: 90%;
+  background: rgba(44, 54, 63, 0.9);
+  border-radius: 15px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  margin-bottom: 40px;
+  border: 1px solid rgba(224, 193, 109, 0.3);
+}
+
+.policy-section {
+  margin-bottom: 35px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid rgba(224, 193, 109, 0.2);
+}
+
+.policy-section:last-of-type {
+  border-bottom: none;
+}
+
+.policy-section h2 {
+  color: #e0c16d;
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.policy-section p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #f7e7b6;
+  text-align: justify;
+  margin-bottom: 15px;
+}
+
+.contact-info {
+  background: rgba(61, 72, 82, 0.5);
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 15px;
+  border-left: 4px solid #e0c16d;
+}
+
+.contact-info p {
+  margin: 8px 0;
+  color: #f7e7b6;
+  font-size: 1rem;
+}
+
+.terms-section {
+  margin-bottom: 20px;
+  padding-left: 20px;
+  border-left: 3px solid rgba(224, 193, 109, 0.5);
+  margin-left: 15px;
+}
+
+.terms-section h3 {
+  color: #ffd54f;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.terms-section p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #f7e7b6;
+}
+
+.policy-footer {
+  background: rgba(61, 72, 82, 0.7);
+  padding: 25px;
+  border-radius: 10px;
+  margin-top: 40px;
+  text-align: center;
+  border: 1px solid rgba(224, 193, 109, 0.2);
+}
+
+.policy-footer .notice {
+  font-style: italic;
+  color: #ffd54f;
+  margin-top: 20px;
+  font-size: 1.1rem;
+  padding: 15px;
+  background: rgba(224, 193, 109, 0.1);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.back-to-unitfinder {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(224, 193, 109, 0.3);
+}
+
+.back-btn {
+  background: #6c757d;
+  color: #f7e7b6;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.back-btn:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.privacy-policy-footer {
+  margin-top: auto;
+  padding: 30px 20px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(247, 231, 182, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.footer-copyright {
+  color: rgba(247, 231, 182, 0.7);
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+  letter-spacing: normal;
+}
+
+@media (max-width: 768px) {
+  .privacy-policy-container {
+    padding: 15px;
+  }
+
+  .privacy-policy-header {
+    margin-top: 50px;
+    margin-bottom: 30px;
+  }
+
+  .privacy-policy-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 40px;
+  }
+
+  .back-button {
+    position: relative;
+    left: 0;
+    top: 0;
+    margin-bottom: 20px;
+    align-self: flex-start;
+  }
+
+  .privacy-policy-content {
+    width: 95%;
+    padding: 25px 20px;
+  }
+
+  .policy-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+  }
+
+  .policy-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .policy-section p {
+    font-size: 1rem;
+  }
+
+  .terms-section h3 {
+    font-size: 1.2rem;
+  }
+
+  .back-btn {
+    padding: 10px 25px;
+    font-size: 1rem;
+    min-width: 100px;
+  }
+
+  .contact-info {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .privacy-policy-header h1 {
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+  }
+
+  .back-button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .privacy-policy-content {
+    padding: 20px 15px;
+  }
+
+  .policy-section h2 {
+    font-size: 1.3rem;
+  }
+
+  .policy-section p {
+    font-size: 0.95rem;
+  }
+
+  .terms-section {
+    padding-left: 15px;
+    margin-left: 10px;
+  }
+
+  .terms-section h3 {
+    font-size: 1.1rem;
+  }
+
+  .back-btn {
+    padding: 8px 20px;
+    font-size: 0.95rem;
+    min-width: 90px;
+  }
+
+  .policy-footer {
+    padding: 20px 15px;
+  }
+
+  .policy-footer .notice {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .footer-copyright {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .privacy-policy-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .back-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .policy-section h2 {
+    font-size: 1.2rem;
+  }
+
+  .policy-section p {
+    font-size: 0.9rem;
+  }
+
+  .back-btn {
+    padding: 6px 15px;
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+}

@@ -16,6 +16,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import AdminUnitFinderManager from "./components/AdminUnitFinderManager";
 import AdminAccountManage from "./components/AdminAccountManage";
 import MyAccount from "./components/MyAccount";
+import PrivacyPolicy from "./components/PrivacyPolicy";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
           {/* Project-related pages */}
           <Route path="/StudentProjects" element={<StudentProjects />} />
           <Route path="/tools" element={<ProjectTools />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         </Routes>
       </Router>
     </UnitsProvider>

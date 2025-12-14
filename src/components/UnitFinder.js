@@ -234,6 +234,11 @@ const UnitFinder = () => {
     navigate("/tools");
   };
 
+  const handlePrivacyPolicyClick = () => {
+    setSidebarOpen(false);
+    navigate("/privacy-policy");
+  };
+
   const handleOpenLocation = (e) => {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
@@ -753,6 +758,12 @@ const UnitFinder = () => {
             onClick={handleProjectToolsClick}
           >
             🛠️ Project Tools
+          </button>
+          <button 
+            className="sidebar-btn"
+            onClick={handlePrivacyPolicyClick}
+          >
+            📄 Privacy Policy
           </button>
           
           {!isGuest && (
