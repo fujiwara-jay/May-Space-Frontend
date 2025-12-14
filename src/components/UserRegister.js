@@ -107,16 +107,16 @@ function UserRegister() {
       return false;
     }
 
+    if (!agreedToPolicy) {
+      setError("You must agree to the registration policies");
+      return false;
+    }
+
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!agreedToPolicy) {
-      setShowPolicy(true);
-      return;
-    }
 
     if (!validateForm()) {
       return;
@@ -157,16 +157,23 @@ function UserRegister() {
     }
   };
 
+  const handleCheckboxClick = () => {
+    setShowPolicy(true);
+  };
+
   const handleAgreeToPolicy = () => {
     setAgreedToPolicy(true);
     setShowPolicy(false);
-    
-    document.querySelector("form").requestSubmit();
   };
 
   const handleDisagreeToPolicy = () => {
+    setAgreedToPolicy(false);
     setShowPolicy(false);
     setError("You must agree to the policies to register.");
+  };
+
+  const handleClosePolicy = () => {
+    setShowPolicy(false);
   };
 
   return (
@@ -179,7 +186,7 @@ function UserRegister() {
               <h3>May Space Registration Policies</h3>
               <button 
                 className="policy-close-btn"
-                onClick={() => setShowPolicy(false)}
+                onClick={handleClosePolicy}
                 aria-label="Close policy modal"
               >
                 ×
@@ -209,7 +216,7 @@ function UserRegister() {
                 
                 <div className="policy-subsection">
                   <h5>4. Consent and Agreement</h5>
-                  <p>• By clicking the "Agree & Register" button, users confirm that they have read and agreed to the Terms & Conditions and Privacy Policy.</p>
+                  <p>• By clicking the "Agree" button, users confirm that they have read and agreed to the Terms & Conditions and Privacy Policy.</p>
                   <p>• Registration signifies consent to the collection and processing of personal data in accordance with the Data Privacy Act of 2012 (RA 10173).</p>
                 </div>
                 
@@ -255,7 +262,7 @@ function UserRegister() {
                 <p><strong>By registering and using the May Space system, users acknowledge and agree to comply with these policies.</strong></p>
               </div>
               
-              <div className="policy-agreement-checkbox">
+              <div className={`policy-agreement-checkbox-modal ${agreedToPolicy ? 'checked' : ''}`}>
                 <input
                   type="checkbox"
                   id="policy-agreement"
@@ -280,7 +287,7 @@ function UserRegister() {
                 onClick={handleAgreeToPolicy}
                 disabled={!agreedToPolicy}
               >
-                Agree & Register
+                Agree
               </button>
             </div>
           </div>
@@ -387,16 +394,23 @@ function UserRegister() {
             </div>
           </div>
 
-          <div className="policy-agreement-mini">
-            <input
-              type="checkbox"
-              id="mini-policy-agreement"
-              checked={agreedToPolicy}
-              onChange={(e) => setAgreedToPolicy(e.target.checked)}
-            />
-            <label htmlFor="mini-policy-agreement">
-              I agree to the <span className="policy-link" onClick={() => setShowPolicy(true)}>Registration Policies</span>
-            </label>
+          <div className="policy-agreement-container">
+            <div 
+              className={`policy-checkbox-wrapper ${agreedToPolicy ? 'checked' : ''}`} 
+              onClick={handleCheckboxClick}
+            >
+              <input
+                type="checkbox"
+                id="mini-policy-agreement"
+                checked={agreedToPolicy}
+                onChange={() => {}}
+                readOnly
+              />
+              <label htmlFor="mini-policy-agreement" className="policy-checkbox-label">
+                I agree to the <span className="policy-link-text">Registration Policies</span>
+              </label>
+              <span className="checkmark-indicator">✓</span>
+            </div>
           </div>
 
           <div className="register-links">
