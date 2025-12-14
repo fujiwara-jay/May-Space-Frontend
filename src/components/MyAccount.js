@@ -349,6 +349,11 @@ const MyAccount = () => {
     navigate("/tools");
   };
 
+  const handlePrivacyPolicyClick = () => {
+    setSidebarOpen(false);
+    navigate("/privacy-policy");
+  };
+
   if (isGuest) {
     return null;
   }
@@ -424,6 +429,15 @@ const MyAccount = () => {
             onClick={handleProjectToolsClick}
           >
             🛠️ Project Tools
+          </button>
+          
+          <div className="sidebar-divider"></div>
+          
+          <button 
+            className="sidebar-btn"
+            onClick={handlePrivacyPolicyClick}
+          >
+            📄 Privacy Policy
           </button>
           
           <div className="sidebar-footer">

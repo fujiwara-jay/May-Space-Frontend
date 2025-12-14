@@ -9,6 +9,7 @@
   background: rgba(44, 54, 63, 0.85) url('GB2.jpg') center/cover no-repeat fixed;
   background-blend-mode: multiply;
   overflow-y: auto;
+  position: relative;
 }
 
 .loading-message {
@@ -20,6 +21,10 @@
   border-radius: 10px;
   margin: 20px;
   border: 1px solid #4a5a6a;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .menu-toggle-btn {
@@ -35,11 +40,13 @@
   cursor: pointer;
   z-index: 1000;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .menu-toggle-btn:hover {
   background: #5a6268;
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .sidebar-menu {
@@ -50,7 +57,7 @@
   height: 100vh;
   background: #2c363f;
   border-right: 2px solid #e0c16d;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
   transition: left 0.3s ease;
   z-index: 2000;
   display: flex;
@@ -86,10 +93,15 @@
   padding: 5px;
   border-radius: 3px;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
 }
 
 .sidebar-close-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   transform: scale(1.1);
 }
 
@@ -141,26 +153,17 @@
   margin-top: auto;
   padding: 20px 0;
   border-top: 1px solid rgba(224, 193, 109, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.sidebar-footer .logout-btn {
-  width: auto;
-  min-width: 200px;
-  justify-content: center;
-  text-align: center;
-  border-left: 3px solid #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
-  margin: 0 20px;
-  border-radius: 5px;
-  padding: 12px 20px;
 }
 
 .logout-btn {
   color: #ff6b6b;
   border-left-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  margin: 0 20px;
+  border-radius: 5px;
+  padding: 12px 20px;
+  text-align: center;
+  justify-content: center;
 }
 
 .logout-btn:hover {
@@ -175,7 +178,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 1999;
   backdrop-filter: blur(2px);
 }
@@ -203,6 +206,7 @@
 .account-header p {
   font-size: 1.1rem;
   opacity: 0.9;
+  margin: 0;
 }
 
 .account-tabs {
@@ -249,7 +253,7 @@
   padding: 30px;
   margin-bottom: 30px;
   border: 1px solid #4a5a6a;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .profile-header,
@@ -283,6 +287,7 @@
 .edit-btn {
   background: linear-gradient(145deg, #4a90e2, #357abd);
   color: white;
+  min-width: 120px;
 }
 
 .edit-btn:hover {
@@ -295,11 +300,13 @@
   background: linear-gradient(145deg, #28a745, #218838);
   color: white;
   margin-right: 10px;
+  min-width: 100px;
 }
 
 .save-btn:hover:not(:disabled) {
   background: linear-gradient(145deg, #34ce57, #28a745);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
 .save-btn:disabled {
@@ -311,11 +318,19 @@
 .cancel-btn {
   background: linear-gradient(145deg, #6c757d, #5a6268);
   color: white;
+  min-width: 100px;
 }
 
 .cancel-btn:hover:not(:disabled) {
   background: linear-gradient(145deg, #868e96, #6c757d);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .change-password-btn {
@@ -323,6 +338,7 @@
   color: #2c363f;
   padding: 12px 30px;
   font-size: 1rem;
+  min-width: 180px;
 }
 
 .change-password-btn:hover:not(:disabled) {
@@ -340,6 +356,7 @@
 .edit-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .password-actions {
@@ -388,12 +405,14 @@
   font-weight: 600;
   color: #e0c16d;
   font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .detail-row span {
   flex: 1;
   color: #f7e7b6;
   font-size: 1rem;
+  word-break: break-word;
 }
 
 .user-type-badge {
@@ -404,6 +423,7 @@
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: capitalize;
+  display: inline-block;
 }
 
 .username-display {
@@ -413,11 +433,12 @@
 
 .user-id {
   font-family: 'Courier New', monospace;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 0.9rem !important;
   color: #ccc !important;
+  display: inline-block;
 }
 
 .edit-input,
@@ -430,6 +451,7 @@
   color: #f7e7b6;
   font-size: 1rem;
   transition: all 0.3s ease;
+  min-width: 0;
 }
 
 .edit-input:focus,
@@ -457,6 +479,7 @@
 
 .stat-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .stat-card h3 {
@@ -482,12 +505,17 @@
   border-radius: 12px;
   padding: 20px;
   text-align: center;
+  margin-top: 20px;
 }
 
 .security-note h4 {
   color: #e0c16d;
   margin-bottom: 10px;
   font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .security-note p {
@@ -507,6 +535,7 @@
   margin-bottom: 20px;
   text-align: center;
   font-weight: 600;
+  animation: fadeIn 0.3s ease;
 }
 
 .success-message {
@@ -518,9 +547,25 @@
   margin-bottom: 20px;
   text-align: center;
   font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
+  .my-account-container {
+    padding: 15px;
+  }
+  
   .sidebar-menu {
     width: 250px;
     left: -250px;
@@ -532,7 +577,6 @@
   }
   
   .sidebar-footer .logout-btn {
-    min-width: 180px;
     margin: 0 15px;
   }
   
@@ -552,6 +596,10 @@
     font-size: 2rem;
   }
   
+  .account-header p {
+    font-size: 1rem;
+  }
+  
   .profile-card,
   .password-card {
     padding: 20px;
@@ -568,15 +616,18 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+    padding: 12px 0;
   }
   
   .detail-row label {
     width: 100%;
+    font-size: 0.95rem;
   }
   
   .edit-actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
   
   .account-stats {
@@ -591,11 +642,19 @@
   .tab-btn {
     padding: 12px 15px;
     font-size: 0.9rem;
+    justify-content: flex-start;
   }
   
   .loading-message {
     font-size: 1.1rem;
     padding: 40px 20px;
+    width: 90%;
+    max-width: 300px;
+  }
+  
+  .edit-input,
+  .password-input {
+    width: 100%;
   }
 }
 
@@ -608,10 +667,10 @@
   .sidebar-btn {
     padding: 10px 15px;
     font-size: 0.85rem;
+    gap: 8px;
   }
   
   .sidebar-footer .logout-btn {
-    min-width: 160px;
     margin: 0 10px;
     padding: 10px 15px;
   }
@@ -628,7 +687,7 @@
     top: 12px;
     left: 12px;
     padding: 8px 12px;
-    font-size: 0.8rem;
+    font-size: 1rem;
   }
   
   .account-header h1 {
@@ -636,17 +695,18 @@
   }
   
   .account-header p {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
   
   .edit-actions {
     flex-direction: column;
     width: 100%;
+    gap: 8px;
   }
   
   .save-btn, .cancel-btn {
     width: 100%;
-    margin: 5px 0;
+    margin: 0;
   }
   
   .password-actions {
@@ -660,6 +720,15 @@
   .loading-message {
     font-size: 1rem;
     padding: 30px 15px;
+    width: 95%;
+  }
+  
+  .stat-card {
+    padding: 20px 15px;
+  }
+  
+  .security-note {
+    padding: 15px;
   }
 }
 
@@ -673,10 +742,13 @@
   .my-account-container {
     background: white !important;
     color: black !important;
+    padding: 0;
   }
   
   .account-content {
     margin-top: 0;
+    max-width: 100%;
+    padding: 20px;
   }
   
   .profile-card,
@@ -685,12 +757,65 @@
     background: white !important;
     color: black !important;
     border: 1px solid #ccc !important;
+    box-shadow: none !important;
   }
   
   .detail-row label,
   .detail-row span,
   .security-note h4,
-  .security-note p {
+  .security-note p,
+  .stat-card h3,
+  .stat-card p,
+  .account-header h1,
+  .account-header p {
     color: black !important;
   }
+  
+  .edit-btn, .save-btn, .cancel-btn,
+  .change-password-btn,
+  .tab-btn {
+    display: none !important;
+  }
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: #1a1f24;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #e0c16d;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #d4b667;
+}
+
+button:focus,
+input:focus {
+  outline: 2px solid #4a90e2;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.detail-row span,
+.security-note p,
+.stat-card p,
+.account-header p {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+button,
+input,
+.sidebar-btn,
+.tab-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
