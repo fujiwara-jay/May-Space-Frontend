@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../cssfiles/Bookings.css";
 
 function Bookings() {
-  const API_BASE = process.env.REACT_APP_API_URL || "https://may-space-backend.onrender.com";
+  const API_BASE = "https://may-space-backend.onrender.com";
   
   const formatPrice = (price) => {
     if (!price) return "Not specified";
@@ -32,30 +32,11 @@ function Bookings() {
   const [actionMessage, setActionMessage] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [availableUnitsForReBooking, setAvailableUnitsForReBooking] = useState([]);
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
   const handleBack = () => {
     navigate(-1);
-  };
-
-   const checkAvailableUnitsForReBooking = () => {
-    const reBookableUnits = myBookings
-      .filter(booking => 
-        booking.status === 'denied' && 
-        !availableUnitsForReBooking.some(unit => unit.unit_id === booking.unit_id)
-      )
-      .map(booking => ({
-        unit_id: booking.unit_id,
-        unit_number: booking.unit_number,
-        building_name: booking.building_name,
-        location: booking.location,
-        price: booking.unitPrice || booking.unit_price || booking.price,
-        denied_date: booking.created_at
-      }));
-    
-    setAvailableUnitsForReBooking(reBookableUnits);
   };
 
   const checkForNewBookings = () => {
@@ -101,8 +82,6 @@ function Bookings() {
   const handleStatusUpdate = async (bookingId, status) => {
     setActionMessage("");
     try {
-      console.log(`Updating booking ${bookingId} to status: ${status}`);
-      
       const res = await fetch(`${API_BASE}/bookings/${bookingId}/status`, {
         method: "PUT",
         headers: {
@@ -112,23 +91,18 @@ function Bookings() {
         body: JSON.stringify({ status }),
       });
       
-      console.log(`Response status: ${res.status}`);
-      
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("Error response:", errorText);
-        
+        let errorData;
         try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.message || `HTTP ${res.status}: Failed to update booking`);
+          errorData = JSON.parse(errorText);
         } catch {
           throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
+        throw new Error(errorData.message || `Failed to update booking`);
       }
       
       const data = await res.json();
-      console.log("Success response:", data);
-      
       setActionMessage(`Booking ${status} successfully!`);
       setNotifications(prev => prev.filter(notif => notif.bookingId !== bookingId));
       
@@ -141,15 +115,6 @@ function Bookings() {
       console.error("Status update error:", err);
       setActionMessage(`Failed to update booking: ${err.message}`);
     }
-  };
-
-  const handleReBookUnit = (unit) => {
-    navigate('/unitfinder', { 
-      state: { 
-        reBookUnit: unit,
-        message: "You can now re-book this unit. Find it in the unit list."
-      } 
-    });
   };
 
   const fetchBookings = async () => {
@@ -165,13 +130,10 @@ function Bookings() {
         "X-User-ID": userId 
       };
 
-      console.log("Fetching bookings for user:", userId);
-      
+      // Fetch my bookings
       const myRes = await fetch(`${API_BASE}/bookings/my`, { 
         headers,
       });
-      
-      console.log("My bookings response status:", myRes.status);
       
       if (!myRes.ok) {
         if (myRes.status === 401) {
@@ -182,19 +144,22 @@ function Bookings() {
         }
         
         const errorText = await myRes.text();
-        console.error("My bookings error response:", errorText);
-        throw new Error(`Failed to fetch my bookings: HTTP ${myRes.status}`);
+        let myData;
+        try {
+          myData = JSON.parse(errorText);
+        } catch {
+          throw new Error(`Failed to fetch my bookings: HTTP ${myRes.status}`);
+        }
+        throw new Error(myData.message || `Failed to fetch my bookings`);
       }
       
       const myData = await myRes.json();
-      console.log("My bookings data received:", myData);
       setMyBookings(myData.bookings || myData || []);
 
+      // Fetch rented units bookings
       const rentedRes = await fetch(`${API_BASE}/bookings/rented`, { 
         headers,
       });
-      
-      console.log("Rented bookings response status:", rentedRes.status);
       
       if (!rentedRes.ok) {
         if (rentedRes.status === 401) {
@@ -205,12 +170,16 @@ function Bookings() {
         }
         
         const errorText = await rentedRes.text();
-        console.error("Rented bookings error response:", errorText);
-        throw new Error(`Failed to fetch rented bookings: HTTP ${rentedRes.status}`);
+        let rentedData;
+        try {
+          rentedData = JSON.parse(errorText);
+        } catch {
+          throw new Error(`Failed to fetch rented bookings: HTTP ${rentedRes.status}`);
+        }
+        throw new Error(rentedData.message || `Failed to fetch rented bookings`);
       }
       
       const rentedData = await rentedRes.json();
-      console.log("Rented bookings data received:", rentedData);
       setRentedUnits(rentedData.bookings || rentedData || []);
       
     } catch (err) {
@@ -236,12 +205,6 @@ function Bookings() {
       checkForNewBookings();
     }
   }, [rentedUnits]);
-
-  useEffect(() => {
-    if (myBookings.length > 0) {
-      checkAvailableUnitsForReBooking();
-    }
-  }, [myBookings]);
 
   return (
     <div className="bookings-container">
@@ -317,39 +280,6 @@ function Bookings() {
       {error && <div className="error-message">{error}</div>}
       {actionMessage && <div className="action-message">{actionMessage}</div>}
 
-      {/* Re-bookable Units Section - Only show if there are denied bookings */}
-      {availableUnitsForReBooking.length > 0 && (
-        <div className="bookings-section rebook-section">
-          <h3>📋 Units Available for Re-booking</h3>
-          <p className="section-subtitle">These units were denied. You can book them again:</p>
-          <div className="booking-list">
-            {availableUnitsForReBooking.map((unit) => (
-              <div key={unit.unit_id} className="booking-card rebook-card">
-                <div className="booking-info">
-                  <div><strong>Unit:</strong> {unit.unit_number} ({unit.building_name})</div>
-                  <div><strong>Location:</strong> {unit.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(unit.price)}</div>
-                  <div><strong>Status:</strong> 
-                    <span className="status-denied">
-                      Available for Re-booking
-                    </span>
-                  </div>
-                  <div><strong>Last Booking Date:</strong> {formatDate(unit.denied_date)}</div>
-                </div>
-                <div className="booking-actions">
-                  <button 
-                    className="rebook-btn"
-                    onClick={() => handleReBookUnit(unit)}
-                  >
-                    Re-book This Unit
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="bookings-section">
         <h3>📅 My Bookings</h3>
         <div className="booking-list">
@@ -395,18 +325,9 @@ function Bookings() {
                     </div>
                   )}
                   {booking.status === 'denied' && (
-                    <button 
-                      className="rebook-btn"
-                      onClick={() => handleReBookUnit({
-                        unit_id: booking.unit_id,
-                        unit_number: booking.unit_number,
-                        building_name: booking.building_name,
-                        location: booking.location,
-                        price: booking.unitPrice || booking.unit_price || booking.price
-                      })}
-                    >
-                      Re-book Unit
-                    </button>
+                    <div className="denied-message">
+                      ❌ Denied - You can re-book this unit from Unit Finder
+                    </div>
                   )}
                   {booking.status === 'pending' && (
                     <div className="pending-message">
