@@ -41,13 +41,6 @@ body {
 .bookings-section h3 {
   color: #e0c16d;
   margin-bottom: 12px;
-  font-size: 1.3rem;
-}
-
-.section-subtitle {
-  color: #a0aec0;
-  margin-bottom: 20px;
-  font-size: 0.95rem;
 }
 
 .booking-list {
@@ -72,11 +65,6 @@ body {
   transform: translateY(-2px);
 }
 
-.rebook-card {
-  border-left: 4px solid #4caf50;
-  background: rgba(76, 175, 80, 0.05);
-}
-
 .booking-info div {
   margin-bottom: 8px;
   line-height: 1.4;
@@ -95,39 +83,21 @@ body {
 }
 
 .status-pending {
-  color: #e0c16d !important;
-  font-weight: bold;
+  color: #ff9800;
+  font-weight: 600;
 }
 
 .status-confirmed {
-  color: #4CAF50 !important;
-  font-weight: bold;
+  color: #4caf50;
+  font-weight: 600;
 }
 
 .status-denied {
-  color: #f44336 !important;
-  font-weight: bold;
+  color: #f44336;
+  font-weight: 600;
 }
 
-.confirmed-note, .denied-note, .pending-note {
-  font-size: 12px;
-  margin-left: 5px;
-  color: #a0aec0;
-}
-
-.confirmed-note {
-  color: #81c784;
-}
-
-.denied-note {
-  color: #ef9a9a;
-}
-
-.pending-note {
-  color: #ffd54f;
-}
-
-.confirm-btn, .deny-btn, .rebook-btn {
+.confirm-btn, .deny-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 10px;
@@ -137,92 +107,26 @@ body {
   margin-right: 10px;
   margin-top: 8px;
   transition: all 0.3s ease;
-  font-size: 14px;
 }
 
 .confirm-btn {
-  background-color: #28a745 !important;
-  background: linear-gradient(135deg, #28a745, #218838);
+  background: linear-gradient(135deg, #4caf50, #45a049);
   color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
 }
 
 .confirm-btn:hover {
-  background: linear-gradient(135deg, #218838, #1e7e34);
-  background-color: #218838 !important;
+  background: linear-gradient(135deg, #45a049, #3d8b40);
   transform: scale(1.05);
 }
 
 .deny-btn {
-  background-color: #ffc107 !important;
-  background: linear-gradient(135deg, #ffc107, #e0a800);
-  color: #212529;
-  padding: 8px 16px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #e57373, #d32f2f);
+  color: white;
 }
 
 .deny-btn:hover {
-  background: linear-gradient(135deg, #e0a800, #d39e00);
-  background-color: #e0a800 !important;
+  background: linear-gradient(135deg, #d32f2f, #b71c1c);
   transform: scale(1.05);
-}
-
-.rebook-btn {
-  background-color: #17a2b8 !important;
-  background: linear-gradient(135deg, #17a2b8, #138496);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-}
-
-.rebook-btn:hover {
-  background: linear-gradient(135deg, #138496, #117a8b);
-  background-color: #138496 !important;
-  transform: scale(1.05);
-}
-
-.confirmed-message, .owner-confirmed-message {
-  color: #4caf50;
-  font-weight: 600;
-  padding: 8px 12px;
-  background: rgba(76, 175, 80, 0.1);
-  border-radius: 6px;
-  margin-top: 10px;
-  font-size: 14px;
-  text-align: center;
-}
-
-.owner-denied-message {
-  color: #f44336;
-  font-weight: 600;
-  padding: 8px 12px;
-  background: rgba(244, 67, 54, 0.1);
-  border-radius: 6px;
-  margin-top: 10px;
-  font-size: 14px;
-  text-align: center;
-}
-
-.pending-message {
-  color: #ff9800;
-  font-weight: 600;
-  padding: 8px 12px;
-  background: rgba(255, 152, 0, 0.1);
-  border-radius: 6px;
-  margin-top: 10px;
-  font-size: 14px;
-  text-align: center;
-}
-
-.booking-actions {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #4a5a6a;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
 }
 
 .notifications-container {
@@ -256,12 +160,11 @@ body {
   position: absolute;
   top: -5px;
   right: -5px;
-  background-color: #dc3545 !important;
   background: #ff4757;
   color: white;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   font-size: 0.7rem;
   font-weight: bold;
   display: flex;
@@ -270,7 +173,6 @@ body {
   animation: pulse 2s infinite;
   border: 2px solid #2c363f;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  padding: 0;
 }
 
 @keyframes pulse {
@@ -364,91 +266,6 @@ body {
   text-align: right;
 }
 
-.loading {
-  text-align: center;
-  padding: 20px;
-  color: #e0c16d;
-  font-size: 1.1rem;
-}
-
-.error-message {
-  background: rgba(244, 67, 54, 0.1);
-  color: #f44336;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  border-left: 4px solid #f44336;
-  font-size: 0.95rem;
-}
-
-.success-message {
-  background: rgba(76, 175, 80, 0.1);
-  color: #4caf50;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  border-left: 4px solid #4caf50;
-  font-size: 0.95rem;
-}
-
-.action-message {
-  background-color: rgba(224, 193, 109, 0.9);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 8px;
-  margin: 10px 0;
-  text-align: center;
-  font-weight: bold;
-  border-left: 4px solid #e0c16d;
-}
-
-.no-inquiries {
-  text-align: center;
-  padding: 30px;
-  color: #a0aec0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  font-style: italic;
-}
-
-.back-button {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: #4a5a6a;
-  color: #f7e7b6;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.back-button:hover {
-  background: #5a6a7a;
-  transform: translateX(-2px);
-}
-
-.rebook-section {
-  background-color: rgba(248, 249, 250, 0.05);
-  border: 1px solid #e0c16d;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 25px;
-  color: #f7e7b6;
-}
-
-.rebook-section h3 {
-  color: #e0c16d;
-  margin-top: 0;
-}
-
-.rebook-section .section-subtitle {
-  color: #a0aec0;
-  margin-bottom: 15px;
-}
-
 @media (max-width: 768px) {
   .bookings-container {
     margin: 20px;
@@ -459,21 +276,6 @@ body {
     width: 280px;
     right: -50px;
   }
-
-  .booking-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .confirm-btn, .deny-btn, .rebook-btn {
-    margin-right: 0;
-    width: 100%;
-  }
-  
-  .bookings-header {
-    font-size: 1.4rem;
-    letter-spacing: 0.15em;
-  }
 }
 
 @media (max-width: 480px) {
@@ -483,21 +285,11 @@ body {
   }
 
   .bookings-header {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
   }
 
   .notifications-dropdown {
     width: 250px;
     right: -80px;
-  }
-  
-  .booking-card {
-    padding: 15px;
-  }
-  
-  .notifications-bell {
-    width: 45px;
-    height: 45px;
-    font-size: 1.3rem;
   }
 }

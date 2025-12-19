@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "../cssfiles/Bookings.css";
 
 function Bookings() {
-  const API_BASE = "https://may-space-backend.onrender.com";
-  
   const formatPrice = (price) => {
     if (!price) return "Not specified";
     const numPrice = typeof price === 'string' ? parseFloat(price) : price;
@@ -82,7 +80,7 @@ function Bookings() {
   const handleStatusUpdate = async (bookingId, status) => {
     setActionMessage("");
     try {
-      const res = await fetch(`${API_BASE}/bookings/${bookingId}/status`, {
+      const res = await fetch(`https://may-space-backend.onrender.com/bookings/${bookingId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -90,30 +88,14 @@ function Bookings() {
         },
         body: JSON.stringify({ status }),
       });
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          throw new Error(`HTTP ${res.status}: ${errorText}`);
-        }
-        throw new Error(errorData.message || `Failed to update booking`);
-      }
-      
       const data = await res.json();
-      setActionMessage(`Booking ${status} successfully!`);
+      if (!res.ok) throw new Error(data.message || `Failed to update booking`);
+      setActionMessage(`Booking ${status}`);
       setNotifications(prev => prev.filter(notif => notif.bookingId !== bookingId));
-      
-      setTimeout(() => {
-        fetchBookings();
-        setActionMessage("");
-      }, 1500);
-      
+      setTimeout(() => setActionMessage(""), 2000);
+      fetchBookings();
     } catch (err) {
-      console.error("Status update error:", err);
-      setActionMessage(`Failed to update booking: ${err.message}`);
+      setActionMessage(err.message);
     }
   };
 
@@ -121,69 +103,17 @@ function Bookings() {
     setLoading(true);
     setError(null);
     try {
-      if (!userId) {
-        throw new Error("User not logged in. Please login first.");
-      }
-
-      const headers = { 
-        "Content-Type": "application/json",
-        "X-User-ID": userId 
-      };
-
-      // Fetch my bookings
-      const myRes = await fetch(`${API_BASE}/bookings/my`, { 
-        headers,
-      });
-      
-      if (!myRes.ok) {
-        if (myRes.status === 401) {
-          localStorage.removeItem("userId");
-          localStorage.removeItem("userType");
-          navigate("/home");
-          return;
-        }
-        
-        const errorText = await myRes.text();
-        let myData;
-        try {
-          myData = JSON.parse(errorText);
-        } catch {
-          throw new Error(`Failed to fetch my bookings: HTTP ${myRes.status}`);
-        }
-        throw new Error(myData.message || `Failed to fetch my bookings`);
-      }
-      
+      const headers = { "X-User-ID": userId };
+      const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
       const myData = await myRes.json();
-      setMyBookings(myData.bookings || myData || []);
+      if (!myRes.ok) throw new Error(myData.message || "Failed to fetch my bookings");
+      setMyBookings(myData.bookings || []);
 
-      // Fetch rented units bookings
-      const rentedRes = await fetch(`${API_BASE}/bookings/rented`, { 
-        headers,
-      });
-      
-      if (!rentedRes.ok) {
-        if (rentedRes.status === 401) {
-          localStorage.removeItem("userId");
-          localStorage.removeItem("userType");
-          navigate("/home");
-          return;
-        }
-        
-        const errorText = await rentedRes.text();
-        let rentedData;
-        try {
-          rentedData = JSON.parse(errorText);
-        } catch {
-          throw new Error(`Failed to fetch rented bookings: HTTP ${rentedRes.status}`);
-        }
-        throw new Error(rentedData.message || `Failed to fetch rented bookings`);
-      }
-      
+      const rentedRes = await fetch("https://may-space-backend.onrender.com/bookings/rented", { headers });
       const rentedData = await rentedRes.json();
-      setRentedUnits(rentedData.bookings || rentedData || []);
-      
+      if (!rentedRes.ok) throw new Error(rentedData.message || "Failed to fetch rented bookings");
+      setRentedUnits(rentedData.bookings || []);
     } catch (err) {
-      console.error("Fetch bookings error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -196,9 +126,8 @@ function Bookings() {
       localStorage.setItem(`lastBookingVisit_${userId}`, Date.now());
     } else {
       setLoading(false);
-      navigate("/home");
     }
-  }, [userId, navigate]);
+  }, [userId]);
 
   useEffect(() => {
     if (rentedUnits.length > 0) {
@@ -278,10 +207,10 @@ function Bookings() {
 
       {loading && <div className="loading">Loading bookings...</div>}
       {error && <div className="error-message">{error}</div>}
-      {actionMessage && <div className="action-message">{actionMessage}</div>}
+      {actionMessage && <div className="success-message">{actionMessage}</div>}
 
       <div className="bookings-section">
-        <h3>📅 My Bookings</h3>
+        <h3>My Bookings</h3>
         <div className="booking-list">
           {myBookings.length === 0 ? (
             <div className="no-inquiries">No bookings made yet.</div>
@@ -294,17 +223,8 @@ function Bookings() {
                   <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
                   <div><strong>Status:</strong> 
                     <span className={`status-${booking.status}`}>
-                      {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                      {booking.status}
                     </span>
-                    {booking.status === 'confirmed' && (
-                      <span className="confirmed-note"> (Cannot book this unit again)</span>
-                    )}
-                    {booking.status === 'denied' && (
-                      <span className="denied-note"> (Can be re-booked)</span>
-                    )}
-                    {booking.status === 'pending' && (
-                      <span className="pending-note"> (Awaiting confirmation)</span>
-                    )}
                   </div>
                   <div><strong>Transaction Type:</strong> 
                     <span className="transaction-type">
@@ -318,23 +238,6 @@ function Bookings() {
                   </div>
                   <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
-                <div className="booking-actions">
-                  {booking.status === 'confirmed' && (
-                    <div className="confirmed-message">
-                      ✅ Booking Confirmed - Cannot re-book this unit
-                    </div>
-                  )}
-                  {booking.status === 'denied' && (
-                    <div className="denied-message">
-                      ❌ Denied - You can re-book this unit from Unit Finder
-                    </div>
-                  )}
-                  {booking.status === 'pending' && (
-                    <div className="pending-message">
-                      ⏳ Booking Pending - Awaiting owner's confirmation
-                    </div>
-                  )}
-                </div>
               </div>
             ))
           )}
@@ -342,7 +245,7 @@ function Bookings() {
       </div>
 
       <div className="bookings-section">
-        <h3>🏠 My Rented Units (Bookings for My Units)</h3>
+        <h3>My Rented Units (Bookings for My Units)</h3>
         <div className="booking-list">
           {rentedUnits.length === 0 ? (
             <div className="no-inquiries">No one has booked your units yet.</div>
@@ -356,7 +259,7 @@ function Bookings() {
                   <div><strong>Booked By:</strong> {booking.name}</div>
                   <div><strong>Status:</strong> 
                     <span className={`status-${booking.status}`}>
-                      {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                      {booking.status}
                     </span>
                   </div>
                   <div><strong>Transaction Type:</strong> 
@@ -374,24 +277,12 @@ function Bookings() {
                 <div className="booking-actions">
                   {booking.status === "pending" && (
                     <>
-                      <button className="confirm-btn" onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
-                        Confirm
-                      </button>
-                      <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>
-                        Deny
-                      </button>
+                      <button className="confirm-btn" onClick={() => handleStatusUpdate(booking.id, "confirmed")}>Confirm</button>
+                      <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>Deny</button>
                     </>
                   )}
-                  {booking.status === "confirmed" && (
-                    <div className="owner-confirmed-message">
-                      ✅ Confirmed - User cannot re-book this unit
-                    </div>
-                  )}
-                  {booking.status === "denied" && (
-                    <div className="owner-denied-message">
-                      ❌ Denied - User can re-book this unit
-                    </div>
-                  )}
+                  {booking.status === "confirmed" && <span style={{ color: '#4caf50', fontWeight: 700 }}>Confirmed</span>}
+                  {booking.status === "denied" && <span style={{ color: '#e57373', fontWeight: 700 }}>Denied</span>}
                 </div>
               </div>
             ))
