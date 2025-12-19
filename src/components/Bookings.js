@@ -40,11 +40,10 @@ function Bookings() {
     navigate(-1);
   };
 
-  // Check which units can be re-booked (denied or canceled bookings)
-  const checkAvailableUnitsForReBooking = () => {
+   const checkAvailableUnitsForReBooking = () => {
     const reBookableUnits = myBookings
       .filter(booking => 
-        (booking.status === 'denied' || booking.status === 'cancelled') && 
+        booking.status === 'denied' && 
         !availableUnitsForReBooking.some(unit => unit.unit_id === booking.unit_id)
       )
       .map(booking => ({
@@ -153,52 +152,6 @@ function Bookings() {
     });
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking? This action cannot be undone.")) return;
-    
-    setActionMessage("");
-    try {
-      console.log(`Cancelling booking ${bookingId}`);
-      
-      // Use the cancel endpoint
-      const res = await fetch(`${API_BASE}/bookings/${bookingId}/cancel`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-ID": userId,
-        },
-      });
-      
-      console.log(`Cancel response status: ${res.status}`);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorMessage;
-        
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || `Failed to cancel booking`;
-        } catch {
-          errorMessage = `HTTP ${res.status}: ${errorText}`;
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      const data = await res.json();
-      setActionMessage(data.message || "Booking cancelled successfully!");
-      
-      setTimeout(() => {
-        fetchBookings();
-        setActionMessage("");
-      }, 1500);
-      
-    } catch (err) {
-      console.error("Cancel booking error:", err);
-      setActionMessage(`Failed to cancel booking: ${err.message}`);
-    }
-  };
-
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
@@ -214,7 +167,6 @@ function Bookings() {
 
       console.log("Fetching bookings for user:", userId);
       
-      // Fetch my bookings
       const myRes = await fetch(`${API_BASE}/bookings/my`, { 
         headers,
       });
@@ -238,7 +190,6 @@ function Bookings() {
       console.log("My bookings data received:", myData);
       setMyBookings(myData.bookings || myData || []);
 
-      // Fetch rented units bookings
       const rentedRes = await fetch(`${API_BASE}/bookings/rented`, { 
         headers,
       });
@@ -366,11 +317,11 @@ function Bookings() {
       {error && <div className="error-message">{error}</div>}
       {actionMessage && <div className="action-message">{actionMessage}</div>}
 
-      {/* Re-bookable Units Section */}
+      {/* Re-bookable Units Section - Only show if there are denied bookings */}
       {availableUnitsForReBooking.length > 0 && (
         <div className="bookings-section rebook-section">
           <h3>📋 Units Available for Re-booking</h3>
-          <p className="section-subtitle">These units were denied or cancelled. You can book them again:</p>
+          <p className="section-subtitle">These units were denied. You can book them again:</p>
           <div className="booking-list">
             {availableUnitsForReBooking.map((unit) => (
               <div key={unit.unit_id} className="booking-card rebook-card">
@@ -421,8 +372,8 @@ function Bookings() {
                     {booking.status === 'denied' && (
                       <span className="denied-note"> (Can be re-booked)</span>
                     )}
-                    {booking.status === 'cancelled' && (
-                      <span className="cancelled-note"> (Can be re-booked)</span>
+                    {booking.status === 'pending' && (
+                      <span className="pending-note"> (Awaiting confirmation)</span>
                     )}
                   </div>
                   <div><strong>Transaction Type:</strong> 
@@ -438,20 +389,12 @@ function Bookings() {
                   <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
                 <div className="booking-actions">
-                  {booking.status === 'pending' && (
-                    <button 
-                      className="cancel-btn"
-                      onClick={() => handleCancelBooking(booking.id)}
-                    >
-                      Cancel Booking
-                    </button>
-                  )}
                   {booking.status === 'confirmed' && (
                     <div className="confirmed-message">
-                      ✅ Booking Confirmed - Cannot re-book
+                      ✅ Booking Confirmed - Cannot re-book this unit
                     </div>
                   )}
-                  {(booking.status === 'denied' || booking.status === 'cancelled') && (
+                  {booking.status === 'denied' && (
                     <button 
                       className="rebook-btn"
                       onClick={() => handleReBookUnit({
@@ -464,6 +407,11 @@ function Bookings() {
                     >
                       Re-book Unit
                     </button>
+                  )}
+                  {booking.status === 'pending' && (
+                    <div className="pending-message">
+                      ⏳ Booking Pending - Awaiting owner's confirmation
+                    </div>
                   )}
                 </div>
               </div>
@@ -505,23 +453,22 @@ function Bookings() {
                 <div className="booking-actions">
                   {booking.status === "pending" && (
                     <>
-                      <button className="confirm-btn" onClick={() => handleStatusUpdate(booking.id, "confirmed")}>Confirm</button>
-                      <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>Deny</button>
+                      <button className="confirm-btn" onClick={() => handleStatusUpdate(booking.id, "confirmed")}>
+                        Confirm
+                      </button>
+                      <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>
+                        Deny
+                      </button>
                     </>
                   )}
                   {booking.status === "confirmed" && (
                     <div className="owner-confirmed-message">
-                      ✅ Confirmed - User cannot re-book
+                      ✅ Confirmed - User cannot re-book this unit
                     </div>
                   )}
                   {booking.status === "denied" && (
                     <div className="owner-denied-message">
-                      ❌ Denied - User can re-book
-                    </div>
-                  )}
-                  {booking.status === "cancelled" && (
-                    <div className="owner-cancelled-message">
-                      📝 Cancelled by User - Can be re-booked
+                      ❌ Denied - User can re-book this unit
                     </div>
                   )}
                 </div>
