@@ -229,11 +229,6 @@ const UnitFinder = () => {
     navigate("/studentProjects");
   };
 
-  const handleProjectToolsClick = () => {
-    setSidebarOpen(false);
-    navigate("/tools");
-  };
-
   const handlePrivacyPolicyClick = () => {
     setSidebarOpen(false);
     navigate("/privacy-policy");
@@ -752,12 +747,6 @@ const UnitFinder = () => {
             onClick={handleStudentProjectsClick}
           >
             🎓 Student Projects
-          </button>
-          <button 
-            className="sidebar-btn"
-            onClick={handleProjectToolsClick}
-          >
-            🛠️ Project Tools
           </button>
           <button 
             className="sidebar-btn"

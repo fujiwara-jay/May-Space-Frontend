@@ -344,11 +344,6 @@ const MyAccount = () => {
     navigate("/studentProjects");
   };
 
-  const handleProjectToolsClick = () => {
-    setSidebarOpen(false);
-    navigate("/tools");
-  };
-
   const handlePrivacyPolicyClick = () => {
     setSidebarOpen(false);
     navigate("/privacy-policy");
@@ -423,12 +418,6 @@ const MyAccount = () => {
             onClick={handleStudentProjectsClick}
           >
             🎓 Student Projects
-          </button>
-          <button 
-            className="sidebar-btn"
-            onClick={handleProjectToolsClick}
-          >
-            🛠️ Project Tools
           </button>
           
           <div className="sidebar-divider"></div>

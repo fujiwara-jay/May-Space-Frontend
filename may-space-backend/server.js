@@ -717,6 +717,56 @@ app.put('/bookings/:id/status', async (req, res) => {
   }
 });
 
+// Cancel a booking (user cancels their own booking)
+app.put('/bookings/:id/cancel', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  const bookingId = req.params.id;
+  
+  if (!userId || !bookingId) {
+    return res.status(400).json({ message: 'Invalid request' });
+  }
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Check if booking exists and belongs to this user
+    const [rows] = await connection.execute(
+      'SELECT * FROM bookings WHERE id = ? AND user_id = ?',
+      [bookingId, userId]
+    );
+    
+    if (rows.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'Booking not found or you are not authorized to cancel this booking' });
+    }
+    
+    // Check if booking is already confirmed or cancelled
+    const booking = rows[0];
+    if (booking.status === 'confirmed') {
+      await connection.end();
+      return res.status(400).json({ message: 'Cannot cancel a confirmed booking' });
+    }
+    
+    if (booking.status === 'cancelled') {
+      await connection.end();
+      return res.status(400).json({ message: 'Booking is already cancelled' });
+    }
+    
+    // Update booking status to cancelled
+    await connection.execute(
+      'UPDATE bookings SET status = ? WHERE id = ?',
+      ['cancelled', bookingId]
+    );
+    
+    await connection.end();
+    res.status(200).json({ message: 'Booking cancelled successfully' });
+    
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    res.status(500).json({ message: 'Failed to cancel booking' });
+  }
+});
+
 // --- Admin User Management Endpoints ---
 
 // Fetch all users (admin view)

@@ -9,7 +9,6 @@ import Bookings from "./components/Bookings";
 import Inquiries from "./components/Inquiries";
 import ForgotPassword from "./components/ForgotPassword";
 import StudentProjects from './components/StudentProjects';
-import ProjectTools from "./components/ProjectTools";
 import AdminRegister from "./components/AdminRegister";
 import UserRegister from "./components/UserRegister";
 import AdminDashboard from "./components/AdminDashboard";
@@ -49,7 +48,6 @@ function App() {
 
           {/* Project-related pages */}
           <Route path="/StudentProjects" element={<StudentProjects />} />
-          <Route path="/tools" element={<ProjectTools />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         </Routes>
       </Router>

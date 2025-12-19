@@ -3,14 +3,13 @@ const open = require('open');
 const { google } = require('googleapis');
 require('dotenv').config();
 
-// Use the same Gmail OAuth2 credentials as Mailer.js and your backend
 const CLIENT_ID = process.env.GMAIL_CLIENT_ID;
 const CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost:3000/oauth2callback';
 const PORT = 3000;
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
-  console.error('Please set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in your .env file before running.');
+  console.error('Please set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in your environment before running.');
   process.exit(1);
 }
 
@@ -41,14 +40,7 @@ const server = http.createServer(async (req, res) => {
     res.end('Success! You can close this tab. Check the terminal for the refresh token.');
     console.log('Tokens received:');
     console.log(JSON.stringify(tokens, null, 2));
-    console.log('\nCopy the refresh_token value into your .env file as GMAIL_REFRESH_TOKEN.');
-    console.log('Example .env setup for Mailer.js, server.js, and Forgotpassword.js integration:');
-    console.log('GMAIL_CLIENT_ID=' + CLIENT_ID);
-    console.log('GMAIL_CLIENT_SECRET=' + CLIENT_SECRET);
-    console.log('GMAIL_REFRESH_TOKEN=' + tokens.refresh_token);
-    console.log('EMAIL_FROM=your_gmail_address@gmail.com');
-    console.log('AUDIT_EMAIL=tenantmaintenanceportal@gmail.com');
-    console.log('\nAfter updating .env, restart your backend to use Gmail API for OTP emails.');
+    console.log('\nCopy the refresh_token value into your env file under GMAIL_REFRESH_TOKEN.');
   } catch (err) {
     console.error('Failed to exchange code for tokens:', err);
     res.writeHead(500, { 'Content-Type': 'text/plain' });
