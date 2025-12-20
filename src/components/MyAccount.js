@@ -55,6 +55,8 @@ const MyAccount = () => {
     setError("");
     
     try {
+      console.log("Fetching user data for ID:", userId);
+      
       const response = await fetch(`${API_BASE}/user/profile`, {
         method: "GET",
         headers: {
@@ -64,20 +66,14 @@ const MyAccount = () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = `HTTP ${response.status}`;
-        
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
+        if (response.status === 404) {
+          throw new Error("User profile endpoint not found. Please check the backend server.");
         }
-        
-        throw new Error(errorMessage);
+        throw new Error(`HTTP ${response.status}: Failed to fetch user data`);
       }
 
       const data = await response.json();
+      console.log("User data received:", data);
       
       if (mountedRef.current) {
         const user = data.user || data;
@@ -86,7 +82,7 @@ const MyAccount = () => {
           username: user.username || "",
           email: user.email || "",
           contactNumber: user.contactNumber || user.contact_number || "",
-          userType: user.userType || user.user_type || "",
+          userType: user.userType || user.user_type || "User",
           createdAt: user.createdAt || user.created_at || ""
         });
         setEditedData({
@@ -475,7 +471,7 @@ const MyAccount = () => {
                   className="edit-btn"
                   onClick={() => setEditMode(true)}
                 >
-                    Edit Profile
+                  ✏️ Edit Profile
                 </button>
               ) : (
                 <div className="edit-actions">
@@ -501,7 +497,7 @@ const MyAccount = () => {
               <div className="detail-row">
                 <label>User Type:</label>
                 <div className="user-type-badge">
-                  {userData.userType || userType || "User"}
+                  {userData.userType}
                 </div>
               </div>
 
@@ -551,7 +547,7 @@ const MyAccount = () => {
                     value={editedData.contactNumber || ""}
                     onChange={handleInputChange}
                     className="edit-input"
-                    placeholder="Enter your contact number (e.g., 09123456789)"
+                    placeholder="Enter your contact number"
                   />
                 ) : (
                   <span>{userData.contactNumber || "Not provided"}</span>
@@ -561,6 +557,11 @@ const MyAccount = () => {
               <div className="detail-row">
                 <label>User ID:</label>
                 <span className="user-id">{userId}</span>
+              </div>
+
+              <div className="detail-row">
+                <label>Account Created:</label>
+                <span>{userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}</span>
               </div>
             </div>
           </div>
@@ -624,11 +625,7 @@ const MyAccount = () => {
 
         <div className="account-stats">
           <div className="stat-card">
-            <h3>Account Created</h3>
-            <p>{userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "N/A"}</p>
-          </div>
-          <div className="stat-card">
-            <h3>Status</h3>
+            <h3>Account Status</h3>
             <p className="status-active">Active</p>
           </div>
         </div>

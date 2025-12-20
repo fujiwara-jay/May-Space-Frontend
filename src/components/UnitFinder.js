@@ -585,7 +585,6 @@ const UnitFinder = () => {
           {actionMessage && <div className="success-message">{actionMessage}</div>}
           <div className="inquiry-info">
             <p><strong>Contact Person:</strong> {modalUnit?.contact_person}</p>
-            <p><strong>Phone:</strong> {modalUnit?.phone_number}</p>
             <p><strong>Price:</strong> {formatPrice(modalUnit?.unitPrice || modalUnit?.price)}</p>
             <p><strong>Status:</strong> 
               {modalUnit?.is_available === 0 || modalUnit?.is_available === false ? 
@@ -629,7 +628,6 @@ const UnitFinder = () => {
           <div className="property-details">
             <p><strong>Building:</strong> {modalUnit.building_name}</p>
             <p><strong>Contact Person:</strong> {modalUnit.contact_person}</p>
-            <p><strong>Phone Number:</strong> {modalUnit.phone_number}</p>
             <p><strong>Specifications:</strong> {modalUnit.specifications}</p>
             <p><strong>Special Features:</strong> {modalUnit.special_features}</p>
             <p><strong>Price:</strong> {formatPrice(modalUnit.unitPrice || modalUnit.price)}</p>
