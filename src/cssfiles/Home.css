@@ -287,7 +287,7 @@
   padding: 25px;
   text-align: center;
   transition: all 0.3s ease;
-  cursor: pointer;
+  cursor: default;
 }
 
 .register-option:hover {
@@ -327,11 +327,107 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-family: inherit;
+  width: 100%;
 }
 
 .option-btn:hover {
   background: #f7e7b6;
   box-shadow: 0 6px 15px rgba(224, 193, 109, 0.4);
+}
+
+.admin-option {
+  background: linear-gradient(135deg, #3d4852 0%, #2c363f 100%);
+  border: 2px solid #3d4852;
+  opacity: 1;
+  filter: none;
+  animation: revealAnimation 0.5s ease;
+}
+
+@keyframes revealAnimation {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 700;
+}
+
+.admin-btn:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+}
+
+.placeholder-option {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  border: 2px dashed #444;
+  opacity: 0.7;
+}
+
+.placeholder-option .option-icon {
+  color: #666;
+}
+
+.placeholder-option h4 {
+  color: #888;
+}
+
+.placeholder-option p {
+  color: #666;
+}
+
+.placeholder-btn {
+  background: #444;
+  color: #888;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: not-allowed;
+  width: 100%;
+  font-family: inherit;
+}
+
+.secret-instruction {
+  margin-top: 25px;
+  padding: 12px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 8s ease;
+  user-select: none;
+  pointer-events: none;
+}
+
+.secret-instruction:hover {
+  opacity: 0.05;
+}
+
+.secret-content {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(224, 193, 109, 0.05);
+}
+
+.secret-text {
+  color: rgba(224, 193, 109, 0.15);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.secret-text .key-hint {
+  font-family: 'Courier New', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(224, 193, 109, 0.1);
 }
 
 .modal-content h3 {
@@ -427,6 +523,11 @@
     padding: 10px 0;
   }
   
+  .admin-option {
+    animation: none;
+  }
+}
+
 @media (min-width: 1440px) {
   .about-btn {
     top: 50px;
@@ -434,7 +535,4 @@
     padding: 14px 28px;
     font-size: 16px;
   }
-
-  }
-
-} 
+}

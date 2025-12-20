@@ -8,7 +8,26 @@ function Home() {
   const [error, setError] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!showRegisterModal) return;
+
+    const handleKeyDown = (e) => {
+      if (e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setAdminUnlocked(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      setAdminUnlocked(false);
+    };
+  }, [showRegisterModal]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -98,11 +117,13 @@ function Home() {
   
   const handleRegisterAsUser = useCallback(() => { 
     setShowRegisterModal(false); 
+    setAdminUnlocked(false);
     navigate("/register/user"); 
   }, [navigate]);
   
   const handleRegisterAsAdmin = useCallback(() => { 
     setShowRegisterModal(false); 
+    setAdminUnlocked(false);
     navigate("/register/admin"); 
   }, [navigate]);
 
@@ -113,6 +134,12 @@ function Home() {
 
   const handleCloseModal = useCallback(() => {
     setShowRegisterModal(false);
+    setAdminUnlocked(false);
+  }, []);
+
+  const handleOpenRegisterModal = useCallback(() => {
+    setShowRegisterModal(true);
+    setAdminUnlocked(false);
   }, []);
 
   useEffect(() => {
@@ -208,7 +235,7 @@ function Home() {
               </button>
               <button 
                 type="button" 
-                onClick={() => setShowRegisterModal(true)} 
+                onClick={handleOpenRegisterModal} 
                 className="action-link" 
                 disabled={isLoading}
               >
@@ -240,9 +267,9 @@ function Home() {
               ×
             </button>
             <h3>Create Account</h3>
-            <p>Choose your account type</p>
+            <p>Register as a user to find rental units</p>
             <div className="register-options">
-              <div className="register-option">
+              <div className="register-option single-option">
                 <div className="option-icon">👤</div>
                 <h4>Register as User</h4>
                 <p>Find and book rental units</p>
@@ -255,19 +282,22 @@ function Home() {
                   Create User Account
                 </button>
               </div>
-              <div className="register-option">
-                <div className="option-icon">⚙️</div>
-                <h4>Register as Admin</h4>
-                <p>Manage units and system</p>
-                <button 
-                  onClick={handleRegisterAsAdmin} 
-                  className="option-btn"
-                  type="button"
-                  disabled={isLoading}
-                >
-                  Create Admin Account
-                </button>
-              </div>
+              
+              {adminUnlocked && (
+                <div className="register-option admin-option">
+                  <div className="option-icon">⚙️</div>
+                  <h4>Register as Admin</h4>
+                  <p>Manage units and system</p>
+                  <button 
+                    onClick={handleRegisterAsAdmin} 
+                    className="option-btn admin-btn"
+                    type="button"
+                    disabled={isLoading}
+                  >
+                    Create Admin Account
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
