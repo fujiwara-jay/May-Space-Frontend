@@ -53,6 +53,7 @@ const UnitFinder = () => {
   const [actionMessage, setActionMessage] = useState(null);
   const [tooltip, setTooltip] = useState({ show: false, target: null });
   const [loading, setLoading] = useState(false);
+  const [userBookings, setUserBookings] = useState([]);
 
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType");
@@ -63,6 +64,9 @@ const UnitFinder = () => {
   useEffect(() => {
     mountedRef.current = true;
     fetchAllUnits();
+    if (userId && userId !== "guest") {
+      fetchUserBookings();
+    }
     if (isGuest) {
       setShowGuestPopup(true);
       setTimeout(() => {
@@ -92,6 +96,36 @@ const UnitFinder = () => {
       setFilteredUnits(filtered);
     }
   }, [searchTerm, allUnits]);
+
+  const fetchUserBookings = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/bookings/my`, {
+        headers: getAuthHeaders(),
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setUserBookings(data.bookings || []);
+      }
+    } catch (err) {
+      console.error("Error fetching user bookings:", err);
+    }
+  };
+
+  const getUnitBookingStatus = (unitId) => {
+    const userBooking = userBookings.find(booking => 
+      parseInt(booking.unit_id) === parseInt(unitId)
+    );
+    
+    if (!userBooking) return null;
+    
+    return {
+      status: userBooking.status,
+      canBookAgain: userBooking.status === 'denied',
+      isPending: userBooking.status === 'pending',
+      isConfirmed: userBooking.status === 'confirmed'
+    };
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
@@ -129,11 +163,14 @@ const UnitFinder = () => {
         const imgs = safeParseImages(u.images);
         const images = imgs.map((p) => (p && p.startsWith("/") ? `${API_BASE}${p}` : p));
         const unitPrice = u.unitPrice || u.price || null;
+        const isAvailable = u.is_available !== undefined ? u.is_available : true;
+        
         return {
           ...u,
           images,
           unitPrice,
-          price: unitPrice
+          price: unitPrice,
+          is_available: isAvailable
         };
       });
 
@@ -251,6 +288,32 @@ const UnitFinder = () => {
       return;
     }
 
+    // Check unit availability
+    if (unit.is_available === 0 || unit.is_available === false) {
+      setActionMessage("This unit is no longer available for booking.");
+      return;
+    }
+
+    // Check user's booking status for this unit
+    const bookingStatus = getUnitBookingStatus(unit.id);
+    
+    if (bookingStatus) {
+      if (bookingStatus.isConfirmed) {
+        setActionMessage("You already have a confirmed booking for this unit.");
+        return;
+      }
+      
+      if (bookingStatus.isPending) {
+        setActionMessage("You already have a pending booking for this unit.");
+        return;
+      }
+      
+      if (!bookingStatus.canBookAgain) {
+        setActionMessage("You cannot book this unit at this time.");
+        return;
+      }
+    }
+
     setShowBookingForm(true);
     setShowInquireForm(false);
     setModalUnit(unit);
@@ -310,6 +373,7 @@ const UnitFinder = () => {
     const isValidNumberOfPeople = Number.isInteger(Number(numberOfPeople)) && Number(numberOfPeople) > 0;
     const isValidTransaction = transaction === "Online" || transaction === "Walk-in";
     const isValidUnitId = unitId !== null && unitId !== undefined && !isNaN(Number(unitId));
+    
     if (
       !name?.trim() ||
       !address?.trim() ||
@@ -319,18 +383,6 @@ const UnitFinder = () => {
       !date?.trim() ||
       !isValidUnitId
     ) {
-      console.log("Validation failed:", {
-        name,
-        address,
-        contact,
-        numberOfPeople,
-        transaction,
-        date,
-        unitId,
-        isValidNumberOfPeople,
-        isValidTransaction,
-        isValidUnitId
-      });
       setBookingError("All booking fields are required.");
       return;
     }
@@ -353,7 +405,7 @@ const UnitFinder = () => {
         transaction: transaction === "Online" ? "Online Transaction" : transaction,
         dateVisiting: date.trim(),
       };
-      console.log("Booking payload:", payload);
+      
       const res = await fetch(`${API_BASE}/bookings`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -374,6 +426,10 @@ const UnitFinder = () => {
         date: "",
         unitId: null,
       });
+
+      // Refresh user bookings and units
+      fetchUserBookings();
+      fetchAllUnits();
 
       setTimeout(() => {
         if (mountedRef.current) setModalUnit(null);
@@ -531,6 +587,12 @@ const UnitFinder = () => {
             <p><strong>Contact Person:</strong> {modalUnit?.contact_person}</p>
             <p><strong>Phone:</strong> {modalUnit?.phone_number}</p>
             <p><strong>Price:</strong> {formatPrice(modalUnit?.unitPrice || modalUnit?.price)}</p>
+            <p><strong>Status:</strong> 
+              {modalUnit?.is_available === 0 || modalUnit?.is_available === false ? 
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Booked</span> : 
+                <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span>
+              }
+            </p>
           </div>
           <form onSubmit={handleSubmitInquire}>
             <label>
@@ -557,6 +619,9 @@ const UnitFinder = () => {
       );
     }
 
+    const bookingStatus = getUnitBookingStatus(modalUnit.id);
+    const isUnitAvailable = modalUnit.is_available !== 0 && modalUnit.is_available !== false;
+
     return (
       <>
         <div className="property-info">
@@ -568,6 +633,28 @@ const UnitFinder = () => {
             <p><strong>Specifications:</strong> {modalUnit.specifications}</p>
             <p><strong>Special Features:</strong> {modalUnit.special_features}</p>
             <p><strong>Price:</strong> {formatPrice(modalUnit.unitPrice || modalUnit.price)}</p>
+            <p><strong>Status:</strong> 
+              {isUnitAvailable ? 
+                <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span> : 
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Booked</span>
+              }
+            </p>
+            
+            {bookingStatus && (
+              <div className="user-booking-status">
+                <p><strong>Your Booking Status:</strong> 
+                  <span className={`status-${bookingStatus.status}`}>
+                    {bookingStatus.status.toUpperCase()}
+                  </span>
+                </p>
+                {bookingStatus.status === 'denied' && (
+                  <p className="rebooking-info">You can book this unit again.</p>
+                )}
+                {bookingStatus.status === 'confirmed' && (
+                  <p className="confirmed-info">You have a confirmed booking for this unit.</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -601,9 +688,10 @@ const UnitFinder = () => {
             <button
               className="book-now-btn"
               onClick={(e) => handleBookNowClick(e, modalUnit)}
-              disabled={isGuest || loading}
+              disabled={isGuest || loading || !isUnitAvailable || (bookingStatus && !bookingStatus.canBookAgain && bookingStatus.status !== 'denied')}
             >
-              📅 Book Now
+              {bookingStatus?.status === 'denied' ? '📅 Book Again' : '📅 Book Now'}
+              {!isUnitAvailable && " (Booked)"}
             </button>
             {tooltip.show && tooltip.target === "book" && (
               <div className="button-tooltip">Please Login to use this feature</div>
@@ -814,43 +902,67 @@ const UnitFinder = () => {
         </div>
       ) : (
         <div className="unit-grid">
-          {filteredUnits.map((unit) => (
-            <div
-              key={unit.id}
-              className="unit-card"
-              onClick={() => setModalUnit(unit)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter") setModalUnit(unit); }}
-            >
-              <div className="unit-image-container">
-                {unit.images?.length > 0 ? (
-                  <img
-                    src={unit.images[0]}
-                    alt={`${unit.building_name} ${unit.unit_number}`}
-                    className="unit-image"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleImageClick(unit.images[0], unit, 0);
-                    }}
-                  />
-                ) : (
-                  <div className="unit-image-placeholder">No Image Available</div>
-                )}
-                {unit.images?.length > 1 && (
-                  <div className="image-count-badge">
-                    View {unit.images.length}
-                  </div>
-                )}
+          {filteredUnits.map((unit) => {
+            const isAvailable = unit.is_available !== 0 && unit.is_available !== false;
+            const bookingStatus = getUnitBookingStatus(unit.id);
+            
+            return (
+              <div
+                key={unit.id}
+                className={`unit-card ${!isAvailable ? 'booked-unit' : ''}`}
+                onClick={() => setModalUnit(unit)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter") setModalUnit(unit); }}
+              >
+                <div className="unit-image-container">
+                  {unit.images?.length > 0 ? (
+                    <img
+                      src={unit.images[0]}
+                      alt={`${unit.building_name} ${unit.unit_number}`}
+                      className="unit-image"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleImageClick(unit.images[0], unit, 0);
+                      }}
+                    />
+                  ) : (
+                    <div className="unit-image-placeholder">No Image Available</div>
+                  )}
+                  {!isAvailable && (
+                    <div className="booked-badge">
+                      Booked
+                    </div>
+                  )}
+                  {unit.images?.length > 1 && (
+                    <div className="image-count-badge">
+                      View {unit.images.length}
+                    </div>
+                  )}
+                </div>
+                <div className="unit-card-content">
+                  <h4>{unit.unit_number} • {unit.building_name}</h4>
+                  <p><strong>Location:</strong> {unit.location}</p>
+                  <p><strong>Contact Person:</strong> {unit.contact_person}</p>
+                  <p><strong>Price:</strong> {formatPrice(unit.unitPrice || unit.price)}</p>
+                  <p><strong>Status:</strong> 
+                    {isAvailable ? 
+                      <span style={{ color: '#4caf50' }}> Available</span> : 
+                      <span style={{ color: '#e57373' }}> Booked</span>
+                    }
+                  </p>
+                  
+                  {bookingStatus && (
+                    <div className="unit-card-booking-status">
+                      <span className={`status-badge status-${bookingStatus.status}`}>
+                        Your booking: {bookingStatus.status}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="unit-card-content">
-                <h4>{unit.unit_number} • {unit.building_name}</h4>
-                <p><strong>Location:</strong> {unit.location}</p>
-                <p><strong>Contact Person:</strong> {unit.contact_person}</p>
-                <p><strong>Price:</strong> {formatPrice(unit.unitPrice || unit.price)}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
