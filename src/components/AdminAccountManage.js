@@ -10,8 +10,14 @@ function AdminAccountManage() {
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteStep, setDeleteStep] = useState(1);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [revealUserId, setRevealUserId] = useState(null);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   const navigate = useNavigate();
+  const ADMIN_PIN = "000000";
 
   const handleBack = () => {
     navigate(-1);
@@ -68,6 +74,48 @@ function AdminAccountManage() {
     }
   };
 
+  const maskSensitiveInfo = (text) => {
+    if (!text) return "Not provided";
+    const visibleChars = Math.min(2, text.length);
+    return text.substring(0, visibleChars) + "*".repeat(text.length - visibleChars);
+  };
+
+  const handleRevealInfo = (userId) => {
+    if (isRevealed && revealUserId === userId) {
+      setIsRevealed(false);
+      setRevealUserId(null);
+    } else {
+      setRevealUserId(userId);
+      setShowPinModal(true);
+      setPinInput("");
+      setPinError("");
+    }
+  };
+
+  const handlePinSubmit = () => {
+    if (pinInput === ADMIN_PIN) {
+      setIsRevealed(true);
+      setShowPinModal(false);
+      setPinInput("");
+      setPinError("");
+    } else {
+      setPinError("Incorrect PIN code");
+    }
+  };
+
+  const closePinModal = () => {
+    setShowPinModal(false);
+    setPinInput("");
+    setPinError("");
+    setRevealUserId(null);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handlePinSubmit();
+    }
+  };
+
   return (
     <div className="admin-account-manage-container">
       <button className="back-button" onClick={handleBack}>
@@ -76,6 +124,7 @@ function AdminAccountManage() {
 
       <div className="admin-account-header">
         <h1 className="admin-account-title">Account Management</h1>
+        <p className="admin-subtitle">Sensitive information is hidden. Click "Reveal Info" to view details.</p>
       </div>
 
       <div className="admin-account-content">
@@ -123,11 +172,17 @@ function AdminAccountManage() {
                 <div className="user-info">
                   <div className="info-item">
                     <span className="info-label">Email:</span>
-                    <span className="info-value">{user.email}</span>
+                    <span className="info-value">
+                      {isRevealed && revealUserId === user.id ? user.email : maskSensitiveInfo(user.email)}
+                    </span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Contact:</span>
-                    <span className="info-value">{user.contact_number || "Not provided"}</span>
+                    <span className="info-value">
+                      {isRevealed && revealUserId === user.id 
+                        ? (user.contact_number || "Not provided") 
+                        : maskSensitiveInfo(user.contact_number)}
+                    </span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Joined:</span>
@@ -139,9 +194,19 @@ function AdminAccountManage() {
                       })}
                     </span>
                   </div>
+                  <div className="info-item">
+                    <span className="info-label">User ID:</span>
+                    <span className="info-value">{user.id}</span>
+                  </div>
                 </div>
 
                 <div className="user-actions">
+                  <button
+                    className={`reveal-info-btn ${isRevealed && revealUserId === user.id ? 'active' : ''}`}
+                    onClick={() => handleRevealInfo(user.id)}
+                  >
+                    {isRevealed && revealUserId === user.id ? 'Hide Info' : 'Reveal Info'}
+                  </button>
                   <button
                     className="delete-user-btn"
                     onClick={() => openDeleteModal(user.id)}
@@ -155,6 +220,7 @@ function AdminAccountManage() {
         )}
       </div>
 
+      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="admin-modal-overlay" onClick={closeDeleteModal}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
@@ -192,6 +258,44 @@ function AdminAccountManage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* PIN Verification Modal */}
+      {showPinModal && (
+        <div className="admin-modal-overlay" onClick={closePinModal}>
+          <div className="admin-modal pin-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="admin-modal-close" onClick={closePinModal}>
+              &times;
+            </button>
+            
+            <div className="modal-icon lock">🔒</div>
+            <h2>Admin Authentication Required</h2>
+            <p>Enter admin PIN code to reveal sensitive information:</p>
+            
+            <div className="pin-input-wrapper">
+              <input
+                type="password"
+                className="pin-input"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onKeyPress={handleKeyPress}
+                placeholder="000000"
+                maxLength="6"
+                autoFocus
+              />
+              {pinError && <div className="pin-error">{pinError}</div>}
+            </div>
+            
+            <div className="admin-modal-actions">
+              <button className="admin-modal-btn confirm" onClick={handlePinSubmit}>
+                Verify PIN
+              </button>
+              <button className="admin-modal-btn cancel" onClick={closePinModal}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

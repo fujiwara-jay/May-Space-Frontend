@@ -184,10 +184,8 @@ function UserRegister() {
   };
 
   const formatPhoneNumber = (value) => {
-    // Remove all non-digits
     const phoneNumber = value.replace(/\D/g, '');
     
-    // Format as (XXX) XXX-XXXX for 10 digits
     if (phoneNumber.length <= 3) {
       return phoneNumber;
     } else if (phoneNumber.length <= 6) {

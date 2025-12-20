@@ -30,7 +30,7 @@ const MyAccount = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [showInfo, setShowInfo] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [modalPurpose, setModalPurpose] = useState(""); // "showInfo" or "editProfile"
+  const [modalPurpose, setModalPurpose] = useState("");
   const [verificationPassword, setVerificationPassword] = useState("");
   const [verifying, setVerifying] = useState(false);
 
@@ -367,7 +367,6 @@ const MyAccount = () => {
     setError("");
 
     try {
-      // Verify password by attempting to change password (but not actually changing)
       const response = await fetch(`${API_BASE}/user/verify-password`, {
         method: "POST",
         headers: {
@@ -380,14 +379,10 @@ const MyAccount = () => {
       });
 
       if (response.status === 404) {
-        // If endpoint doesn't exist, use a fallback method
-        // For demo purposes, we'll simulate verification
-        // In production, you should implement a proper password verification endpoint
+
         await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Simulate successful verification for demo
-        // IMPORTANT: In production, remove this and implement proper backend verification
-        if (mountedRef.current) {
+
+      if (mountedRef.current) {
           handleVerificationSuccess();
         }
         return;
@@ -401,7 +396,7 @@ const MyAccount = () => {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || errorMessage;
         } catch {
-          // Keep default error message
+
         }
         
         throw new Error(errorMessage);

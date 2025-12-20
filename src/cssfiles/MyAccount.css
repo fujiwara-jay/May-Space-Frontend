@@ -602,7 +602,6 @@
   animation: fadeIn 0.3s ease;
 }
 
-/* Password Verification Modal */
 .password-modal-overlay {
   position: fixed;
   top: 0;

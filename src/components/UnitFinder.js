@@ -288,13 +288,11 @@ const UnitFinder = () => {
       return;
     }
 
-    // Check if unit is already confirmed (unavailable)
     if (unit.is_available === 0 || unit.is_available === false) {
       setActionMessage("This unit is no longer available for booking. It has been confirmed by another user.");
       return;
     }
 
-    // Check user's booking status for this unit
     const bookingStatus = getUnitBookingStatus(unit.id);
     
     if (bookingStatus) {
@@ -427,7 +425,6 @@ const UnitFinder = () => {
         unitId: null,
       });
 
-      // Refresh user bookings and units
       fetchUserBookings();
       fetchAllUnits();
 

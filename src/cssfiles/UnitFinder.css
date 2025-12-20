@@ -1124,7 +1124,6 @@ button:disabled {
   box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
 }
 
-/* Status badges */
 .status-badge {
   display: inline-block;
   padding: 4px 10px;
@@ -1152,7 +1151,6 @@ button:disabled {
   border: 1px solid #f5c6cb;
 }
 
-/* User booking status in modal */
 .user-booking-status {
   background-color: #f8f9fa;
   padding: 12px;
@@ -1183,7 +1181,6 @@ button:disabled {
   font-style: italic;
 }
 
-/* Unit card booking status */
 .unit-card-booking-status {
   margin-top: 10px;
   padding-top: 10px;
