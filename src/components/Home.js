@@ -267,11 +267,11 @@ function Home() {
               ×
             </button>
             <h3>Create Account</h3>
-            <p>Register as a user to find rental units</p>
+            <p>Register to find rental units</p>
             <div className="register-options">
               <div className="register-option single-option">
                 <div className="option-icon">👤</div>
-                <h4>Register as User</h4>
+                <h4>Register</h4>
                 <p>Find and book rental units</p>
                 <button 
                   onClick={handleRegisterAsUser} 
