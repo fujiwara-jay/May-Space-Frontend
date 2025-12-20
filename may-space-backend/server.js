@@ -614,75 +614,38 @@ app.get('/inquiries', async (req, res) => {
 
 // --- Bookings Endpoints ---
 
-
 // Create a new booking (with transaction_type and date_of_visiting)
 app.post('/bookings', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { unitId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting } = req.body;
-  
   if (!userId || !unitId || !name || !address || !contactNumber || !numberOfPeople || !transaction || !dateVisiting) {
     return res.status(400).json({ message: 'All booking fields are required' });
   }
-  
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
-    // Check if unit exists
+    // Check if unit exists and prevent booking own unit
     const [unitRows] = await connection.execute('SELECT * FROM units WHERE id = ?', [unitId]);
     if (unitRows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found' });
     }
-    
-    // Prevent booking own unit
     if (parseInt(unitRows[0].user_id) === parseInt(userId)) {
       await connection.end();
       return res.status(400).json({ message: 'You cannot book your own unit.' });
     }
-    
-    // Check if user already has an active booking for this unit
-    const [existingBookings] = await connection.execute(
-      'SELECT * FROM bookings WHERE user_id = ? AND unit_id = ? AND status IN (?, ?)',
-      [userId, unitId, 'pending', 'confirmed']
-    );
-    
-    if (existingBookings.length > 0) {
-      await connection.end();
-      return res.status(400).json({ 
-        message: existingBookings[0].status === 'confirmed' 
-          ? 'You have already booked this unit and it has been confirmed. You cannot book it again.' 
-          : 'You already have a pending booking for this unit.' 
-      });
-    }
-    
-    // Check if there's a cancelled booking - allow re-booking
-    const [cancelledBookings] = await connection.execute(
-      'SELECT * FROM bookings WHERE user_id = ? AND unit_id = ? AND status = ?',
-      [userId, unitId, 'cancelled']
-    );
-    
-    // Allow re-booking if previous was cancelled or denied
-    const [deniedBookings] = await connection.execute(
-      'SELECT * FROM bookings WHERE user_id = ? AND unit_id = ? AND status = ?',
-      [userId, unitId, 'denied']
-    );
-    
-    // Insert new booking
     await connection.execute(
       'INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, transaction_type, date_of_visiting) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [unitId, userId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting]
     );
-    
     await connection.end();
     res.status(201).json({ message: 'Booking created successfully' });
-    
   } catch (error) {
     console.error('Error creating booking:', error);
     res.status(500).json({ message: 'Failed to create booking' });
   }
 });
 
-// Get bookings made by the logged-in user
+// Get bookings made by the logged-in user (include transaction_type and date_of_visiting)
 app.get('/bookings/my', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -702,7 +665,7 @@ app.get('/bookings/my', async (req, res) => {
   }
 });
 
-// Get bookings for units posted by the logged-in user
+// Get bookings for units posted by the logged-in user (include transaction_type and date_of_visiting)
 app.get('/bookings/rented', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -727,43 +690,27 @@ app.put('/bookings/:id/status', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const bookingId = req.params.id;
   const { status } = req.body; // 'confirmed' or 'denied'
-  
   if (!userId || !bookingId || !['confirmed', 'denied'].includes(status)) {
     return res.status(400).json({ message: 'Invalid request' });
   }
-  
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
     // Check if booking exists and belongs to a unit owned by this user
     const [rows] = await connection.execute(
       `SELECT b.*, u.user_id as unit_owner_id FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.id = ?`,
       [bookingId]
     );
-    
     if (rows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Booking not found' });
     }
-    
     if (parseInt(rows[0].unit_owner_id) !== parseInt(userId)) {
       await connection.end();
       return res.status(403).json({ message: 'Not authorized to update this booking' });
     }
-    
-    // Update booking status
     await connection.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
-    
-    // If confirming a booking, prevent other users from booking this unit
-    if (status === 'confirmed') {
-      // Mark the unit as "booked" (you can add a field in units table or handle differently)
-      // For now, we'll just prevent new bookings through the booking logic above
-      console.log(`Unit ${rows[0].unit_id} is now confirmed for booking ${bookingId}`);
-    }
-    
     await connection.end();
     res.status(200).json({ message: `Booking ${status}` });
-    
   } catch (error) {
     console.error('Error updating booking status:', error);
     res.status(500).json({ message: 'Failed to update booking status' });
