@@ -288,9 +288,9 @@ const UnitFinder = () => {
       return;
     }
 
-    // Check unit availability
+    // Check if unit is already confirmed (unavailable)
     if (unit.is_available === 0 || unit.is_available === false) {
-      setActionMessage("This unit is no longer available for booking.");
+      setActionMessage("This unit is no longer available for booking. It has been confirmed by another user.");
       return;
     }
 
@@ -308,7 +308,7 @@ const UnitFinder = () => {
         return;
       }
       
-      if (!bookingStatus.canBookAgain) {
+      if (!bookingStatus.canBookAgain && bookingStatus.status !== 'denied') {
         setActionMessage("You cannot book this unit at this time.");
         return;
       }
@@ -415,7 +415,7 @@ const UnitFinder = () => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
 
-      setActionMessage("Booking successfully made!");
+      setActionMessage("Booking successfully made! Waiting for owner confirmation.");
       setShowBookingForm(false);
       setBookingDetails({
         name: "",
@@ -589,7 +589,7 @@ const UnitFinder = () => {
             <p><strong>Price:</strong> {formatPrice(modalUnit?.unitPrice || modalUnit?.price)}</p>
             <p><strong>Status:</strong> 
               {modalUnit?.is_available === 0 || modalUnit?.is_available === false ? 
-                <span style={{ color: '#e57373', fontWeight: 700 }}> Booked</span> : 
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Booked)</span> : 
                 <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span>
               }
             </p>
@@ -636,7 +636,7 @@ const UnitFinder = () => {
             <p><strong>Status:</strong> 
               {isUnitAvailable ? 
                 <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span> : 
-                <span style={{ color: '#e57373', fontWeight: 700 }}> Booked</span>
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Booked)</span>
               }
             </p>
             
@@ -652,6 +652,9 @@ const UnitFinder = () => {
                 )}
                 {bookingStatus.status === 'confirmed' && (
                   <p className="confirmed-info">You have a confirmed booking for this unit.</p>
+                )}
+                {bookingStatus.status === 'pending' && (
+                  <p className="pending-info">Waiting for owner confirmation.</p>
                 )}
               </div>
             )}
@@ -691,7 +694,7 @@ const UnitFinder = () => {
               disabled={isGuest || loading || !isUnitAvailable || (bookingStatus && !bookingStatus.canBookAgain && bookingStatus.status !== 'denied')}
             >
               {bookingStatus?.status === 'denied' ? '📅 Book Again' : '📅 Book Now'}
-              {!isUnitAvailable && " (Booked)"}
+              {!isUnitAvailable && " (Unavailable)"}
             </button>
             {tooltip.show && tooltip.target === "book" && (
               <div className="button-tooltip">Please Login to use this feature</div>
@@ -909,7 +912,7 @@ const UnitFinder = () => {
             return (
               <div
                 key={unit.id}
-                className={`unit-card ${!isAvailable ? 'booked-unit' : ''}`}
+                className={`unit-card ${!isAvailable ? 'unavailable-unit' : ''}`}
                 onClick={() => setModalUnit(unit)}
                 role="button"
                 tabIndex={0}
@@ -930,8 +933,8 @@ const UnitFinder = () => {
                     <div className="unit-image-placeholder">No Image Available</div>
                   )}
                   {!isAvailable && (
-                    <div className="booked-badge">
-                      Booked
+                    <div className="unavailable-badge">
+                      Unavailable
                     </div>
                   )}
                   {unit.images?.length > 1 && (
@@ -948,7 +951,7 @@ const UnitFinder = () => {
                   <p><strong>Status:</strong> 
                     {isAvailable ? 
                       <span style={{ color: '#4caf50' }}> Available</span> : 
-                      <span style={{ color: '#e57373' }}> Booked</span>
+                      <span style={{ color: '#e57373' }}> Unavailable (Booked)</span>
                     }
                   </p>
                   

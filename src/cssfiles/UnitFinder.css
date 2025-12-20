@@ -243,11 +243,36 @@
   cursor: pointer;
   width: 280px;
   max-width: 100%;
+  position: relative;
 }
 
 .unit-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
+
+.unavailable-unit {
+  opacity: 0.85;
+  border: 2px solid #e57373;
+  background-color: rgba(255, 245, 245, 0.1);
+}
+
+.unavailable-unit:hover {
+  opacity: 0.95;
+  transform: translateY(-2px);
+}
+
+.unavailable-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #e57373;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 2;
 }
 
 .unit-image,
@@ -284,6 +309,18 @@
   font-size: 0.9rem;
   margin: 5px 0;
   text-align: center;
+}
+
+.unit-card-content p strong {
+  color: #f7e7b6;
+}
+
+.unit-card-content p span[style*="color: #4caf50"] {
+  font-weight: 600;
+}
+
+.unit-card-content p span[style*="color: #e57373"] {
+  font-weight: 600;
 }
 
 .unit-image-container {
@@ -560,6 +597,33 @@ button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
+  background-color: #cccccc !important;
+}
+
+.book-now-btn:disabled,
+.inquire-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #cccccc !important;
+}
+
+.book-now-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.book-now-btn:hover:not(:disabled) {
+  background-color: #388e3c;
+}
+
+.book-now-btn:disabled {
+  background-color: #9e9e9e !important;
 }
 
 .button-tooltip {
@@ -709,7 +773,7 @@ button:disabled {
   justify-content: center;
   align-items: center;
   gap: 15px;
-  margin-top: auto;
+  margin-top: 20px;
   padding: 20px 0 0 0;
   border-top: 1px solid #4a5a6a;
   width: 100%;
@@ -741,11 +805,17 @@ button:disabled {
   border: 2px solid #28a745;
 }
 
-.submit-btn:hover {
+.submit-btn:hover:not(:disabled) {
   background: #218838;
   border-color: #1e7e34;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.submit-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  border-color: #cccccc;
 }
 
 .backToDetails {
@@ -1052,6 +1122,93 @@ button:disabled {
   background: #218838;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-confirmed {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-denied {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* User booking status in modal */
+.user-booking-status {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+  border-left: 4px solid #e0c16d;
+  color: #333;
+}
+
+.rebooking-info {
+  color: #28a745;
+  font-size: 14px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.confirmed-info {
+  color: #007bff;
+  font-size: 14px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.pending-info {
+  color: #ff9800;
+  font-size: 14px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Unit card booking status */
+.unit-card-booking-status {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #ddd;
+  color: #f7e7b6;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 1px solid #c3e6cb;
+  text-align: center;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 1px solid #f5c6cb;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
