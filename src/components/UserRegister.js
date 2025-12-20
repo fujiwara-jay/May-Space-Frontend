@@ -96,7 +96,8 @@ function UserRegister() {
     }
 
     const phoneRegex = /^[0-9]{10,15}$/;
-    if (!phoneRegex.test(contactNumber)) {
+    const cleanPhone = contactNumber.replace(/[-\s()]/g, '');
+    if (!phoneRegex.test(cleanPhone)) {
       setError("Please enter a valid contact number (10-15 digits)");
       return false;
     }
@@ -126,7 +127,13 @@ function UserRegister() {
       const response = await fetch("https://may-space-backend.onrender.com/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, username, email, contactNumber, password }),
+        body: JSON.stringify({ 
+          name, 
+          username, 
+          email, 
+          contactNumber: contactNumber.replace(/[-\s()]/g, ''), 
+          password 
+        }),
       });
 
       const data = await response.json();
@@ -174,6 +181,27 @@ function UserRegister() {
 
   const handleClosePolicy = () => {
     setShowPolicy(false);
+  };
+
+  const formatPhoneNumber = (value) => {
+    // Remove all non-digits
+    const phoneNumber = value.replace(/\D/g, '');
+    
+    // Format as (XXX) XXX-XXXX for 10 digits
+    if (phoneNumber.length <= 3) {
+      return phoneNumber;
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else if (phoneNumber.length <= 10) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)} ext. ${phoneNumber.slice(10, 15)}`;
+    }
+  };
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setContactNumber(formatted);
   };
 
   return (
@@ -301,97 +329,128 @@ function UserRegister() {
           <div className="success-popup">User registration successful!</div>
         )}
         <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-label="Full Name"
-            maxLength={50}
-          />
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            aria-label="Username"
-            maxLength={30}
-          />
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-label="Email"
-            maxLength={100}
-          />
-          <input
-            type="text"
-            placeholder="Contact Number"
-            value={contactNumber}
-            onChange={(e) => setContactNumber(e.target.value)}
-            aria-label="Contact Number"
-            maxLength={15}
-          />
-          
-          <div className="password-input-container">
-            <div className="password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password (10-30 characters with uppercase, lowercase & numbers)"
-                value={password}
-                onChange={handlePasswordChange}
-                aria-label="Password"
-                maxLength={30}
-              />
-              <button 
-                type="button"
-                className="toggle-password"
-                onClick={togglePasswordVisibility}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button>
-            </div>
-            {password && (
-              <div className={`password-strength ${passwordStrength}`}>
-                <span>Password Strength: </span>
-                <span className="strength-text">
-                  {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
-                </span>
-                <div className="strength-bar">
-                  <div className={`strength-fill ${passwordStrength}`}></div>
-                </div>
-              </div>
-            )}
-            <div className="password-requirements">
-              <small>Password must be 10-30 characters with at least:</small>
-              <small>• One uppercase letter (A-Z)</small>
-              <small>• One lowercase letter (a-z)</small>
-              <small>• One number (0-9)</small>
-              <small>• One special character (!@#$%^&*)</small>
-            </div>
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-label="Full Name"
+              maxLength={50}
+              required
+            />
+            <span className="required-indicator">*</span>
           </div>
           
-          <div className="password-input-container">
-            <div className="password-wrapper">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                aria-label="Confirm Password"
-                maxLength={30}
-              />
-              <button 
-                type="button"
-                className="toggle-password"
-                onClick={toggleConfirmPasswordVisibility}
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-              >
-                {showConfirmPassword ? "🙈" : "👁️"}
-              </button>
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              aria-label="Username"
+              maxLength={30}
+              required
+            />
+            <span className="required-indicator">*</span>
+          </div>
+          
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              aria-label="Email"
+              maxLength={100}
+              required
+            />
+            <span className="required-indicator">*</span>
+          </div>
+          
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="Contact Number (e.g., (123) 456-7890)"
+              value={contactNumber}
+              onChange={handlePhoneChange}
+              aria-label="Contact Number"
+              maxLength={20}
+              required
+            />
+            <span className="required-indicator">*</span>
+          </div>
+          
+          <div className="input-group">
+            <div className="password-input-container">
+              <div className="password-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password (10-30 characters with uppercase, lowercase & numbers)"
+                  value={password}
+                  onChange={handlePasswordChange}
+                  aria-label="Password"
+                  maxLength={30}
+                  required
+                />
+                <button 
+                  type="button"
+                  className="toggle-password"
+                  onClick={togglePasswordVisibility}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+              {password && (
+                <div className={`password-strength ${passwordStrength}`}>
+                  <span>Password Strength: </span>
+                  <span className="strength-text">
+                    {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                  </span>
+                  <div className="strength-bar">
+                    <div className={`strength-fill ${passwordStrength}`}></div>
+                  </div>
+                </div>
+              )}
+              <div className="password-requirements">
+                <small>Password must be 10-30 characters with at least:</small>
+                <small>• One uppercase letter (A-Z)</small>
+                <small>• One lowercase letter (a-z)</small>
+                <small>• One number (0-9)</small>
+                <small>• One special character (!@#$%^&*)</small>
+              </div>
             </div>
+            <span className="required-indicator">*</span>
+          </div>
+          
+          <div className="input-group">
+            <div className="password-input-container">
+              <div className="password-wrapper">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  aria-label="Confirm Password"
+                  maxLength={30}
+                  required
+                />
+                <button 
+                  type="button"
+                  className="toggle-password"
+                  onClick={toggleConfirmPasswordVisibility}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+            <span className="required-indicator">*</span>
+          </div>
+
+          <div className="required-fields-note">
+            <small><span className="required-indicator">*</span> Required fields</small>
           </div>
 
           <div className="policy-agreement-container">
@@ -408,6 +467,7 @@ function UserRegister() {
               />
               <label htmlFor="mini-policy-agreement" className="policy-checkbox-label">
                 I agree to the <span className="policy-link-text">Registration Policies</span>
+                <span className="required-indicator">*</span>
               </label>
               <span className="checkmark-indicator">✓</span>
             </div>

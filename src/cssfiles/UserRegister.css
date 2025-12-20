@@ -45,7 +45,7 @@
 
 .register-box {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   margin: 60px auto;
   padding: 36px 32px 28px 32px;
   background-color: #2c363f;
@@ -66,10 +66,17 @@
   margin-bottom: 1.5rem;
 }
 
-.register-box input {
+.input-group {
+  position: relative;
   width: 100%;
-  padding: 12px;
   margin: 8px 0;
+  display: flex;
+  align-items: center;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 40px 12px 12px;
   border-radius: 8px;
   border: none;
   background: #3d4852;
@@ -81,14 +88,48 @@
   transition: background-color 0.3s ease, border 0.3s ease;
 }
 
-.register-box input::placeholder {
+.input-group input::placeholder {
   color: #b1b1b1;
   opacity: 1;
 }
 
-.register-box input:focus {
+.input-group input:focus {
   background-color: #4a5a6a;
   border: 1px solid #e0c16d;
+}
+
+.required-indicator {
+  color: #ff6b6b;
+  font-weight: bold;
+  font-size: 1.2rem;
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.required-fields-note {
+  text-align: left;
+  margin: 10px 0 15px 0;
+  padding: 8px 12px;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #ff6b6b;
+}
+
+.required-fields-note small {
+  color: #ff8a8a;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.required-fields-note .required-indicator {
+  position: static;
+  transform: none;
+  font-size: 1rem;
 }
 
 button[type="submit"] {
@@ -125,7 +166,7 @@ button[type="submit"]:hover {
 
 .password-wrapper input {
   padding-right: 50px;
-  margin: 8px 0;
+  margin: 0;
 }
 
 .toggle-password {
@@ -139,6 +180,7 @@ button[type="submit"]:hover {
   padding: 4px 8px;
   border-radius: 4px;
   transition: background-color 0.3s ease;
+  z-index: 3;
 }
 
 .toggle-password:hover {
@@ -372,6 +414,8 @@ button[type="submit"]:hover {
   letter-spacing: 0.02em;
   text-align: left;
   margin: 0;
+  position: relative;
+  padding-right: 15px;
 }
 
 .policy-checkbox-wrapper:hover .policy-checkbox-label {
@@ -399,6 +443,14 @@ button[type="submit"]:hover {
   color: #ffd54f;
   background-color: rgba(224, 193, 109, 0.1);
   text-decoration: none;
+}
+
+.policy-checkbox-label .required-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 1rem;
+  transform: none;
 }
 
 .checkmark-indicator {
@@ -722,9 +774,14 @@ button[type="submit"]:hover {
     letter-spacing: 0.25em;
   }
   
-  .register-box input {
-    padding: 10px;
+  .input-group input {
+    padding: 10px 35px 10px 10px;
     font-size: 0.95rem;
+  }
+  
+  .required-indicator {
+    right: 12px;
+    font-size: 1.1rem;
   }
   
   .password-strength {
@@ -749,7 +806,7 @@ button[type="submit"]:hover {
     height: 16px;
   }
   
-   .policy-modal {
+  .policy-modal {
     max-width: 95%;
     max-height: 90vh;
   }
@@ -811,7 +868,7 @@ button[type="submit"]:hover {
     gap: 4px;
   }
   
-    .policy-checkbox-wrapper {
+  .policy-checkbox-wrapper {
     gap: 6px;
   }
   
@@ -824,7 +881,7 @@ button[type="submit"]:hover {
     height: 15px;
   }
   
-   .policy-modal-footer {
+  .policy-modal-footer {
     flex-direction: column;
     gap: 12px;
   }
