@@ -13,6 +13,10 @@ function AdminDashboard() {
 		navigate("/admin/account-manage");
 	};
 
+	const handleAdminReport = () => {
+		navigate("/admin/report");
+	};
+
 	const handleLogout = () => {
 		localStorage.removeItem("userId");
 		localStorage.removeItem("userType");
@@ -30,6 +34,9 @@ function AdminDashboard() {
 				</button>
 				<button className="account-manage-btn" onClick={handleAccountManage}>
 					Account Manage
+				</button>
+				<button className="report-btn" onClick={handleAdminReport}>
+					Admin Report
 				</button>
 				<button className="logout-admin-btn" onClick={handleLogout}>
 					Logout

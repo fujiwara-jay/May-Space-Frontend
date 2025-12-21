@@ -1063,3 +1063,201 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+// --- Admin Report Endpoints ---
+
+// Get comprehensive admin report statistics
+app.get('/admin/report/statistics', async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // 1. Total users count
+    const [usersResult] = await connection.execute('SELECT COUNT(*) as total_users FROM users');
+    const totalUsers = usersResult[0].total_users;
+    
+    // 2. Total units count
+    const [unitsResult] = await connection.execute('SELECT COUNT(*) as total_units FROM units');
+    const totalUnits = unitsResult[0].total_units;
+    
+    // 3. Total bookings count
+    const [bookingsResult] = await connection.execute('SELECT COUNT(*) as total_bookings FROM bookings');
+    const totalBookings = bookingsResult[0].total_bookings;
+    
+    // 4. Booking status breakdown
+    const [bookingStatusResult] = await connection.execute(
+      `SELECT 
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_bookings,
+        SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_bookings,
+        SUM(CASE WHEN status = 'denied' THEN 1 ELSE 0 END) as denied_bookings
+       FROM bookings`
+    );
+    
+    // 5. Units availability status
+    const [unitsStatusResult] = await connection.execute(
+      `SELECT 
+        SUM(CASE WHEN is_available = 1 THEN 1 ELSE 0 END) as available_units,
+        SUM(CASE WHEN is_available = 0 THEN 1 ELSE 0 END) as unavailable_units
+       FROM units`
+    );
+    
+    // 6. Recent registrations (last 7 days)
+    const [recentRegistrations] = await connection.execute(
+      `SELECT COUNT(*) as recent_users 
+       FROM users 
+       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`
+    );
+    
+    // 7. Recent units posted (last 7 days)
+    const [recentUnits] = await connection.execute(
+      `SELECT COUNT(*) as recent_units 
+       FROM units 
+       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`
+    );
+    
+    // 8. Total inquiries
+    const [inquiriesResult] = await connection.execute('SELECT COUNT(*) as total_inquiries FROM inquiries');
+    const totalInquiries = inquiriesResult[0].total_inquiries;
+    
+    // 9. Top users by units posted
+    const [topUsersResult] = await connection.execute(
+      `SELECT u.username, u.email, COUNT(units.id) as units_count
+       FROM users u
+       LEFT JOIN units ON u.id = units.user_id
+       GROUP BY u.id
+       ORDER BY units_count DESC
+       LIMIT 5`
+    );
+    
+    // 10. Transaction type breakdown
+    const [transactionTypesResult] = await connection.execute(
+      `SELECT 
+        transaction_type,
+        COUNT(*) as count
+       FROM bookings
+       WHERE transaction_type IS NOT NULL
+       GROUP BY transaction_type`
+    );
+    
+    await connection.end();
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers: parseInt(totalUsers),
+        totalUnits: parseInt(totalUnits),
+        totalBookings: parseInt(totalBookings),
+        totalInquiries: parseInt(totalInquiries),
+        bookingStatus: {
+          pending: parseInt(bookingStatusResult[0].pending_bookings),
+          confirmed: parseInt(bookingStatusResult[0].confirmed_bookings),
+          denied: parseInt(bookingStatusResult[0].denied_bookings)
+        },
+        unitStatus: {
+          available: parseInt(unitsStatusResult[0].available_units),
+          unavailable: parseInt(unitsStatusResult[0].unavailable_units)
+        },
+        recentActivity: {
+          usersLast7Days: parseInt(recentRegistrations[0].recent_users),
+          unitsLast7Days: parseInt(recentUnits[0].recent_units)
+        },
+        topUsers: topUsersResult,
+        transactionTypes: transactionTypesResult
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching admin report statistics:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch report statistics' 
+    });
+  }
+});
+
+// Get detailed booking report with filters
+app.get('/admin/report/bookings', async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.query;
+    let query = `
+      SELECT b.*, 
+             u.building_name, u.unit_number, u.location,
+             usr.username as renter_username, usr.email as renter_email,
+             owner.username as owner_username, owner.email as owner_email
+      FROM bookings b
+      JOIN units u ON b.unit_id = u.id
+      JOIN users usr ON b.user_id = usr.id
+      JOIN users owner ON u.user_id = owner.id
+      WHERE 1=1
+    `;
+    
+    const params = [];
+    
+    if (startDate) {
+      query += ' AND DATE(b.created_at) >= ?';
+      params.push(startDate);
+    }
+    
+    if (endDate) {
+      query += ' AND DATE(b.created_at) <= ?';
+      params.push(endDate);
+    }
+    
+    if (status) {
+      query += ' AND b.status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY b.created_at DESC';
+    
+    const connection = await mysql.createConnection(dbConfig);
+    const [bookings] = await connection.execute(query, params);
+    await connection.end();
+    
+    res.status(200).json({
+      success: true,
+      data: bookings
+    });
+    
+  } catch (error) {
+    console.error('Error fetching detailed bookings report:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch bookings report' 
+    });
+  }
+});
+
+// Get users report with their activity
+app.get('/admin/report/users', async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [users] = await connection.execute(
+      `SELECT 
+        u.*,
+        COUNT(DISTINCT units.id) as units_posted,
+        COUNT(DISTINCT b.id) as bookings_made,
+        COUNT(DISTINCT i.id) as inquiries_sent,
+        MAX(u.created_at) as last_activity
+       FROM users u
+       LEFT JOIN units ON u.id = units.user_id
+       LEFT JOIN bookings b ON u.id = b.user_id
+       LEFT JOIN inquiries i ON u.id = i.sender_user_id
+       GROUP BY u.id
+       ORDER BY u.created_at DESC`
+    );
+    
+    await connection.end();
+    
+    res.status(200).json({
+      success: true,
+      data: users
+    });
+    
+  } catch (error) {
+    console.error('Error fetching users report:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch users report' 
+    });
+  }
+});

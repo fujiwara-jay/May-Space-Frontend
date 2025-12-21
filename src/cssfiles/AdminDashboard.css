@@ -55,6 +55,7 @@
 
 .unit-finder-btn,
 .account-manage-btn,
+.report-btn,
 .logout-admin-btn {
   width: 100%;
   padding: 14px 0;
@@ -64,39 +65,100 @@
   border-radius: 9px;
   border: none;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.3s ease;
+  transition: all 0.3s ease;
   text-align: center;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 50px;
-  background-color: #e0c16d;
-  color: #2c363f;
   position: relative;
 }
 
-.unit-finder-btn:hover,
-.account-manage-btn:hover,
-.logout-admin-btn:hover {
+.unit-finder-btn {
+  background-color: #e0c16d;
+  color: #2c363f;
+}
+
+.account-manage-btn {
+  background-color: #6d8be0;
+  color: #ffffff;
+}
+
+.report-btn {
+  background-color: #9f7aea;
+  color: #ffffff;
+}
+
+.logout-admin-btn {
+  background-color: #ff6b6b;
+  color: #ffffff;
+}
+
+.unit-finder-btn:hover {
   background-color: #f7e7b6;
   color: #1a1a1a;
-  box-shadow: 0 0 8px rgba(247, 231, 182, 0.7);
+  box-shadow: 0 0 12px rgba(247, 231, 182, 0.8);
+  transform: translateY(-2px);
+}
+
+.account-manage-btn:hover {
+  background-color: #8ba3f0;
+  box-shadow: 0 0 12px rgba(109, 139, 224, 0.8);
+  transform: translateY(-2px);
+}
+
+.report-btn:hover {
+  background-color: #b794f4;
+  box-shadow: 0 0 12px rgba(159, 122, 234, 0.8);
+  transform: translateY(-2px);
+}
+
+.logout-admin-btn:hover {
+  background-color: #ff8e8e;
+  box-shadow: 0 0 12px rgba(255, 107, 107, 0.8);
+  transform: translateY(-2px);
 }
 
 .unit-finder-btn:focus-visible,
 .account-manage-btn:focus-visible,
+.report-btn:focus-visible,
 .logout-admin-btn:focus-visible {
-  outline: 3px solid #e0c16d;
+  outline: 3px solid currentColor;
   outline-offset: 2px;
 }
 
 .unit-finder-btn:disabled,
 .account-manage-btn:disabled,
+.report-btn:disabled,
 .logout-admin-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
+}
+
+.unit-finder-btn::before,
+.account-manage-btn::before,
+.report-btn::before,
+.logout-admin-btn::before {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+.unit-finder-btn::before {
+  content: "🏢";
+}
+
+.account-manage-btn::before {
+  content: "👥";
+}
+
+.report-btn::before {
+  content: "📊";
+}
+
+.logout-admin-btn::before {
+  content: "🚪";
 }
 
 .notification-badge {
@@ -154,18 +216,56 @@
   }
 }
 
-@media (max-width: 480px) {
+.button-loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.button-loading::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: button-spin 0.8s linear infinite;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
   .adminDashboard-container {
     padding: 15px;
+    justify-content: center;
+  }
+  
+  .admin-header {
+    margin: 0 0 30px 0;
+    padding: 15px 0;
   }
   
   .admin-dashboard-title {
-    font-size: 22px;
+    font-size: 24px;
     padding: 10px 20px;
   }
   
   .adminDashboard-buttons {
     max-width: 350px;
+    gap: 15px;
+  }
+  
+  .unit-finder-btn,
+  .account-manage-btn,
+  .report-btn,
+  .logout-admin-btn {
+    padding: 12px 0;
+    font-size: 1rem;
+    min-height: 45px;
   }
   
   .notification-badge {
@@ -173,18 +273,47 @@
     height: 20px;
     font-size: 0.6rem;
   }
-  
-  .notification-badge.corner {
-    top: 0;
-    right: 0;
-  }
 }
 
+@media (max-width: 480px) {
+  .adminDashboard-container {
+    padding: 10px;
+  }
+  
+  .admin-dashboard-title {
+    font-size: 20px;
+    padding: 8px 16px;
+  }
+  
+  .adminDashboard-buttons {
+    max-width: 300px;
+    gap: 12px;
+  }
+  
+  .unit-finder-btn,
+  .account-manage-btn,
+  .report-btn,
+  .logout-admin-btn {
+    padding: 10px 0;
+    font-size: 0.95rem;
+    min-height: 42px;
+    letter-spacing: 0.1em;
+  }
+  
+  .unit-finder-btn::before,
+  .account-manage-btn::before,
+  .report-btn::before,
+  .logout-admin-btn::before {
+    font-size: 1rem;
+    margin-right: 8px;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .admin-dashboard-title,
   .unit-finder-btn,
   .account-manage-btn,
+  .report-btn,
   .logout-admin-btn {
     transition: none;
   }
@@ -192,6 +321,7 @@
   .admin-dashboard-title:hover,
   .unit-finder-btn:hover,
   .account-manage-btn:hover,
+  .report-btn:hover,
   .logout-admin-btn:hover {
     transform: none;
   }
@@ -199,4 +329,100 @@
   .notification-badge {
     animation: none;
   }
+  
+  .button-loading::after {
+    animation: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .unit-finder-btn,
+  .account-manage-btn,
+  .report-btn,
+  .logout-admin-btn {
+    border: 2px solid #000000;
+  }
+  
+  .admin-dashboard-title {
+    border: 2px solid #eeeac4;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .admin-dashboard-title {
+    color: #f8f5d7;
+    background-color: rgba(241, 201, 91, 0.4);
+    box-shadow: 0 4px 8px rgba(206, 168, 63, 0.5);
+  }
+  
+  .admin-dashboard-title:hover {
+    box-shadow: 0 6px 15px rgba(224, 193, 109, 0.9);
+  }
+}
+
+@media print {
+  .adminDashboard-container {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .admin-dashboard-title {
+    color: black !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+  }
+  
+  .unit-finder-btn,
+  .account-manage-btn,
+  .report-btn,
+  .logout-admin-btn {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+  
+  .notification-badge {
+    display: none;
+  }
+}
+
+.unit-finder-btn:focus,
+.account-manage-btn:focus,
+.report-btn:focus,
+.logout-admin-btn:focus {
+  outline: 3px solid #2c363f;
+  outline-offset: 3px;
+}
+
+.button-tooltip {
+  position: relative;
+}
+
+.button-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-bottom: 5px;
+  z-index: 1000;
+}
+
+.button-tooltip:hover::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+  margin-bottom: -5px;
 }

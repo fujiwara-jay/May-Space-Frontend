@@ -16,6 +16,7 @@ import AdminUnitFinderManager from "./components/AdminUnitFinderManager";
 import AdminAccountManage from "./components/AdminAccountManage";
 import MyAccount from "./components/MyAccount";
 import PrivacyPolicy from "./components/PrivacyPolicy";
+import AdminReport from './components/AdminReport';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin/unit-finder-manager" element={<AdminUnitFinderManager />} />
           <Route path="/admin/account-manage" element={<AdminAccountManage />} />
+          <Route path="/admin/report" element={<AdminReport />} />
 
           {/* Project-related pages */}
           <Route path="/StudentProjects" element={<StudentProjects />} />
