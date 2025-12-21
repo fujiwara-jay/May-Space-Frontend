@@ -11,8 +11,8 @@ function About() {
 
   return (
     <>
-      <div className="back-button-container">
-        <button className="back-button" onClick={handleBackClick}>
+      <div className="back-button-about-container">
+        <button className="back-button-about" onClick={handleBackClick}>
           ⬅ Back
         </button>
       </div>
