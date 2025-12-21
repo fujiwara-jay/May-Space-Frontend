@@ -105,6 +105,7 @@
   margin: 0;
   font-size: 1.2rem;
   letter-spacing: 0.1em;
+  text-align: left;
 }
 
 .sidebar-close-btn {
@@ -251,30 +252,6 @@
   box-shadow: 0 8px 18px rgba(0,0,0,0.25);
 }
 
-.unavailable-unit {
-  opacity: 0.85;
-  border: 2px solid #e57373;
-  background-color: rgba(255, 245, 245, 0.1);
-}
-
-.unavailable-unit:hover {
-  opacity: 0.95;
-  transform: translateY(-2px);
-}
-
-.unavailable-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: #e57373;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: bold;
-  z-index: 2;
-}
-
 .unit-image,
 .unit-image-placeholder {
   width: 100%;
@@ -290,29 +267,39 @@
   justify-content: center;
   font-style: italic;
   color: #ddd;
+  text-align: center;
 }
 
 .unit-card-content {
   padding: 15px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .unit-card-content h4 {
   font-size: 1.1rem;
   color: #e0c16d;
-  margin: 5px 0;
+  margin: 5px 0 10px 0;
   text-align: center;
   letter-spacing: normal;
+  width: 100%;
+  font-weight: 700;
 }
 
 .unit-card-content p {
   font-size: 0.9rem;
-  margin: 5px 0;
+  margin: 8px 0;
   text-align: center;
+  width: 100%;
+  line-height: 1.4;
 }
 
 .unit-card-content p strong {
   color: #f7e7b6;
+  font-weight: 600;
 }
 
 .unit-card-content p span[style*="color: #4caf50"] {
@@ -343,6 +330,7 @@
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 600;
+  text-align: center;
 }
 
 .image-modal-overlay {
@@ -405,12 +393,14 @@
   color: #e0c16d;
   margin: 0 0 5px 0;
   font-size: 1.4rem;
+  text-align: center;
 }
 
 .image-modal-header p {
   color: #ccc;
   margin: 0;
   font-size: 1rem;
+  text-align: center;
 }
 
 .image-viewer {
@@ -473,6 +463,7 @@
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 600;
+  text-align: center;
 }
 
 .image-thumbnails {
@@ -514,6 +505,7 @@
   padding-top: 20px;
   border-top: 1px solid #4a5a6a;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .action-wrapper {
@@ -533,6 +525,7 @@
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.2s;
+  text-align: center;
 }
 
 .book-now-btn {
@@ -585,6 +578,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.95rem;
+  text-align: center;
 }
 
 .view-images-btn:hover {
@@ -616,6 +610,7 @@ button:disabled {
   cursor: pointer;
   font-weight: 600;
   transition: background-color 0.3s;
+  text-align: center;
 }
 
 .book-now-btn:hover:not(:disabled) {
@@ -639,6 +634,7 @@ button:disabled {
   white-space: nowrap;
   z-index: 1000;
   pointer-events: none;
+  text-align: center;
 }
 
 .modal-overlay {
@@ -678,12 +674,14 @@ button:disabled {
   margin-bottom: 15px;
   text-align: center;
   letter-spacing: normal;
+  font-weight: 700;
 }
 
 .property-details p {
   margin: 8px 0;
   line-height: 1.4;
   text-align: center;
+  font-size: 0.95rem;
 }
 
 .unit-images-gallery {
@@ -695,6 +693,7 @@ button:disabled {
   margin-bottom: 10px;
   text-align: center;
   letter-spacing: normal;
+  font-weight: 700;
 }
 
 .images-grid {
@@ -734,6 +733,7 @@ button:disabled {
   flex-direction: column;
   gap: 5px;
   font-weight: bold;
+  font-size: 0.95rem;
 }
 
 .modal-content input,
@@ -745,6 +745,7 @@ button:disabled {
   background: #232b33;
   color: #f7e7b6;
   font-size: 1rem;
+  text-align: left;
 }
 
 .modal-content input:focus,
@@ -759,6 +760,7 @@ button:disabled {
   min-height: 120px;
   resize: vertical;
   font-family: inherit;
+  text-align: left;
 }
 
 .char-count {
@@ -797,6 +799,7 @@ button:disabled {
   justify-content: center;
   flex: 1;
   max-width: 200px;
+  text-align: center;
 }
 
 .submit-btn {
@@ -842,6 +845,8 @@ button:disabled {
 
 .inquiry-info p {
   margin: 5px 0;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .error-message {
@@ -852,6 +857,7 @@ button:disabled {
   border: 1px solid #f5c6cb;
   margin: 10px 0;
   text-align: center;
+  line-height: 1.4;
 }
 
 .success-message {
@@ -862,6 +868,7 @@ button:disabled {
   border: 1px solid #c3e6cb;
   margin: 10px 0;
   text-align: center;
+  line-height: 1.4;
 }
 
 .no-units {
@@ -870,6 +877,7 @@ button:disabled {
   font-size: 1.1rem;
   margin: 40px 0;
   width: 100%;
+  line-height: 1.5;
 }
 
 .guest-popup {
@@ -888,6 +896,7 @@ button:disabled {
   text-align: center;
   border: 2px solid #ffe066;
   animation: guest-glow 2s infinite;
+  line-height: 1.4;
 }
 
 @keyframes guest-glow {
@@ -908,6 +917,7 @@ button:disabled {
 
 .unit-finder-header-buttons {
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .unit-finder-footer {
@@ -945,6 +955,7 @@ button:disabled {
   margin-left: auto;
   margin-right: auto;
   width: 90%;
+  text-align: center;
 }
 
 .search-input-wrapper {
@@ -962,6 +973,7 @@ button:disabled {
   background: white;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
 }
 
 .search-input:focus {
@@ -981,6 +993,7 @@ button:disabled {
   padding: 4px;
   border-radius: 50%;
   transition: all 0.2s ease;
+  text-align: center;
 }
 
 .clear-search-btn:hover {
@@ -994,6 +1007,7 @@ button:disabled {
   color: #666;
   font-size: 14px;
   font-style: italic;
+  line-height: 1.4;
 }
 
 .location-modal-overlay {
@@ -1039,6 +1053,7 @@ button:disabled {
   margin: 0;
   font-size: 1.4rem;
   letter-spacing: 0.05em;
+  text-align: left;
 }
 
 .location-modal-close {
@@ -1050,6 +1065,7 @@ button:disabled {
   padding: 5px 10px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  text-align: center;
 }
 
 .location-modal-close:hover {
@@ -1075,6 +1091,8 @@ button:disabled {
 .location-info p {
   margin: 8px 0;
   font-size: 0.95rem;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .location-actions {
@@ -1097,6 +1115,7 @@ button:disabled {
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 140px;
+  text-align: center;
 }
 
 .location-close-btn:hover {
@@ -1116,6 +1135,7 @@ button:disabled {
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 140px;
+  text-align: center;
 }
 
 .location-open-btn:hover {
@@ -1131,6 +1151,7 @@ button:disabled {
   font-size: 12px;
   font-weight: 600;
   margin-top: 8px;
+  text-align: center;
 }
 
 .status-pending {
@@ -1158,6 +1179,8 @@ button:disabled {
   margin: 12px 0;
   border-left: 4px solid #e0c16d;
   color: #333;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .rebooking-info {
@@ -1165,6 +1188,8 @@ button:disabled {
   font-size: 14px;
   margin-top: 8px;
   font-style: italic;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .confirmed-info {
@@ -1172,6 +1197,8 @@ button:disabled {
   font-size: 14px;
   margin-top: 8px;
   font-style: italic;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .pending-info {
@@ -1179,6 +1206,8 @@ button:disabled {
   font-size: 14px;
   margin-top: 8px;
   font-style: italic;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .unit-card-booking-status {
@@ -1186,6 +1215,8 @@ button:disabled {
   padding-top: 10px;
   border-top: 1px dashed #ddd;
   color: #f7e7b6;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .success-message {
@@ -1196,6 +1227,7 @@ button:disabled {
   margin: 15px 0;
   border: 1px solid #c3e6cb;
   text-align: center;
+  line-height: 1.4;
 }
 
 .error-message {
@@ -1206,6 +1238,7 @@ button:disabled {
   margin: 15px 0;
   border: 1px solid #f5c6cb;
   text-align: center;
+  line-height: 1.4;
 }
 
 @media (max-width: 768px) {
@@ -1217,11 +1250,13 @@ button:disabled {
   .sidebar-btn {
     padding: 12px 20px;
     font-size: 0.9rem;
+    text-align: left;
   }
   
   .sidebar-footer .logout-btn {
     min-width: 180px;
     margin: 0 15px;
+    text-align: center;
   }
   
   .menu-toggle-btn {
@@ -1229,6 +1264,7 @@ button:disabled {
     left: 15px;
     padding: 10px 14px;
     font-size: 1.1rem;
+    text-align: center;
   }
   
   .login-signup-btn {
@@ -1236,6 +1272,7 @@ button:disabled {
     right: 15px;
     padding: 10px 20px;
     font-size: 0.9rem;
+    text-align: center;
   }
   
   .unit-finder-header {
@@ -1263,6 +1300,7 @@ button:disabled {
   .location-btn,
   .unitclose-btn {
     min-width: 100%;
+    text-align: center;
   }
   
   .form-actions {
@@ -1279,12 +1317,14 @@ button:disabled {
     height: 44px;
     max-width: none;
     flex: none;
+    text-align: center;
   }
   
   .nav-arrow {
     font-size: 1.5rem;
     width: 40px;
     height: 40px;
+    text-align: center;
   }
   
   .search-container {
@@ -1295,6 +1335,7 @@ button:disabled {
   .search-input {
     font-size: 14px;
     padding: 10px 36px 10px 14px;
+    text-align: left;
   }
   
   .image-modal {
@@ -1352,6 +1393,7 @@ button:disabled {
     min-width: 100%;
     width: 100%;
     max-width: 250px;
+    text-align: center;
   }
 }
 
@@ -1364,12 +1406,14 @@ button:disabled {
   .sidebar-btn {
     padding: 10px 15px;
     font-size: 0.85rem;
+    text-align: left;
   }
   
   .sidebar-footer .logout-btn {
     min-width: 160px;
     margin: 0 10px;
     padding: 10px 15px;
+    text-align: center;
   }
   
   .sidebar-header {
@@ -1378,6 +1422,7 @@ button:disabled {
   
   .sidebar-header h3 {
     font-size: 1.1rem;
+    text-align: left;
   }
   
   .menu-toggle-btn {
@@ -1385,6 +1430,7 @@ button:disabled {
     left: 12px;
     padding: 8px 12px;
     font-size: 0.8rem;
+    text-align: center;
   }
   
   .login-signup-btn {
@@ -1392,10 +1438,12 @@ button:disabled {
     right: 12px;
     padding: 8px 16px;
     font-size: 0.85rem;
+    text-align: center;
   }
   
   .image-modal-header h3 {
     font-size: 1.2rem;
+    text-align: center;
   }
   
   .image-viewer {
@@ -1415,6 +1463,7 @@ button:disabled {
     padding: 10px 16px;
     font-size: 0.9rem;
     height: 42px;
+    text-align: center;
   }
   
   .unit-grid {
@@ -1430,14 +1479,17 @@ button:disabled {
   
   .unit-card-content h4 {
     font-size: 1rem;
+    text-align: center;
   }
   
   .unit-card-content p {
     font-size: 0.85rem;
+    text-align: center;
   }
   
   .location-modal-header h3 {
     font-size: 1.2rem;
+    text-align: left;
   }
   
   .map-container iframe {
@@ -1451,6 +1503,7 @@ button:disabled {
     left: 10px;
     padding: 6px 10px;
     font-size: 0.7rem;
+    text-align: center;
   }
   
   .login-signup-btn {
@@ -1458,6 +1511,7 @@ button:disabled {
     right: 10px;
     padding: 6px 12px;
     font-size: 0.8rem;
+    text-align: center;
   }
   
   .unit-finder-header {
@@ -1466,14 +1520,17 @@ button:disabled {
   
   .unit-finder-header h1 {
     font-size: 1.5rem;
+    text-align: center;
   }
   
   .unit-finder-header h2 {
     font-size: 1.1rem;
+    text-align: center;
   }
   
   .unit-finder-header h3 {
     font-size: 1rem;
+    text-align: center;
   }
   
   .unit-card {

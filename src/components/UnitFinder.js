@@ -929,7 +929,6 @@ const UnitFinder = () => {
                   )}
                   {!isAvailable && (
                     <div className="unavailable-badge">
-                      Unavailable
                     </div>
                   )}
                   {unit.images?.length > 1 && (
