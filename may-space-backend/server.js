@@ -39,9 +39,8 @@ const safeParseImages = (imagesData) => {
 const { sendOtpEmail } = require('./Mailer.js');
 const crypto = require('crypto');
 
-// Helper: Save OTP to DB (simple example, you may want to use your otp_codes table)
+// Helper: Save OTP to DB
 async function saveOtpToDb(email, otp) {
-  // Find user by email
   const connection = await mysql.createConnection(dbConfig);
   const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
   if (users.length === 0) {
@@ -49,8 +48,7 @@ async function saveOtpToDb(email, otp) {
     throw new Error('No user found with that email');
   }
   const userId = users[0].id;
-  // Save OTP to otp_codes table (expires in 10 minutes)
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min from now
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
   await connection.execute(
     'INSERT INTO otp_codes (user_id, otp_code, expires_at, used) VALUES (?, ?, ?, ?)',
     [userId, otp, expiresAt, false]
@@ -75,7 +73,6 @@ async function validateOtp(email, otp) {
     await connection.end();
     return false;
   }
-  // Mark OTP as used
   await connection.execute('UPDATE otp_codes SET used = TRUE WHERE id = ?', [rows[0].id]);
   await connection.end();
   return true;
@@ -86,7 +83,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: 'Email is required.' });
 
-  // Generate secure OTP (6 digits)
   const otp = crypto.randomInt(100000, 999999).toString();
 
   try {
@@ -109,7 +105,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
     const valid = await validateOtp(email, otp);
     if (!valid) return res.status(400).json({ message: 'Invalid or expired OTP.' });
 
-    // Update password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
@@ -269,7 +264,7 @@ const authenticate = async (req, res, next) => {
   next();
 };
 
-// Post a new unit (store images as base64 in DB)
+// Post a new unit
 app.post('/units', authenticate, async (req, res) => {
   const userId = req.userId;
   const { buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, images } = req.body;
@@ -281,9 +276,8 @@ app.post('/units', authenticate, async (req, res) => {
   }
   try {
     const connection = await mysql.createConnection(dbConfig);
-    // Store images as JSON array of base64 strings
     await connection.execute(
-      'INSERT INTO units (user_id, building_name, unit_number, location, specifications, special_features, unit_price, contact_person, phone_number, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO units (user_id, building_name, unit_number, location, specifications, special_features, unit_price, contact_person, phone_number, images, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
       [userId, buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, JSON.stringify(images)]
     );
     await connection.end();
@@ -358,7 +352,7 @@ app.put('/units/:id', authenticate, async (req, res) => {
     unitPrice,
     contactPerson,
     phoneNumber,
-    images // array of base64 strings
+    images
   } = req.body;
 
   if (!buildingName || !unitNumber || !specs) {
@@ -456,7 +450,7 @@ app.get('/public/units', async (req, res) => {
       ...unit,
       unitPrice: unit.unit_price,
       images: safeParseImages(unit.images),
-      is_available: unit.is_available || 1 // Default to available if column doesn't exist
+      is_available: unit.is_available || 1
     }));
     res.status(200).json({ units: mappedUnits });
   } catch (error) {
@@ -465,47 +459,69 @@ app.get('/public/units', async (req, res) => {
   }
 });
 
-// Serve unit image BLOB as base64
-app.get('/api/unit/:unitId/image/:imgIndex', async (req, res) => {
-  const { unitId, imgIndex } = req.params;
+// Check if unit can be booked
+app.get('/units/:id/booking-status', async (req, res) => {
+  const unitId = req.params.id;
+  const userId = req.headers['x-user-id'];
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [units] = await connection.execute('SELECT images FROM units WHERE id = ?', [unitId]);
+    
+    // Get unit info
+    const [units] = await connection.execute(
+      'SELECT id, user_id, is_available FROM units WHERE id = ?',
+      [unitId]
+    );
+    
+    if (units.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'Unit not found' });
+    }
+    
+    const unit = units[0];
+    
+    // Get user's existing bookings for this unit
+    let userBookingStatus = null;
+    if (userId && userId !== 'guest') {
+      const [userBookings] = await connection.execute(
+        'SELECT id, status FROM bookings WHERE unit_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1',
+        [unitId, userId]
+      );
+      
+      if (userBookings.length > 0) {
+        userBookingStatus = {
+          status: userBookings[0].status,
+          bookingId: userBookings[0].id
+        };
+      }
+    }
+    
+    // Check if unit has any confirmed booking
+    const [confirmedBookings] = await connection.execute(
+      'SELECT id FROM bookings WHERE unit_id = ? AND status = ?',
+      [unitId, 'confirmed']
+    );
+    
+    const isUnitConfirmed = confirmedBookings.length > 0;
+    
     await connection.end();
-    if (!units.length || !units[0].images) {
-      return res.status(404).json({ error: 'No image found' });
-    }
-    let imagesArr;
-    try {
-      imagesArr = JSON.parse(units[0].images);
-    } catch {
-      imagesArr = [units[0].images];
-    }
-    const imgPath = imagesArr[imgIndex];
-    if (!imgPath) {
-      return res.status(404).json({ error: 'Image index not found' });
-    }
-    // Read image file from disk and convert to base64
-    const filePath = path.join(__dirname, imgPath);
-    let fileBuffer;
-    try {
-      fileBuffer = await fs.readFile(filePath);
-    } catch (err) {
-      return res.status(404).json({ error: 'Image file not found on disk' });
-    }
-    const base64Img = fileBuffer.toString('base64');
-    // Optionally detect mime type from extension
-    let mimeType = 'image/jpeg';
-    if (imgPath.endsWith('.png')) mimeType = 'image/png';
-    else if (imgPath.endsWith('.gif')) mimeType = 'image/gif';
-    res.json({ base64: `data:${mimeType};base64,${base64Img}` });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    
+    res.status(200).json({
+      canBook: unit.is_available === 1 && !isUnitConfirmed,
+      isAvailable: unit.is_available === 1,
+      isConfirmed: isUnitConfirmed,
+      userBookingStatus: userBookingStatus,
+      message: isUnitConfirmed ? 
+        'Unit is already booked and confirmed by another user' : 
+        unit.is_available === 0 ? 'Unit is unavailable' : 'Unit can be booked'
+    });
+  } catch (error) {
+    console.error('Error checking booking status:', error);
+    res.status(500).json({ message: 'Failed to check booking status' });
   }
 });
 
 // --- Inquiries Endpoints ---
-// Send a new inquiry (bound to unit poster)
 app.post('/inquiries', async (req, res) => {
   const { unitId, message } = req.body;
   const senderUserId = req.headers['x-user-id'];
@@ -514,14 +530,12 @@ app.post('/inquiries', async (req, res) => {
   }
   try {
     const connection = await mysql.createConnection(dbConfig);
-    // Get the poster (owner) of the unit
     const [unitRows] = await connection.execute('SELECT user_id FROM units WHERE id = ?', [unitId]);
     if (unitRows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found' });
     }
     const recipientUserId = unitRows[0].user_id;
-    // Prevent sending inquiry to self
     if (parseInt(senderUserId) === recipientUserId) {
       await connection.end();
       return res.status(400).json({ message: 'Cannot send inquiry to yourself' });
@@ -538,7 +552,6 @@ app.post('/inquiries', async (req, res) => {
   }
 });
 
-// Reply to an inquiry (threaded)
 app.post('/inquiries/reply', async (req, res) => {
   const { inquiryId, message, recipientUserId } = req.body;
   const senderUserId = req.headers['x-user-id'];
@@ -547,7 +560,6 @@ app.post('/inquiries/reply', async (req, res) => {
   }
   try {
     const connection = await mysql.createConnection(dbConfig);
-    // Get the original inquiry to fetch unit_id
     const [inquiryRows] = await connection.execute('SELECT unit_id FROM inquiries WHERE id = ?', [inquiryId]);
     if (inquiryRows.length === 0) {
       await connection.end();
@@ -566,7 +578,6 @@ app.post('/inquiries/reply', async (req, res) => {
   }
 });
 
-// Fetch all inquiries for the logged-in user (sent or received, with unit info and user names)
 app.get('/inquiries', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -575,7 +586,6 @@ app.get('/inquiries', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
-    // Get all inquiries where user is sender or recipient with user names
     const [inquiries] = await connection.execute(
       `SELECT 
         i.*, 
@@ -593,7 +603,6 @@ app.get('/inquiries', async (req, res) => {
       [userId, userId]
     );
 
-    // For each inquiry, get replies with user names
     for (const inquiry of inquiries) {
       const [replies] = await connection.execute(
         `SELECT 
@@ -618,7 +627,7 @@ app.get('/inquiries', async (req, res) => {
 
 // --- Bookings Endpoints ---
 
-// Create a new booking (with transaction_type and date_of_visiting)
+// Create a new booking
 app.post('/bookings', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { unitId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting } = req.body;
@@ -642,13 +651,13 @@ app.post('/bookings', async (req, res) => {
       return res.status(400).json({ message: 'You cannot book your own unit.' });
     }
     
-    // Check if unit is already booked (confirmed) - make unit unavailable
-    const [existingBookings] = await connection.execute(
+    // Check if unit is already confirmed
+    const [confirmedBookings] = await connection.execute(
       'SELECT * FROM bookings WHERE unit_id = ? AND status = ?',
       [unitId, 'confirmed']
     );
     
-    if (existingBookings.length > 0) {
+    if (confirmedBookings.length > 0) {
       await connection.end();
       return res.status(400).json({ message: 'This unit is already booked and confirmed. Unit is now unavailable.' });
     }
@@ -671,12 +680,6 @@ app.post('/bookings', async (req, res) => {
       }
     }
     
-    // Check if user has a denied booking for this unit (allow rebooking)
-    const [deniedBookings] = await connection.execute(
-      'SELECT * FROM bookings WHERE unit_id = ? AND user_id = ? AND status = ?',
-      [unitId, userId, 'denied']
-    );
-    
     // Create new booking
     await connection.execute(
       'INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, transaction_type, date_of_visiting) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -691,7 +694,7 @@ app.post('/bookings', async (req, res) => {
   }
 });
 
-// Get bookings made by the logged-in user (include transaction_type and date_of_visiting)
+// Get bookings made by the logged-in user
 app.get('/bookings/my', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -717,7 +720,7 @@ app.get('/bookings/my', async (req, res) => {
   }
 });
 
-// Get bookings for units posted by the logged-in user (include transaction_type and date_of_visiting)
+// Get bookings for units posted by the logged-in user
 app.get('/bookings/rented', async (req, res) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -743,22 +746,70 @@ app.get('/bookings/rented', async (req, res) => {
   }
 });
 
+// Cancel a pending booking (user can cancel their own pending booking)
+app.delete('/bookings/:id', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  const bookingId = req.params.id;
+  
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
+  }
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Check if booking exists and belongs to user
+    const [bookings] = await connection.execute(
+      'SELECT * FROM bookings WHERE id = ? AND user_id = ?',
+      [bookingId, userId]
+    );
+    
+    if (bookings.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'Booking not found or not authorized to cancel' });
+    }
+    
+    const booking = bookings[0];
+    
+    // Only allow cancellation of pending bookings
+    if (booking.status !== 'pending') {
+      await connection.end();
+      return res.status(400).json({ message: 'Only pending bookings can be cancelled' });
+    }
+    
+    // Delete the booking
+    await connection.execute(
+      'DELETE FROM bookings WHERE id = ? AND user_id = ?',
+      [bookingId, userId]
+    );
+    
+    await connection.end();
+    res.status(200).json({ message: 'Booking cancelled successfully' });
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    res.status(500).json({ message: 'Failed to cancel booking' });
+  }
+});
+
 // Confirm or deny a booking (unit owner only)
 app.put('/bookings/:id/status', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const bookingId = req.params.id;
-  const { status } = req.body; // 'confirmed' or 'denied'
+  const { status } = req.body; // 'confirmed', 'denied', or 'cancelled'
   
-  if (!userId || !bookingId || !['confirmed', 'denied'].includes(status)) {
+  if (!userId || !bookingId || !['confirmed', 'denied', 'cancelled'].includes(status)) {
     return res.status(400).json({ message: 'Invalid request' });
   }
   
   try {
     const connection = await mysql.createConnection(dbConfig);
     
-    // Check if booking exists and belongs to a unit owned by this user
+    // Get booking with unit and user info
     const [rows] = await connection.execute(
-      `SELECT b.*, u.user_id as unit_owner_id, u.id as unit_id FROM bookings b JOIN units u ON b.unit_id = u.id WHERE b.id = ?`,
+      `SELECT b.*, u.user_id as unit_owner_id, u.id as unit_id, u.is_available 
+       FROM bookings b 
+       JOIN units u ON b.unit_id = u.id 
+       WHERE b.id = ?`,
       [bookingId]
     );
     
@@ -767,16 +818,33 @@ app.put('/bookings/:id/status', async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
     
-    if (parseInt(rows[0].unit_owner_id) !== parseInt(userId)) {
-      await connection.end();
-      return res.status(403).json({ message: 'Not authorized to update this booking' });
-    }
+    const booking = rows[0];
+    const unitId = booking.unit_id;
+    const currentStatus = booking.status;
     
-    const unitId = rows[0].unit_id;
-    const currentStatus = rows[0].status;
-    
-    // If confirming a booking
-    if (status === 'confirmed') {
+    // Handle different status updates
+    if (status === 'cancelled') {
+      // Only allow user to cancel their own pending booking
+      if (parseInt(booking.user_id) !== parseInt(userId)) {
+        await connection.end();
+        return res.status(403).json({ message: 'Not authorized to cancel this booking' });
+      }
+      
+      if (currentStatus !== 'pending') {
+        await connection.end();
+        return res.status(400).json({ message: 'Only pending bookings can be cancelled' });
+      }
+      
+      // Simply delete the booking
+      await connection.execute('DELETE FROM bookings WHERE id = ?', [bookingId]);
+      
+    } else if (status === 'confirmed') {
+      // Only unit owner can confirm
+      if (parseInt(booking.unit_owner_id) !== parseInt(userId)) {
+        await connection.end();
+        return res.status(403).json({ message: 'Not authorized to confirm this booking' });
+      }
+      
       // Check if unit already has a confirmed booking
       const [confirmedBookings] = await connection.execute(
         'SELECT * FROM bookings WHERE unit_id = ? AND status = ? AND id != ?',
@@ -788,7 +856,7 @@ app.put('/bookings/:id/status', async (req, res) => {
         return res.status(400).json({ message: 'This unit already has a confirmed booking.' });
       }
       
-      // Update unit status to unavailable (is_available = 0)
+      // Update unit status to unavailable
       await connection.execute(
         'UPDATE units SET is_available = 0 WHERE id = ?',
         [unitId]
@@ -799,18 +867,28 @@ app.put('/bookings/:id/status', async (req, res) => {
         'UPDATE bookings SET status = ? WHERE unit_id = ? AND status = ? AND id != ?',
         ['denied', unitId, 'pending', bookingId]
       );
+      
+      // Update the booking status
+      await connection.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
+      
+    } else if (status === 'denied') {
+      // Only unit owner can deny
+      if (parseInt(booking.unit_owner_id) !== parseInt(userId)) {
+        await connection.end();
+        return res.status(403).json({ message: 'Not authorized to deny this booking' });
+      }
+      
+      // If denying a confirmed booking, make unit available again
+      if (currentStatus === 'confirmed') {
+        await connection.execute(
+          'UPDATE units SET is_available = 1 WHERE id = ?',
+          [unitId]
+        );
+      }
+      
+      // Update the booking status
+      await connection.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
     }
-    
-    // If denying a booking that was previously confirmed, make unit available again
-    if (status === 'denied' && currentStatus === 'confirmed') {
-      await connection.execute(
-        'UPDATE units SET is_available = 1 WHERE id = ?',
-        [unitId]
-      );
-    }
-    
-    // Update the booking status
-    await connection.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
     
     await connection.end();
     res.status(200).json({ message: `Booking ${status}` });
@@ -821,8 +899,6 @@ app.put('/bookings/:id/status', async (req, res) => {
 });
 
 // --- User Profile Endpoints ---
-
-// Get user profile
 app.get('/user/profile', async (req, res) => {
   const userId = req.headers['x-user-id'];
   console.log('Fetching profile for user ID:', userId);
@@ -862,7 +938,6 @@ app.get('/user/profile', async (req, res) => {
   }
 });
 
-// Update user profile
 app.put('/user/profile', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { name, email, contactNumber } = req.body;
@@ -968,8 +1043,6 @@ app.put('/user/change-password', async (req, res) => {
 });
 
 // --- Admin User Management Endpoints ---
-
-// Fetch all users (admin view)
 app.get('/admin/users', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
@@ -982,7 +1055,6 @@ app.get('/admin/users', async (req, res) => {
   }
 });
 
-// Admin delete any user (by id, cascade delete their data)
 app.delete('/admin/users/:id', async (req, res) => {
   const userId = req.params.id;
   try {
@@ -998,7 +1070,6 @@ app.delete('/admin/users/:id', async (req, res) => {
         }
       }
     }
-    // Delete all units for this user (which will cascade bookings/inquiries)
     await connection.execute('DELETE FROM units WHERE user_id = ?', [userId]);
     await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
     await connection.end();
@@ -1010,8 +1081,6 @@ app.delete('/admin/users/:id', async (req, res) => {
 });
 
 // --- Admin Unit Management Endpoints ---
-
-// Fetch all units (admin view, includes user info)
 app.get('/admin/units', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
@@ -1030,12 +1099,10 @@ app.get('/admin/units', async (req, res) => {
   }
 });
 
-// Admin delete any unit (by id, regardless of owner)
 app.delete('/admin/units/:id', async (req, res) => {
   const unitId = req.params.id;
   try {
     const connection = await mysql.createConnection(dbConfig);
-    // Get images to delete
     const [unitRows] = await connection.execute('SELECT images FROM units WHERE id = ?', [unitId]);
     if (unitRows.length === 0) {
       await connection.end();
@@ -1059,30 +1126,20 @@ app.delete('/admin/units/:id', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
 // --- Admin Report Endpoints ---
-
-// Get comprehensive admin report statistics
 app.get('/admin/report/statistics', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
-    // 1. Total users count
     const [usersResult] = await connection.execute('SELECT COUNT(*) as total_users FROM users');
     const totalUsers = usersResult[0].total_users;
     
-    // 2. Total units count
     const [unitsResult] = await connection.execute('SELECT COUNT(*) as total_units FROM units');
     const totalUnits = unitsResult[0].total_units;
     
-    // 3. Total bookings count
     const [bookingsResult] = await connection.execute('SELECT COUNT(*) as total_bookings FROM bookings');
     const totalBookings = bookingsResult[0].total_bookings;
     
-    // 4. Booking status breakdown
     const [bookingStatusResult] = await connection.execute(
       `SELECT 
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_bookings,
@@ -1091,7 +1148,6 @@ app.get('/admin/report/statistics', async (req, res) => {
        FROM bookings`
     );
     
-    // 5. Units availability status
     const [unitsStatusResult] = await connection.execute(
       `SELECT 
         SUM(CASE WHEN is_available = 1 THEN 1 ELSE 0 END) as available_units,
@@ -1099,25 +1155,21 @@ app.get('/admin/report/statistics', async (req, res) => {
        FROM units`
     );
     
-    // 6. Recent registrations (last 7 days)
     const [recentRegistrations] = await connection.execute(
       `SELECT COUNT(*) as recent_users 
        FROM users 
        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`
     );
     
-    // 7. Recent units posted (last 7 days)
     const [recentUnits] = await connection.execute(
       `SELECT COUNT(*) as recent_units 
        FROM units 
        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`
     );
     
-    // 8. Total inquiries
     const [inquiriesResult] = await connection.execute('SELECT COUNT(*) as total_inquiries FROM inquiries');
     const totalInquiries = inquiriesResult[0].total_inquiries;
     
-    // 9. Top users by units posted
     const [topUsersResult] = await connection.execute(
       `SELECT u.username, u.email, COUNT(units.id) as units_count
        FROM users u
@@ -1127,7 +1179,6 @@ app.get('/admin/report/statistics', async (req, res) => {
        LIMIT 5`
     );
     
-    // 10. Transaction type breakdown
     const [transactionTypesResult] = await connection.execute(
       `SELECT 
         transaction_type,
@@ -1173,7 +1224,6 @@ app.get('/admin/report/statistics', async (req, res) => {
   }
 });
 
-// Get detailed booking report with filters
 app.get('/admin/report/bookings', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.query;
@@ -1226,7 +1276,6 @@ app.get('/admin/report/bookings', async (req, res) => {
   }
 });
 
-// Get users report with their activity
 app.get('/admin/report/users', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
@@ -1260,4 +1309,9 @@ app.get('/admin/report/users', async (req, res) => {
       message: 'Failed to fetch users report' 
     });
   }
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });

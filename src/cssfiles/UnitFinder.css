@@ -320,6 +320,37 @@
   transform: scale(1.02);
 }
 
+.unavailable-unit {
+  opacity: 0.8;
+  position: relative;
+}
+
+.unavailable-unit::after {
+  content: "BOOKED";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #f44336;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  z-index: 1;
+}
+
+.unavailable-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(244, 67, 54, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
 .image-count-badge {
   position: absolute;
   top: 10px;
@@ -682,6 +713,31 @@ button:disabled {
   line-height: 1.4;
   text-align: center;
   font-size: 0.95rem;
+}
+
+.pending-booking-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.cancel-booking-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-booking-btn:hover {
+  background: linear-gradient(135deg, #ff4757, #ff3838);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
 }
 
 .unit-images-gallery {
@@ -1394,6 +1450,15 @@ button:disabled {
     width: 100%;
     max-width: 250px;
     text-align: center;
+  }
+  
+  .pending-booking-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .cancel-booking-btn {
+    width: 100%;
   }
 }
 

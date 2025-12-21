@@ -121,10 +121,27 @@ const UnitFinder = () => {
     
     return {
       status: userBooking.status,
+      bookingId: userBooking.id,
       canBookAgain: userBooking.status === 'denied',
       isPending: userBooking.status === 'pending',
       isConfirmed: userBooking.status === 'confirmed'
     };
+  };
+
+  const fetchUnitBookingStatus = async (unitId) => {
+    try {
+      const res = await fetch(`${API_BASE}/units/${unitId}/booking-status`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        return data;
+      }
+      return null;
+    } catch (err) {
+      console.error("Error fetching unit booking status:", err);
+      return null;
+    }
   };
 
   const handleLogout = () => {
@@ -278,7 +295,34 @@ const UnitFinder = () => {
     setShowLocationMap(true);
   };
 
-  const handleBookNowClick = (e, unit) => {
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`${API_BASE}/bookings/${bookingId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+      
+      setActionMessage("Booking cancelled successfully!");
+      fetchUserBookings();
+      fetchAllUnits();
+      
+      setTimeout(() => {
+        if (mountedRef.current) setModalUnit(null);
+      }, 1400);
+    } catch (err) {
+      console.error("Error cancelling booking:", err);
+      setActionMessage(`Failed to cancel booking: ${err.message}`);
+    }
+  };
+
+  const handleBookNowClick = async (e, unit) => {
     if (e && typeof e.stopPropagation === "function") {
       e.stopPropagation();
     }
@@ -288,26 +332,22 @@ const UnitFinder = () => {
       return;
     }
 
-    if (unit.is_available === 0 || unit.is_available === false) {
-      setActionMessage("This unit is no longer available for booking. It has been confirmed by another user.");
-      return;
-    }
-
-    const bookingStatus = getUnitBookingStatus(unit.id);
+    // Fetch current booking status
+    const bookingStatus = await fetchUnitBookingStatus(unit.id);
     
     if (bookingStatus) {
-      if (bookingStatus.isConfirmed) {
+      if (!bookingStatus.canBook) {
+        setActionMessage(bookingStatus.message || "This unit cannot be booked at this time.");
+        return;
+      }
+      
+      if (bookingStatus.userBookingStatus && bookingStatus.userBookingStatus.status === 'confirmed') {
         setActionMessage("You already have a confirmed booking for this unit.");
         return;
       }
       
-      if (bookingStatus.isPending) {
+      if (bookingStatus.userBookingStatus && bookingStatus.userBookingStatus.status === 'pending') {
         setActionMessage("You already have a pending booking for this unit.");
-        return;
-      }
-      
-      if (!bookingStatus.canBookAgain && bookingStatus.status !== 'denied') {
-        setActionMessage("You cannot book this unit at this time.");
         return;
       }
     }
@@ -649,7 +689,15 @@ const UnitFinder = () => {
                   <p className="confirmed-info">You have a confirmed booking for this unit.</p>
                 )}
                 {bookingStatus.status === 'pending' && (
-                  <p className="pending-info">Waiting for owner confirmation.</p>
+                  <div className="pending-booking-actions">
+                    <p className="pending-info">Waiting for owner confirmation.</p>
+                    <button 
+                      className="cancel-booking-btn"
+                      onClick={() => handleCancelBooking(bookingStatus.bookingId)}
+                    >
+                      ❌ Cancel Booking
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -686,10 +734,18 @@ const UnitFinder = () => {
             <button
               className="book-now-btn"
               onClick={(e) => handleBookNowClick(e, modalUnit)}
-              disabled={isGuest || loading || !isUnitAvailable || (bookingStatus && !bookingStatus.canBookAgain && bookingStatus.status !== 'denied')}
+              disabled={
+                isGuest || 
+                loading || 
+                !isUnitAvailable || 
+                (bookingStatus && 
+                 (bookingStatus.status === 'confirmed' || 
+                  bookingStatus.status === 'pending'))
+              }
             >
               {bookingStatus?.status === 'denied' ? '📅 Book Again' : '📅 Book Now'}
               {!isUnitAvailable && " (Unavailable)"}
+              {(bookingStatus?.status === 'confirmed' || bookingStatus?.status === 'pending') && " (Already Booked)"}
             </button>
             {tooltip.show && tooltip.target === "book" && (
               <div className="button-tooltip">Please Login to use this feature</div>
@@ -929,6 +985,7 @@ const UnitFinder = () => {
                   )}
                   {!isAvailable && (
                     <div className="unavailable-badge">
+                      BOOKED
                     </div>
                   )}
                   {unit.images?.length > 1 && (

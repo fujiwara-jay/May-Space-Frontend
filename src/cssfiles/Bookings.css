@@ -1,33 +1,3 @@
-.highlight {
-  background-color: rgba(224, 193, 109, 0.4);
-  color: #2c363f;
-  padding: 0 6px;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(224, 193, 109, 0.3);
-  font-weight: 600;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  text-shadow: none;
-}
-
-.highlight:hover {
-  background-color: rgba(224, 193, 109, 0.6);
-  box-shadow: 0 4px 12px rgba(224, 193, 109, 0.5);
-  cursor: default;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-image: url('GB2.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-
-}
-
 .top-navigation-container {
   position: fixed;
   top: 20px;
@@ -146,25 +116,41 @@ body {
 .status-pending {
   color: #ff9800;
   font-weight: 600;
+  background-color: rgba(255, 152, 0, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 5px;
 }
 
 .status-confirmed {
   color: #4caf50;
   font-weight: 600;
+  background-color: rgba(76, 175, 80, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 5px;
 }
 
 .status-denied {
   color: #f44336;
   font-weight: 600;
+  background-color: rgba(244, 67, 54, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 5px;
 }
 
 .booking-actions {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid #4a5a6a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
-.confirm-btn, .deny-btn {
+.confirm-btn, .deny-btn, .cancel-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 10px;
@@ -197,6 +183,19 @@ body {
   background: linear-gradient(135deg, #d32f2f, #b71c1c);
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+}
+
+.cancel-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  color: white;
+  width: 100%;
+  max-width: 200px;
+}
+
+.cancel-btn:hover {
+  background: linear-gradient(135deg, #ff4757, #ff3838);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
 }
 
 .loading, .no-inquiries, .error-message, .success-message {
@@ -409,7 +408,7 @@ body {
     padding: 15px;
   }
   
-  .confirm-btn, .deny-btn {
+  .confirm-btn, .deny-btn, .cancel-btn {
     width: 100%;
     margin-right: 0;
     margin-bottom: 8px;
