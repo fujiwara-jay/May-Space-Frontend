@@ -33,8 +33,6 @@ function Bookings() {
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
-  const API_BASE = process.env.REACT_APP_API_URL || "https://may-space-backend.onrender.com";
-
   const handleBack = () => {
     navigate(-1);
   };
@@ -79,34 +77,10 @@ function Bookings() {
     return notifications.filter(notif => !notif.read).length;
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) {
-      return;
-    }
-    
-    setActionMessage("");
-    try {
-      const res = await fetch(`${API_BASE}/bookings/${bookingId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-ID": userId,
-        },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || `Failed to cancel booking`);
-      setActionMessage(`Booking cancelled successfully`);
-      setTimeout(() => setActionMessage(""), 2000);
-      fetchBookings();
-    } catch (err) {
-      setActionMessage(err.message);
-    }
-  };
-
   const handleStatusUpdate = async (bookingId, status) => {
     setActionMessage("");
     try {
-      const res = await fetch(`${API_BASE}/bookings/${bookingId}/status`, {
+      const res = await fetch(`https://may-space-backend.onrender.com/bookings/${bookingId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -130,12 +104,12 @@ function Bookings() {
     setError(null);
     try {
       const headers = { "X-User-ID": userId };
-      const myRes = await fetch(`${API_BASE}/bookings/my`, { headers });
+      const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
       const myData = await myRes.json();
       if (!myRes.ok) throw new Error(myData.message || "Failed to fetch my bookings");
       setMyBookings(myData.bookings || []);
 
-      const rentedRes = await fetch(`${API_BASE}/bookings/rented`, { headers });
+      const rentedRes = await fetch("https://may-space-backend.onrender.com/bookings/rented", { headers });
       const rentedData = await rentedRes.json();
       if (!rentedRes.ok) throw new Error(rentedData.message || "Failed to fetch rented bookings");
       setRentedUnits(rentedData.bookings || []);
@@ -270,16 +244,6 @@ function Bookings() {
                     </div>
                     <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                   </div>
-                  {booking.status === "pending" && (
-                    <div className="booking-actions">
-                      <button 
-                        className="cancel-btn" 
-                        onClick={() => handleCancelBooking(booking.id)}
-                      >
-                        Cancel Booking
-                      </button>
-                    </div>
-                  )}
                 </div>
               ))
             )}
