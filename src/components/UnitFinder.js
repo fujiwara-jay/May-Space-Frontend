@@ -54,6 +54,7 @@ const UnitFinder = () => {
   const [tooltip, setTooltip] = useState({ show: false, target: null });
   const [loading, setLoading] = useState(false);
   const [userBookings, setUserBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]); // Track all bookings to check availability
 
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType");
@@ -64,6 +65,7 @@ const UnitFinder = () => {
   useEffect(() => {
     mountedRef.current = true;
     fetchAllUnits();
+    fetchAllBookings(); // Fetch all bookings to check unit availability
     if (userId && userId !== "guest") {
       fetchUserBookings();
     }
@@ -97,6 +99,21 @@ const UnitFinder = () => {
     }
   }, [searchTerm, allUnits]);
 
+  const fetchAllBookings = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/public/bookings`, {
+        headers: getAuthHeaders(),
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setAllBookings(data.bookings || []);
+      }
+    } catch (err) {
+      console.error("Error fetching all bookings:", err);
+    }
+  };
+
   const fetchUserBookings = async () => {
     try {
       const res = await fetch(`${API_BASE}/bookings/my`, {
@@ -110,6 +127,23 @@ const UnitFinder = () => {
     } catch (err) {
       console.error("Error fetching user bookings:", err);
     }
+  };
+
+  // Check if unit is available (not booked by anyone with confirmed status)
+  const isUnitAvailable = (unitId) => {
+    // First check unit's own availability flag
+    const unit = allUnits.find(u => u.id === unitId);
+    if (unit && (unit.is_available === 0 || unit.is_available === false)) {
+      return false;
+    }
+    
+    // Check if there are any confirmed bookings for this unit
+    const confirmedBooking = allBookings.find(booking => 
+      parseInt(booking.unit_id) === parseInt(unitId) && 
+      booking.status === 'confirmed'
+    );
+    
+    return !confirmedBooking; // Available if no confirmed booking exists
   };
 
   const getUnitBookingStatus = (unitId) => {
@@ -288,7 +322,8 @@ const UnitFinder = () => {
       return;
     }
 
-    if (unit.is_available === 0 || unit.is_available === false) {
+    // Check if unit is available (not confirmed by anyone else)
+    if (!isUnitAvailable(unit.id)) {
       setActionMessage("This unit is no longer available for booking. It has been confirmed by another user.");
       return;
     }
@@ -367,6 +402,12 @@ const UnitFinder = () => {
     setBookingError(null);
     setActionMessage(null);
 
+    // Double-check availability before submitting
+    if (!isUnitAvailable(bookingDetails.unitId)) {
+      setBookingError("This unit is no longer available. It has been confirmed by another user.");
+      return;
+    }
+
     const { name, address, contact, numberOfPeople, transaction, date, unitId } = bookingDetails;
     const isValidNumberOfPeople = Number.isInteger(Number(numberOfPeople)) && Number(numberOfPeople) > 0;
     const isValidTransaction = transaction === "Online" || transaction === "Walk-in";
@@ -426,6 +467,7 @@ const UnitFinder = () => {
       });
 
       fetchUserBookings();
+      fetchAllBookings(); // Refresh all bookings
       fetchAllUnits();
 
       setTimeout(() => {
@@ -493,6 +535,9 @@ const UnitFinder = () => {
 
   const renderModalContent = () => {
     if (!modalUnit) return null;
+
+    const unitAvailable = isUnitAvailable(modalUnit.id);
+    const bookingStatus = getUnitBookingStatus(modalUnit.id);
 
     if (showBookingForm) {
       return (
@@ -584,9 +629,9 @@ const UnitFinder = () => {
             <p><strong>Contact Person:</strong> {modalUnit?.contact_person}</p>
             <p><strong>Price:</strong> {formatPrice(modalUnit?.unitPrice || modalUnit?.price)}</p>
             <p><strong>Status:</strong> 
-              {modalUnit?.is_available === 0 || modalUnit?.is_available === false ? 
-                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Booked)</span> : 
-                <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span>
+              {unitAvailable ? 
+                <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span> : 
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Confirmed by another user)</span>
               }
             </p>
           </div>
@@ -615,9 +660,6 @@ const UnitFinder = () => {
       );
     }
 
-    const bookingStatus = getUnitBookingStatus(modalUnit.id);
-    const isUnitAvailable = modalUnit.is_available !== 0 && modalUnit.is_available !== false;
-
     return (
       <>
         <div className="property-info">
@@ -629,9 +671,9 @@ const UnitFinder = () => {
             <p><strong>Special Features:</strong> {modalUnit.special_features}</p>
             <p><strong>Price:</strong> {formatPrice(modalUnit.unitPrice || modalUnit.price)}</p>
             <p><strong>Status:</strong> 
-              {isUnitAvailable ? 
+              {unitAvailable ? 
                 <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span> : 
-                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Booked)</span>
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Confirmed by another user)</span>
               }
             </p>
             
@@ -642,7 +684,7 @@ const UnitFinder = () => {
                     {bookingStatus.status.toUpperCase()}
                   </span>
                 </p>
-                {bookingStatus.status === 'denied' && (
+                {bookingStatus.status === 'denied' && unitAvailable && (
                   <p className="rebooking-info">You can book this unit again.</p>
                 )}
                 {bookingStatus.status === 'confirmed' && (
@@ -686,10 +728,10 @@ const UnitFinder = () => {
             <button
               className="book-now-btn"
               onClick={(e) => handleBookNowClick(e, modalUnit)}
-              disabled={isGuest || loading || !isUnitAvailable || (bookingStatus && !bookingStatus.canBookAgain && bookingStatus.status !== 'denied')}
+              disabled={isGuest || loading || !unitAvailable || (bookingStatus && !bookingStatus.canBookAgain && bookingStatus.status !== 'denied')}
             >
-              {bookingStatus?.status === 'denied' ? '📅 Book Again' : '📅 Book Now'}
-              {!isUnitAvailable && " (Unavailable)"}
+              {bookingStatus?.status === 'denied' && unitAvailable ? '📅 Book Again' : '📅 Book Now'}
+              {!unitAvailable && " (Unavailable)"}
             </button>
             {tooltip.show && tooltip.target === "book" && (
               <div className="button-tooltip">Please Login to use this feature</div>
@@ -859,7 +901,7 @@ const UnitFinder = () => {
       <div className="unit-finder-header">
         <h1>May Space</h1>
         <h2>A Web-Based Rental Unit Space Finder</h2>
-        <h3>Available Units ({filteredUnits.length})</h3>
+        <h3>Available Units ({filteredUnits.filter(unit => isUnitAvailable(unit.id)).length})</h3>
         
         <div className="search-container">
           <div className="search-input-wrapper">
@@ -901,13 +943,13 @@ const UnitFinder = () => {
       ) : (
         <div className="unit-grid">
           {filteredUnits.map((unit) => {
-            const isAvailable = unit.is_available !== 0 && unit.is_available !== false;
+            const unitAvailable = isUnitAvailable(unit.id);
             const bookingStatus = getUnitBookingStatus(unit.id);
             
             return (
               <div
                 key={unit.id}
-                className={`unit-card ${!isAvailable ? 'unavailable-unit' : ''}`}
+                className={`unit-card ${!unitAvailable ? 'unavailable-unit' : ''}`}
                 onClick={() => setModalUnit(unit)}
                 role="button"
                 tabIndex={0}
@@ -927,8 +969,9 @@ const UnitFinder = () => {
                   ) : (
                     <div className="unit-image-placeholder">No Image Available</div>
                   )}
-                  {!isAvailable && (
+                  {!unitAvailable && (
                     <div className="unavailable-badge">
+                      Booked
                     </div>
                   )}
                   {unit.images?.length > 1 && (
@@ -943,7 +986,7 @@ const UnitFinder = () => {
                   <p><strong>Contact Person:</strong> {unit.contact_person}</p>
                   <p><strong>Price:</strong> {formatPrice(unit.unitPrice || unit.price)}</p>
                   <p><strong>Status:</strong> 
-                    {isAvailable ? 
+                    {unitAvailable ? 
                       <span style={{ color: '#4caf50' }}> Available</span> : 
                       <span style={{ color: '#e57373' }}> Unavailable (Booked)</span>
                     }
