@@ -262,10 +262,11 @@
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 
-.info-value.masked {
-  color: #ff6b6b;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 2px;
+.info-value.revealed {
+  color: #ffffff;
+  font-weight: 600;
+  animation: reveal 0.3s ease;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .user-actions {
@@ -333,7 +334,7 @@
   box-shadow: 0 6px 20px rgba(229, 115, 115, 0.4);
 }
 
-.back-button {
+.back-button-manager {
   background: rgba(61, 72, 82, 0.9);
   color: #f7e7b6;
   border: none;
@@ -354,7 +355,7 @@
   z-index: 1;
 }
 
-.back-button:hover {
+.back-button-manager:hover {
   background: rgba(77, 88, 98, 0.9);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -588,13 +589,6 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
-.info-value.revealed {
-  color: #28a745;
-  font-weight: 600;
-  animation: reveal 0.3s ease;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
 @media (max-width: 768px) {
   .admin-account-manage-container {
     padding: 15px;
@@ -758,7 +752,7 @@
   }
   
   .user-actions,
-  .back-button {
+  .back-button-manager {
     display: none !important;
   }
   

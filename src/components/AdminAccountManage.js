@@ -118,7 +118,7 @@ function AdminAccountManage() {
 
   return (
     <div className="admin-account-manage-container">
-      <button className="back-button" onClick={handleBack}>
+      <button className="back-button-manager" onClick={handleBack}>
         ⬅ Back
       </button>
 
@@ -172,13 +172,13 @@ function AdminAccountManage() {
                 <div className="user-info">
                   <div className="info-item">
                     <span className="info-label">Email:</span>
-                    <span className="info-value">
+                    <span className={`info-value ${isRevealed && revealUserId === user.id ? 'revealed' : ''}`}>
                       {isRevealed && revealUserId === user.id ? user.email : maskSensitiveInfo(user.email)}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Contact:</span>
-                    <span className="info-value">
+                    <span className={`info-value ${isRevealed && revealUserId === user.id ? 'revealed' : ''}`}>
                       {isRevealed && revealUserId === user.id 
                         ? (user.contact_number || "Not provided") 
                         : maskSensitiveInfo(user.contact_number)}
@@ -220,7 +220,6 @@ function AdminAccountManage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="admin-modal-overlay" onClick={closeDeleteModal}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
@@ -262,7 +261,6 @@ function AdminAccountManage() {
         </div>
       )}
 
-      {/* PIN Verification Modal */}
       {showPinModal && (
         <div className="admin-modal-overlay" onClick={closePinModal}>
           <div className="admin-modal pin-modal" onClick={(e) => e.stopPropagation()}>
