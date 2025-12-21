@@ -3,11 +3,11 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
+const crypto = require('crypto');
 const app = express();
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 const dbConfig = {
   host: process.env.DB_HOST,
@@ -17,9 +17,20 @@ const dbConfig = {
   port: process.env.DB_PORT || 3307,
 };
 
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Ensure uploads directory exists
+(async () => {
+  try {
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
+  } catch (error) {
+    console.error('Error creating uploads directory:', error);
+  }
+})();
 
 const safeParseImages = (imagesData) => {
   if (!imagesData) return [];
@@ -33,113 +44,102 @@ const safeParseImages = (imagesData) => {
   }
 };
 
-// --- Registration Endpoints ---
-
-// --- Forgot Password OTP Endpoint ---
-const { sendOtpEmail } = require('./Mailer.js');
-const crypto = require('crypto');
-
-// Helper: Save OTP to DB
+// --- Helper Functions for OTP ---
 async function saveOtpToDb(email, otp) {
   const connection = await mysql.createConnection(dbConfig);
-  const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
-  if (users.length === 0) {
+  try {
+    const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      throw new Error('No user found with that email');
+    }
+    const userId = users[0].id;
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    
+    // Clear old OTPs for this user
+    await connection.execute('DELETE FROM otp_codes WHERE user_id = ?', [userId]);
+    
+    await connection.execute(
+      'INSERT INTO otp_codes (user_id, otp_code, expires_at, used) VALUES (?, ?, ?, ?)',
+      [userId, otp, expiresAt, false]
+    );
+  } finally {
     await connection.end();
-    throw new Error('No user found with that email');
   }
-  const userId = users[0].id;
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await connection.execute(
-    'INSERT INTO otp_codes (user_id, otp_code, expires_at, used) VALUES (?, ?, ?, ?)',
-    [userId, otp, expiresAt, false]
-  );
-  await connection.end();
 }
 
-// Helper: Validate OTP
 async function validateOtp(email, otp) {
   const connection = await mysql.createConnection(dbConfig);
-  const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
-  if (users.length === 0) {
+  try {
+    const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      return false;
+    }
+    const userId = users[0].id;
+    const [rows] = await connection.execute(
+      'SELECT * FROM otp_codes WHERE user_id = ? AND otp_code = ? AND used = FALSE AND expires_at > NOW()',
+      [userId, otp]
+    );
+    if (rows.length === 0) {
+      return false;
+    }
+    await connection.execute('UPDATE otp_codes SET used = TRUE WHERE id = ?', [rows[0].id]);
+    return true;
+  } finally {
     await connection.end();
-    return false;
   }
-  const userId = users[0].id;
-  const [rows] = await connection.execute(
-    'SELECT * FROM otp_codes WHERE user_id = ? AND otp_code = ? AND used = FALSE AND expires_at > NOW()',
-    [userId, otp]
-  );
-  if (rows.length === 0) {
-    await connection.end();
-    return false;
-  }
-  await connection.execute('UPDATE otp_codes SET used = TRUE WHERE id = ?', [rows[0].id]);
-  await connection.end();
-  return true;
 }
 
-// POST /api/auth/forgot-password
-app.post('/api/auth/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email is required.' });
-
-  const otp = crypto.randomInt(100000, 999999).toString();
-
-  try {
-    await saveOtpToDb(email, otp);
-    await sendOtpEmail(email, otp, { type: 'forgot-password' });
-    res.status(200).json({ message: 'OTP sent to your email.' });
-  } catch (err) {
-    console.error('Failed to send OTP:', err);
-    res.status(500).json({ message: err.message || 'Failed to send OTP email.' });
+// --- Authentication Middleware ---
+const authenticate = async (req, res, next) => {
+  const userId = req.headers['x-user-id'];
+  if (!userId || userId === 'undefined') {
+    return res.status(401).json({ message: 'Unauthorized: User ID not provided. Please log in.' });
   }
-});
+  req.userId = userId;
+  next();
+};
 
-// POST /api/auth/reset-password
-app.post('/api/auth/reset-password', async (req, res) => {
-  const { email, otp, newPassword } = req.body;
-  if (!email || !otp || !newPassword) {
-    return res.status(400).json({ message: 'Email, OTP, and new password are required.' });
-  }
-  try {
-    const valid = await validateOtp(email, otp);
-    if (!valid) return res.status(400).json({ message: 'Invalid or expired OTP.' });
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const connection = await mysql.createConnection(dbConfig);
-    await connection.execute('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
-    await connection.end();
-    res.status(200).json({ message: 'Password reset successful.' });
-  } catch (err) {
-    console.error('Failed to reset password:', err);
-    res.status(500).json({ message: err.message || 'Failed to reset password.' });
-  }
-});
+// --- Registration Endpoints ---
 
 // User Registration
 app.post('/user/register', async (req, res) => {
   const { name, username, email, contactNumber, password } = req.body;
+  
   if (!name || !username || !email || !contactNumber || !password) {
     return res.status(400).json({ message: 'All fields are required' });
   }
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
+    
+    // Check if username or email already exists
     const [existing] = await connection.execute(
       'SELECT * FROM users WHERE username = ? OR email = ?',
       [username, email]
     );
+    
     if (existing.length > 0) {
       await connection.end();
       return res.status(409).json({ message: 'Username or email already exists' });
     }
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await connection.execute(
       'INSERT INTO users (name, username, email, contact_number, password) VALUES (?, ?, ?, ?, ?)',
       [name, username, email, contactNumber, hashedPassword]
     );
-    const [userRows] = await connection.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
+    
+    const [userRows] = await connection.execute(
+      'SELECT id, name, username, email, contact_number, created_at FROM users WHERE id = ?',
+      [result.insertId]
+    );
+    
     await connection.end();
-    res.status(201).json({ message: 'User registered successfully', user: userRows[0] });
+    
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      user: userRows[0] 
+    });
   } catch (error) {
     console.error('User registration error:', error);
     res.status(500).json({ message: 'Failed to register user' });
@@ -149,27 +149,41 @@ app.post('/user/register', async (req, res) => {
 // Admin Registration
 app.post('/admin/register', async (req, res) => {
   const { username, email, contactNumber, password } = req.body;
+  
   if (!username || !email || !contactNumber || !password) {
     return res.status(400).json({ message: 'All fields are required' });
   }
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
+    
     const [existing] = await connection.execute(
       'SELECT * FROM admins WHERE username = ? OR email = ?',
       [username, email]
     );
+    
     if (existing.length > 0) {
       await connection.end();
       return res.status(409).json({ message: 'Username or email already exists' });
     }
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await connection.execute(
       'INSERT INTO admins (username, email, contact_number, password) VALUES (?, ?, ?, ?)',
       [username, email, contactNumber, hashedPassword]
     );
-    const [adminRows] = await connection.execute('SELECT * FROM admins WHERE id = ?', [result.insertId]);
+    
+    const [adminRows] = await connection.execute(
+      'SELECT id, username, email, contact_number, created_at FROM admins WHERE id = ?',
+      [result.insertId]
+    );
+    
     await connection.end();
-    res.status(201).json({ message: 'Admin registered successfully', admin: adminRows[0] });
+    
+    res.status(201).json({ 
+      message: 'Admin registered successfully', 
+      admin: adminRows[0] 
+    });
   } catch (error) {
     console.error('Admin registration error:', error);
     res.status(500).json({ message: 'Failed to register admin' });
@@ -181,9 +195,11 @@ app.post('/admin/register', async (req, res) => {
 // User Login
 app.post('/user/login', async (req, res) => {
   const { username, password } = req.body;
+  
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required' });
   }
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [users] = await connection.execute(
@@ -191,14 +207,18 @@ app.post('/user/login', async (req, res) => {
       [username, username]
     );
     await connection.end();
+    
     if (users.length === 0) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
+    
     const user = users[0];
     const passwordMatch = await bcrypt.compare(password, user.password);
+    
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
+    
     res.status(200).json({ 
       message: 'Login successful', 
       user: { 
@@ -218,9 +238,11 @@ app.post('/user/login', async (req, res) => {
 // Admin Login
 app.post('/admin/login', async (req, res) => {
   const { username, password } = req.body;
+  
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required' });
   }
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [admins] = await connection.execute(
@@ -228,21 +250,99 @@ app.post('/admin/login', async (req, res) => {
       [username, username]
     );
     await connection.end();
+    
     if (admins.length === 0) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
+    
     const admin = admins[0];
     const passwordMatch = await bcrypt.compare(password, admin.password);
+    
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
-    res.status(200).json({ message: 'Login successful', admin: { id: admin.id, username: admin.username, email: admin.email } });
+    
+    res.status(200).json({ 
+      message: 'Login successful', 
+      admin: { 
+        id: admin.id, 
+        username: admin.username, 
+        email: admin.email,
+        contact_number: admin.contact_number
+      } 
+    });
   } catch (error) {
     console.error('Admin login error:', error);
     res.status(500).json({ message: 'Failed to log in' });
   }
 });
 
+// --- Forgot Password Endpoints ---
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required.' });
+  }
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [email]);
+    await connection.end();
+    
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No user found with that email' });
+    }
+    
+    const otp = crypto.randomInt(100000, 999999).toString();
+    
+    await saveOtpToDb(email, otp);
+    
+    // Here you would send the email. For now, we'll return the OTP in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`OTP for ${email}: ${otp}`);
+    }
+    
+    res.status(200).json({ 
+      message: 'OTP sent to your email.',
+      // In development, return OTP for testing
+      ...(process.env.NODE_ENV === 'development' && { otp: otp })
+    });
+  } catch (error) {
+    console.error('Failed to process forgot password:', error);
+    res.status(500).json({ message: 'Failed to process forgot password request.' });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: 'Email, OTP, and new password are required.' });
+  }
+  
+  try {
+    const valid = await validateOtp(email, otp);
+    
+    if (!valid) {
+      return res.status(400).json({ message: 'Invalid or expired OTP.' });
+    }
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
+    await connection.end();
+    
+    res.status(200).json({ message: 'Password reset successful.' });
+  } catch (error) {
+    console.error('Failed to reset password:', error);
+    res.status(500).json({ message: 'Failed to reset password.' });
+  }
+});
+
+// --- Unit Endpoints ---
+
+// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
@@ -253,33 +353,55 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   },
 });
-const upload = multer({ storage: storage });
 
-const authenticate = async (req, res, next) => {
-  const userId = req.headers['x-user-id'];
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized: User ID not provided. Please log in.' });
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
   }
-  req.userId = userId;
-  next();
-};
+});
 
 // Post a new unit
 app.post('/units', authenticate, async (req, res) => {
   const userId = req.userId;
   const { buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, images } = req.body;
+  
   if (!buildingName || !unitNumber || !specs) {
     return res.status(400).json({ message: 'Building Name, Unit Number, and Specifications are required' });
   }
+  
   if (!Array.isArray(images) || images.length === 0) {
     return res.status(400).json({ message: 'At least one image is required.' });
   }
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
+    
     await connection.execute(
-      'INSERT INTO units (user_id, building_name, unit_number, location, specifications, special_features, unit_price, contact_person, phone_number, images, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
-      [userId, buildingName, unitNumber, location, specs, specialFeatures, unitPrice, contactPerson, phoneNumber, JSON.stringify(images)]
+      `INSERT INTO units (
+        user_id, building_name, unit_number, location, 
+        specifications, special_features, unit_price, 
+        contact_person, phone_number, images, is_available
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId, buildingName, unitNumber, location || null,
+        specs, specialFeatures || null, unitPrice || null,
+        contactPerson || null, phoneNumber || null, 
+        JSON.stringify(images), 1
+      ]
     );
+    
     await connection.end();
     res.status(201).json({ message: 'Unit posted successfully!' });
   } catch (error) {
@@ -291,17 +413,21 @@ app.post('/units', authenticate, async (req, res) => {
 // Get all units for the logged-in user
 app.get('/units', authenticate, async (req, res) => {
   const userId = req.userId;
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [units] = await connection.execute(
-      'SELECT * FROM units WHERE user_id = ?',
+      'SELECT * FROM units WHERE user_id = ? ORDER BY created_at DESC',
       [userId]
     );
+    
     await connection.end();
+    
     const processedUnits = units.map(unit => ({
       ...unit,
       images: safeParseImages(unit.images)
     }));
+    
     res.status(200).json({ units: processedUnits });
   } catch (error) {
     console.error('Error fetching units:', error);
@@ -313,20 +439,25 @@ app.get('/units', authenticate, async (req, res) => {
 app.get('/units/:id', authenticate, async (req, res) => {
   const unitId = req.params.id;
   const userId = req.userId;
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [units] = await connection.execute(
       'SELECT * FROM units WHERE id = ? AND user_id = ?',
       [unitId, userId]
     );
+    
     await connection.end();
+    
     if (units.length === 0) {
       return res.status(404).json({ message: 'Unit not found or does not belong to this user' });
     }
+    
     const unit = { 
       ...units[0], 
       images: safeParseImages(units[0].images)
     };
+    
     res.status(200).json({ unit });
   } catch (error) {
     console.error('Error fetching unit:', error);
@@ -338,11 +469,6 @@ app.get('/units/:id', authenticate, async (req, res) => {
 app.put('/units/:id', authenticate, async (req, res) => {
   const unitId = req.params.id;
   const userId = req.userId;
-
-  if (!req.body || typeof req.body !== 'object') {
-    return res.status(400).json({ message: 'Missing or invalid JSON payload.' });
-  }
-
   const {
     buildingName,
     unitNumber,
@@ -360,6 +486,7 @@ app.put('/units/:id', authenticate, async (req, res) => {
       message: 'Building Name, Unit Number, and Specifications are required'
     });
   }
+  
   if (!Array.isArray(images) || images.length === 0) {
     return res.status(400).json({ message: 'At least one image is required.' });
   }
@@ -367,8 +494,9 @@ app.put('/units/:id', authenticate, async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
 
+    // Check if unit exists and belongs to user
     const [existingUnitRows] = await connection.execute(
-      'SELECT id FROM units WHERE id = ? AND user_id = ?',
+      'SELECT images FROM units WHERE id = ? AND user_id = ?',
       [unitId, userId]
     );
 
@@ -379,29 +507,48 @@ app.put('/units/:id', authenticate, async (req, res) => {
       });
     }
 
+    // Get old images to delete them from filesystem
+    const oldImages = safeParseImages(existingUnitRows[0].images);
+    
+    // Update the unit
     await connection.execute(
       `UPDATE units 
-       SET building_name = ?, unit_number = ?, location = ?, specifications = ?, special_features = ?, unit_price = ?, contact_person = ?, phone_number = ?, images = ? WHERE id = ? AND user_id = ?`,
+       SET building_name = ?, unit_number = ?, location = ?, 
+           specifications = ?, special_features = ?, unit_price = ?, 
+           contact_person = ?, phone_number = ?, images = ? 
+       WHERE id = ? AND user_id = ?`,
       [
         buildingName,
         unitNumber,
-        location,
+        location || null,
         specs,
-        specialFeatures,
-        unitPrice,
-        contactPerson,
-        phoneNumber,
+        specialFeatures || null,
+        unitPrice || null,
+        contactPerson || null,
+        phoneNumber || null,
         JSON.stringify(images),
         unitId,
         userId
       ]
     );
 
+    // Delete old image files
+    for (const imagePath of oldImages) {
+      if (imagePath && !images.includes(imagePath)) {
+        const filePath = path.join(__dirname, imagePath);
+        try {
+          await fs.unlink(filePath);
+        } catch (error) {
+          console.error(`Error deleting old image file ${filePath}:`, error);
+        }
+      }
+    }
+
     await connection.end();
     res.status(200).json({ message: 'Unit updated successfully' });
   } catch (error) {
     console.error('Error updating unit:', error);
-    res.status(500).json({ message: 'Failed to update unit', error: error.message, stack: error.stack });
+    res.status(500).json({ message: 'Failed to update unit' });
   }
 });
 
@@ -409,29 +556,40 @@ app.put('/units/:id', authenticate, async (req, res) => {
 app.delete('/units/:id', authenticate, async (req, res) => {
   const unitId = req.params.id;
   const userId = req.userId;
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
+    
+    // Get unit info and check ownership
     const [unitToDeleteRows] = await connection.execute(
       'SELECT images FROM units WHERE id = ? AND user_id = ?',
       [unitId, userId]
     );
+    
     if (unitToDeleteRows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found or does not belong to this user' });
     }
+    
+    // Delete associated image files
     const imagePathsToDelete = safeParseImages(unitToDeleteRows[0].images);
     for (const imagePath of imagePathsToDelete) {
-      const filePath = path.join(__dirname, imagePath);
-      try {
-        await fs.unlink(filePath);
-      } catch (error) {
-        console.error(`Error deleting image file ${filePath}:`, error);
+      if (imagePath) {
+        const filePath = path.join(__dirname, imagePath);
+        try {
+          await fs.unlink(filePath);
+        } catch (error) {
+          console.error(`Error deleting image file ${filePath}:`, error);
+        }
       }
     }
+    
+    // Delete the unit
     await connection.execute(
       'DELETE FROM units WHERE id = ? AND user_id = ?',
       [unitId, userId]
     );
+    
     await connection.end();
     res.status(200).json({ message: 'Unit deleted successfully' });
   } catch (error) {
@@ -444,14 +602,19 @@ app.delete('/units/:id', authenticate, async (req, res) => {
 app.get('/public/units', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [units] = await connection.execute('SELECT * FROM units');
+    const [units] = await connection.execute(
+      'SELECT * FROM units WHERE is_available = 1 ORDER BY created_at DESC'
+    );
+    
     await connection.end();
+    
     const mappedUnits = units.map(unit => ({
       ...unit,
       unitPrice: unit.unit_price,
       images: safeParseImages(unit.images),
       is_available: unit.is_available || 1
     }));
+    
     res.status(200).json({ units: mappedUnits });
   } catch (error) {
     console.error('Error fetching all units for public view:', error);
@@ -480,9 +643,12 @@ app.get('/units/:id/booking-status', async (req, res) => {
     
     const unit = units[0];
     
+    // Check if user is trying to book their own unit
+    const isOwnUnit = userId && parseInt(userId) === parseInt(unit.user_id);
+    
     // Get user's existing bookings for this unit
     let userBookingStatus = null;
-    if (userId && userId !== 'guest') {
+    if (userId && userId !== 'guest' && userId !== 'undefined') {
       const [userBookings] = await connection.execute(
         'SELECT id, status FROM bookings WHERE unit_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1',
         [unitId, userId]
@@ -503,125 +669,25 @@ app.get('/units/:id/booking-status', async (req, res) => {
     );
     
     const isUnitConfirmed = confirmedBookings.length > 0;
+    const isUnitAvailable = unit.is_available === 1;
     
     await connection.end();
     
     res.status(200).json({
-      canBook: unit.is_available === 1 && !isUnitConfirmed,
-      isAvailable: unit.is_available === 1,
+      canBook: isUnitAvailable && !isUnitConfirmed && !isOwnUnit,
+      isAvailable: isUnitAvailable,
       isConfirmed: isUnitConfirmed,
+      isOwnUnit: isOwnUnit,
       userBookingStatus: userBookingStatus,
-      message: isUnitConfirmed ? 
-        'Unit is already booked and confirmed by another user' : 
-        unit.is_available === 0 ? 'Unit is unavailable' : 'Unit can be booked'
+      message: isOwnUnit ? 
+        'You cannot book your own unit' :
+        isUnitConfirmed ? 
+          'Unit is already booked and confirmed by another user' : 
+          !isUnitAvailable ? 'Unit is unavailable' : 'Unit can be booked'
     });
   } catch (error) {
     console.error('Error checking booking status:', error);
     res.status(500).json({ message: 'Failed to check booking status' });
-  }
-});
-
-// --- Inquiries Endpoints ---
-app.post('/inquiries', async (req, res) => {
-  const { unitId, message } = req.body;
-  const senderUserId = req.headers['x-user-id'];
-  if (!unitId || !message || !senderUserId) {
-    return res.status(400).json({ message: 'unitId, message, and sender user ID are required' });
-  }
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [unitRows] = await connection.execute('SELECT user_id FROM units WHERE id = ?', [unitId]);
-    if (unitRows.length === 0) {
-      await connection.end();
-      return res.status(404).json({ message: 'Unit not found' });
-    }
-    const recipientUserId = unitRows[0].user_id;
-    if (parseInt(senderUserId) === recipientUserId) {
-      await connection.end();
-      return res.status(400).json({ message: 'Cannot send inquiry to yourself' });
-    }
-    await connection.execute(
-      'INSERT INTO inquiries (unit_id, sender_user_id, recipient_user_id, message) VALUES (?, ?, ?, ?)',
-      [unitId, senderUserId, recipientUserId, message]
-    );
-    await connection.end();
-    res.status(201).json({ message: 'Inquiry sent successfully' });
-  } catch (error) {
-    console.error('Error sending inquiry:', error);
-    res.status(500).json({ message: 'Failed to send inquiry' });
-  }
-});
-
-app.post('/inquiries/reply', async (req, res) => {
-  const { inquiryId, message, recipientUserId } = req.body;
-  const senderUserId = req.headers['x-user-id'];
-  if (!inquiryId || !message || !recipientUserId || !senderUserId) {
-    return res.status(400).json({ message: 'inquiryId, message, recipientUserId, and sender user ID are required' });
-  }
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [inquiryRows] = await connection.execute('SELECT unit_id FROM inquiries WHERE id = ?', [inquiryId]);
-    if (inquiryRows.length === 0) {
-      await connection.end();
-      return res.status(404).json({ message: 'Original inquiry not found' });
-    }
-    const unitId = inquiryRows[0].unit_id;
-    await connection.execute(
-      'INSERT INTO inquiries (unit_id, sender_user_id, recipient_user_id, message, parent_inquiry_id) VALUES (?, ?, ?, ?, ?)',
-      [unitId, senderUserId, recipientUserId, message, inquiryId]
-    );
-    await connection.end();
-    res.status(201).json({ message: 'Reply sent successfully' });
-  } catch (error) {
-    console.error('Error sending reply:', error);
-    res.status(500).json({ message: 'Failed to send reply' });
-  }
-});
-
-app.get('/inquiries', async (req, res) => {
-  const userId = req.headers['x-user-id'];
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
-  }
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    
-    const [inquiries] = await connection.execute(
-      `SELECT 
-        i.*, 
-        u.building_name, 
-        u.unit_number, 
-        u.location,
-        sender.name as sender_name,
-        recipient.name as recipient_name
-       FROM inquiries i
-       JOIN units u ON i.unit_id = u.id
-       LEFT JOIN users sender ON i.sender_user_id = sender.id
-       LEFT JOIN users recipient ON i.recipient_user_id = recipient.id
-       WHERE i.sender_user_id = ? OR i.recipient_user_id = ?
-       ORDER BY i.created_at DESC`,
-      [userId, userId]
-    );
-
-    for (const inquiry of inquiries) {
-      const [replies] = await connection.execute(
-        `SELECT 
-          r.*,
-          u.name as sender_name
-         FROM inquiries r
-         LEFT JOIN users u ON r.sender_user_id = u.id
-         WHERE r.parent_inquiry_id = ? 
-         ORDER BY r.created_at ASC`,
-        [inquiry.id]
-      );
-      inquiry.replies = replies;
-    }
-
-    await connection.end();
-    res.status(200).json({ inquiries });
-  } catch (error) {
-    console.error('Error fetching inquiries:', error);
-    res.status(500).json({ message: 'Failed to fetch inquiries' });
   }
 });
 
@@ -639,14 +705,17 @@ app.post('/bookings', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     
-    // Check if unit exists and prevent booking own unit
+    // Check if unit exists
     const [unitRows] = await connection.execute('SELECT * FROM units WHERE id = ?', [unitId]);
     if (unitRows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found' });
     }
     
-    if (parseInt(unitRows[0].user_id) === parseInt(userId)) {
+    const unit = unitRows[0];
+    
+    // Prevent booking own unit
+    if (parseInt(unit.user_id) === parseInt(userId)) {
       await connection.end();
       return res.status(400).json({ message: 'You cannot book your own unit.' });
     }
@@ -660,6 +729,12 @@ app.post('/bookings', async (req, res) => {
     if (confirmedBookings.length > 0) {
       await connection.end();
       return res.status(400).json({ message: 'This unit is already booked and confirmed. Unit is now unavailable.' });
+    }
+    
+    // Check if unit is available
+    if (unit.is_available === 0) {
+      await connection.end();
+      return res.status(400).json({ message: 'This unit is currently unavailable.' });
     }
     
     // Check if user already has a pending or confirmed booking for this unit
@@ -682,8 +757,8 @@ app.post('/bookings', async (req, res) => {
     
     // Create new booking
     await connection.execute(
-      'INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, transaction_type, date_of_visiting) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [unitId, userId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting]
+      'INSERT INTO bookings (unit_id, user_id, name, address, contact_number, number_of_people, transaction_type, date_of_visiting, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [unitId, userId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting, 'pending']
     );
     
     await connection.end();
@@ -697,21 +772,28 @@ app.post('/bookings', async (req, res) => {
 // Get bookings made by the logged-in user
 app.get('/bookings/my', async (req, res) => {
   const userId = req.headers['x-user-id'];
-  if (!userId) {
+  
+  if (!userId || userId === 'undefined') {
     return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
   }
   
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT b.*, u.building_name, u.unit_number, u.location, u.is_available, 
-       b.transaction_type, b.date_of_visiting 
+      `SELECT 
+        b.*, 
+        u.building_name, 
+        u.unit_number, 
+        u.location, 
+        u.is_available,
+        u.user_id as unit_owner_id
        FROM bookings b 
        JOIN units u ON b.unit_id = u.id 
        WHERE b.user_id = ? 
        ORDER BY b.created_at DESC`,
       [userId]
     );
+    
     await connection.end();
     res.status(200).json({ bookings });
   } catch (error) {
@@ -723,21 +805,31 @@ app.get('/bookings/my', async (req, res) => {
 // Get bookings for units posted by the logged-in user
 app.get('/bookings/rented', async (req, res) => {
   const userId = req.headers['x-user-id'];
-  if (!userId) {
+  
+  if (!userId || userId === 'undefined') {
     return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
   }
   
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [bookings] = await connection.execute(
-      `SELECT b.*, u.building_name, u.unit_number, u.location, u.is_available,
-       b.transaction_type, b.date_of_visiting 
+      `SELECT 
+        b.*, 
+        u.building_name, 
+        u.unit_number, 
+        u.location, 
+        u.is_available,
+        usr.name as renter_name,
+        usr.email as renter_email,
+        usr.contact_number as renter_contact
        FROM bookings b 
        JOIN units u ON b.unit_id = u.id 
+       JOIN users usr ON b.user_id = usr.id
        WHERE u.user_id = ? 
        ORDER BY b.created_at DESC`,
       [userId]
     );
+    
     await connection.end();
     res.status(200).json({ bookings });
   } catch (error) {
@@ -751,7 +843,7 @@ app.delete('/bookings/:id', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const bookingId = req.params.id;
   
-  if (!userId) {
+  if (!userId || userId === 'undefined') {
     return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
   }
   
@@ -795,9 +887,9 @@ app.delete('/bookings/:id', async (req, res) => {
 app.put('/bookings/:id/status', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const bookingId = req.params.id;
-  const { status } = req.body; // 'confirmed', 'denied', or 'cancelled'
+  const { status } = req.body; // 'confirmed', 'denied'
   
-  if (!userId || !bookingId || !['confirmed', 'denied', 'cancelled'].includes(status)) {
+  if (!userId || userId === 'undefined' || !bookingId || !['confirmed', 'denied'].includes(status)) {
     return res.status(400).json({ message: 'Invalid request' });
   }
   
@@ -806,7 +898,11 @@ app.put('/bookings/:id/status', async (req, res) => {
     
     // Get booking with unit and user info
     const [rows] = await connection.execute(
-      `SELECT b.*, u.user_id as unit_owner_id, u.id as unit_id, u.is_available 
+      `SELECT 
+        b.*, 
+        u.user_id as unit_owner_id, 
+        u.id as unit_id, 
+        u.is_available 
        FROM bookings b 
        JOIN units u ON b.unit_id = u.id 
        WHERE b.id = ?`,
@@ -822,29 +918,13 @@ app.put('/bookings/:id/status', async (req, res) => {
     const unitId = booking.unit_id;
     const currentStatus = booking.status;
     
-    // Handle different status updates
-    if (status === 'cancelled') {
-      // Only allow user to cancel their own pending booking
-      if (parseInt(booking.user_id) !== parseInt(userId)) {
-        await connection.end();
-        return res.status(403).json({ message: 'Not authorized to cancel this booking' });
-      }
-      
-      if (currentStatus !== 'pending') {
-        await connection.end();
-        return res.status(400).json({ message: 'Only pending bookings can be cancelled' });
-      }
-      
-      // Simply delete the booking
-      await connection.execute('DELETE FROM bookings WHERE id = ?', [bookingId]);
-      
-    } else if (status === 'confirmed') {
-      // Only unit owner can confirm
-      if (parseInt(booking.unit_owner_id) !== parseInt(userId)) {
-        await connection.end();
-        return res.status(403).json({ message: 'Not authorized to confirm this booking' });
-      }
-      
+    // Only unit owner can confirm/deny
+    if (parseInt(booking.unit_owner_id) !== parseInt(userId)) {
+      await connection.end();
+      return res.status(403).json({ message: 'Not authorized to update this booking' });
+    }
+    
+    if (status === 'confirmed') {
       // Check if unit already has a confirmed booking
       const [confirmedBookings] = await connection.execute(
         'SELECT * FROM bookings WHERE unit_id = ? AND status = ? AND id != ?',
@@ -856,28 +936,32 @@ app.put('/bookings/:id/status', async (req, res) => {
         return res.status(400).json({ message: 'This unit already has a confirmed booking.' });
       }
       
-      // Update unit status to unavailable
-      await connection.execute(
-        'UPDATE units SET is_available = 0 WHERE id = ?',
-        [unitId]
-      );
+      // Start transaction
+      await connection.beginTransaction();
       
-      // Deny all other pending bookings for this unit
-      await connection.execute(
-        'UPDATE bookings SET status = ? WHERE unit_id = ? AND status = ? AND id != ?',
-        ['denied', unitId, 'pending', bookingId]
-      );
-      
-      // Update the booking status
-      await connection.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
-      
-    } else if (status === 'denied') {
-      // Only unit owner can deny
-      if (parseInt(booking.unit_owner_id) !== parseInt(userId)) {
-        await connection.end();
-        return res.status(403).json({ message: 'Not authorized to deny this booking' });
+      try {
+        // Update unit status to unavailable
+        await connection.execute(
+          'UPDATE units SET is_available = 0 WHERE id = ?',
+          [unitId]
+        );
+        
+        // Deny all other pending bookings for this unit
+        await connection.execute(
+          'UPDATE bookings SET status = ? WHERE unit_id = ? AND status = ? AND id != ?',
+          ['denied', unitId, 'pending', bookingId]
+        );
+        
+        // Update the booking status
+        await connection.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
+        
+        await connection.commit();
+      } catch (error) {
+        await connection.rollback();
+        throw error;
       }
       
+    } else if (status === 'denied') {
       // If denying a confirmed booking, make unit available again
       if (currentStatus === 'confirmed') {
         await connection.execute(
@@ -898,12 +982,142 @@ app.put('/bookings/:id/status', async (req, res) => {
   }
 });
 
+// --- Inquiries Endpoints ---
+app.post('/inquiries', async (req, res) => {
+  const { unitId, message } = req.body;
+  const senderUserId = req.headers['x-user-id'];
+  
+  if (!unitId || !message || !senderUserId) {
+    return res.status(400).json({ message: 'unitId, message, and sender user ID are required' });
+  }
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Get unit owner
+    const [unitRows] = await connection.execute(
+      'SELECT user_id FROM units WHERE id = ?', 
+      [unitId]
+    );
+    
+    if (unitRows.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'Unit not found' });
+    }
+    
+    const recipientUserId = unitRows[0].user_id;
+    
+    // Check if user is trying to message themselves
+    if (parseInt(senderUserId) === parseInt(recipientUserId)) {
+      await connection.end();
+      return res.status(400).json({ message: 'Cannot send inquiry to yourself' });
+    }
+    
+    await connection.execute(
+      'INSERT INTO inquiries (unit_id, sender_user_id, recipient_user_id, message) VALUES (?, ?, ?, ?)',
+      [unitId, senderUserId, recipientUserId, message]
+    );
+    
+    await connection.end();
+    res.status(201).json({ message: 'Inquiry sent successfully' });
+  } catch (error) {
+    console.error('Error sending inquiry:', error);
+    res.status(500).json({ message: 'Failed to send inquiry' });
+  }
+});
+
+app.post('/inquiries/reply', async (req, res) => {
+  const { inquiryId, message, recipientUserId } = req.body;
+  const senderUserId = req.headers['x-user-id'];
+  
+  if (!inquiryId || !message || !recipientUserId || !senderUserId) {
+    return res.status(400).json({ message: 'inquiryId, message, recipientUserId, and sender user ID are required' });
+  }
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Get original inquiry
+    const [inquiryRows] = await connection.execute(
+      'SELECT unit_id FROM inquiries WHERE id = ?', 
+      [inquiryId]
+    );
+    
+    if (inquiryRows.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'Original inquiry not found' });
+    }
+    
+    const unitId = inquiryRows[0].unit_id;
+    
+    await connection.execute(
+      'INSERT INTO inquiries (unit_id, sender_user_id, recipient_user_id, message, parent_inquiry_id) VALUES (?, ?, ?, ?, ?)',
+      [unitId, senderUserId, recipientUserId, message, inquiryId]
+    );
+    
+    await connection.end();
+    res.status(201).json({ message: 'Reply sent successfully' });
+  } catch (error) {
+    console.error('Error sending reply:', error);
+    res.status(500).json({ message: 'Failed to send reply' });
+  }
+});
+
+app.get('/inquiries', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  
+  if (!userId || userId === 'undefined') {
+    return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
+  }
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [inquiries] = await connection.execute(
+      `SELECT 
+        i.*, 
+        u.building_name, 
+        u.unit_number, 
+        u.location,
+        sender.name as sender_name,
+        recipient.name as recipient_name
+       FROM inquiries i
+       JOIN units u ON i.unit_id = u.id
+       LEFT JOIN users sender ON i.sender_user_id = sender.id
+       LEFT JOIN users recipient ON i.recipient_user_id = recipient.id
+       WHERE i.sender_user_id = ? OR i.recipient_user_id = ?
+       ORDER BY i.created_at DESC`,
+      [userId, userId]
+    );
+
+    // Get replies for each inquiry
+    for (const inquiry of inquiries) {
+      const [replies] = await connection.execute(
+        `SELECT 
+          r.*,
+          u.name as sender_name
+         FROM inquiries r
+         LEFT JOIN users u ON r.sender_user_id = u.id
+         WHERE r.parent_inquiry_id = ? 
+         ORDER BY r.created_at ASC`,
+        [inquiry.id]
+      );
+      inquiry.replies = replies;
+    }
+
+    await connection.end();
+    res.status(200).json({ inquiries });
+  } catch (error) {
+    console.error('Error fetching inquiries:', error);
+    res.status(500).json({ message: 'Failed to fetch inquiries' });
+  }
+});
+
 // --- User Profile Endpoints ---
 app.get('/user/profile', async (req, res) => {
   const userId = req.headers['x-user-id'];
-  console.log('Fetching profile for user ID:', userId);
   
-  if (!userId) {
+  if (!userId || userId === 'undefined') {
     return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
   }
   
@@ -913,15 +1127,15 @@ app.get('/user/profile', async (req, res) => {
       'SELECT id, name, username, email, contact_number, created_at FROM users WHERE id = ?', 
       [userId]
     );
-    await connection.end();
     
-    console.log('Found users:', users);
+    await connection.end();
     
     if (users.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
     
     const user = users[0];
+    
     res.status(200).json({ 
       user: {
         id: user.id,
@@ -942,9 +1156,7 @@ app.put('/user/profile', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { name, email, contactNumber } = req.body;
   
-  console.log('Updating profile for user ID:', userId, 'with data:', { name, email, contactNumber });
-  
-  if (!userId || !name || !email || !contactNumber) {
+  if (!userId || userId === 'undefined' || !name || !email || !contactNumber) {
     return res.status(400).json({ message: 'Missing required fields.' });
   }
   
@@ -1005,9 +1217,7 @@ app.put('/user/change-password', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { currentPassword, newPassword } = req.body;
   
-  console.log('Changing password for user ID:', userId);
-  
-  if (!userId || !currentPassword || !newPassword) {
+  if (!userId || userId === 'undefined' || !currentPassword || !newPassword) {
     return res.status(400).json({ message: 'Missing required fields.' });
   }
   
@@ -1046,7 +1256,10 @@ app.put('/user/change-password', async (req, res) => {
 app.get('/admin/users', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [users] = await connection.execute('SELECT * FROM users');
+    const [users] = await connection.execute(
+      'SELECT id, name, username, email, contact_number, created_at FROM users ORDER BY created_at DESC'
+    );
+    
     await connection.end();
     res.status(200).json({ users });
   } catch (error) {
@@ -1057,21 +1270,46 @@ app.get('/admin/users', async (req, res) => {
 
 app.delete('/admin/users/:id', async (req, res) => {
   const userId = req.params.id;
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [unitRows] = await connection.execute('SELECT id, images FROM units WHERE user_id = ?', [userId]);
+    
+    // Get all units owned by this user to delete their images
+    const [unitRows] = await connection.execute(
+      'SELECT id, images FROM units WHERE user_id = ?', 
+      [userId]
+    );
+    
+    // Delete unit images
     for (const unit of unitRows) {
       const imagePaths = safeParseImages(unit.images);
       for (const imagePath of imagePaths) {
-        const filePath = path.join(__dirname, imagePath);
-        try {
-          await fs.unlink(filePath);
-        } catch (error) {
+        if (imagePath) {
+          const filePath = path.join(__dirname, imagePath);
+          try {
+            await fs.unlink(filePath);
+          } catch (error) {
+            // Ignore file not found errors
+          }
         }
       }
     }
+    
+    // Delete user's units
     await connection.execute('DELETE FROM units WHERE user_id = ?', [userId]);
+    
+    // Delete user's bookings
+    await connection.execute('DELETE FROM bookings WHERE user_id = ?', [userId]);
+    
+    // Delete user's inquiries
+    await connection.execute('DELETE FROM inquiries WHERE sender_user_id = ? OR recipient_user_id = ?', [userId, userId]);
+    
+    // Delete user's OTP codes
+    await connection.execute('DELETE FROM otp_codes WHERE user_id = ?', [userId]);
+    
+    // Finally, delete the user
     await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
+    
     await connection.end();
     res.status(200).json({ message: 'User and all related data deleted successfully' });
   } catch (error) {
@@ -1085,13 +1323,22 @@ app.get('/admin/units', async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [units] = await connection.execute(
-      `SELECT units.*, users.username as owner_username, users.email as owner_email FROM units LEFT JOIN users ON units.user_id = users.id`
+      `SELECT 
+        units.*, 
+        users.username as owner_username, 
+        users.email as owner_email 
+       FROM units 
+       LEFT JOIN users ON units.user_id = users.id
+       ORDER BY units.created_at DESC`
     );
+    
     await connection.end();
+    
     const processedUnits = units.map(unit => ({
       ...unit,
       images: safeParseImages(unit.images)
     }));
+    
     res.status(200).json({ units: processedUnits });
   } catch (error) {
     console.error('Admin: Error fetching all units:', error);
@@ -1101,23 +1348,39 @@ app.get('/admin/units', async (req, res) => {
 
 app.delete('/admin/units/:id', async (req, res) => {
   const unitId = req.params.id;
+  
   try {
     const connection = await mysql.createConnection(dbConfig);
+    
+    // Get unit images
     const [unitRows] = await connection.execute('SELECT images FROM units WHERE id = ?', [unitId]);
     if (unitRows.length === 0) {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found' });
     }
 
+    // Delete image files
     const imagePathsToDelete = safeParseImages(unitRows[0].images);
     for (const imagePath of imagePathsToDelete) {
-      const filePath = path.join(__dirname, imagePath);
-      try {
-        await fs.unlink(filePath);
-      } catch (error) {
+      if (imagePath) {
+        const filePath = path.join(__dirname, imagePath);
+        try {
+          await fs.unlink(filePath);
+        } catch (error) {
+          // Ignore file not found errors
+        }
       }
     }
+    
+    // Delete bookings for this unit
+    await connection.execute('DELETE FROM bookings WHERE unit_id = ?', [unitId]);
+    
+    // Delete inquiries for this unit
+    await connection.execute('DELETE FROM inquiries WHERE unit_id = ?', [unitId]);
+    
+    // Delete the unit
     await connection.execute('DELETE FROM units WHERE id = ?', [unitId]);
+    
     await connection.end();
     res.status(200).json({ message: 'Unit deleted successfully' });
   } catch (error) {
@@ -1171,7 +1434,10 @@ app.get('/admin/report/statistics', async (req, res) => {
     const totalInquiries = inquiriesResult[0].total_inquiries;
     
     const [topUsersResult] = await connection.execute(
-      `SELECT u.username, u.email, COUNT(units.id) as units_count
+      `SELECT 
+        u.username, 
+        u.email, 
+        COUNT(units.id) as units_count
        FROM users u
        LEFT JOIN units ON u.id = units.user_id
        GROUP BY u.id
@@ -1185,7 +1451,8 @@ app.get('/admin/report/statistics', async (req, res) => {
         COUNT(*) as count
        FROM bookings
        WHERE transaction_type IS NOT NULL
-       GROUP BY transaction_type`
+       GROUP BY transaction_type
+       ORDER BY count DESC`
     );
     
     await connection.end();
@@ -1198,17 +1465,17 @@ app.get('/admin/report/statistics', async (req, res) => {
         totalBookings: parseInt(totalBookings),
         totalInquiries: parseInt(totalInquiries),
         bookingStatus: {
-          pending: parseInt(bookingStatusResult[0].pending_bookings),
-          confirmed: parseInt(bookingStatusResult[0].confirmed_bookings),
-          denied: parseInt(bookingStatusResult[0].denied_bookings)
+          pending: parseInt(bookingStatusResult[0].pending_bookings || 0),
+          confirmed: parseInt(bookingStatusResult[0].confirmed_bookings || 0),
+          denied: parseInt(bookingStatusResult[0].denied_bookings || 0)
         },
         unitStatus: {
-          available: parseInt(unitsStatusResult[0].available_units),
-          unavailable: parseInt(unitsStatusResult[0].unavailable_units)
+          available: parseInt(unitsStatusResult[0].available_units || 0),
+          unavailable: parseInt(unitsStatusResult[0].unavailable_units || 0)
         },
         recentActivity: {
-          usersLast7Days: parseInt(recentRegistrations[0].recent_users),
-          unitsLast7Days: parseInt(recentUnits[0].recent_units)
+          usersLast7Days: parseInt(recentRegistrations[0].recent_users || 0),
+          unitsLast7Days: parseInt(recentUnits[0].recent_units || 0)
         },
         topUsers: topUsersResult,
         transactionTypes: transactionTypesResult
@@ -1227,11 +1494,18 @@ app.get('/admin/report/statistics', async (req, res) => {
 app.get('/admin/report/bookings', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.query;
+    
     let query = `
-      SELECT b.*, 
-             u.building_name, u.unit_number, u.location,
-             usr.username as renter_username, usr.email as renter_email,
-             owner.username as owner_username, owner.email as owner_email
+      SELECT 
+        b.*, 
+        u.building_name, 
+        u.unit_number, 
+        u.location,
+        usr.username as renter_username, 
+        usr.email as renter_email,
+        usr.name as renter_name,
+        owner.username as owner_username, 
+        owner.email as owner_email
       FROM bookings b
       JOIN units u ON b.unit_id = u.id
       JOIN users usr ON b.user_id = usr.id
@@ -1286,7 +1560,7 @@ app.get('/admin/report/users', async (req, res) => {
         COUNT(DISTINCT units.id) as units_posted,
         COUNT(DISTINCT b.id) as bookings_made,
         COUNT(DISTINCT i.id) as inquiries_sent,
-        MAX(u.created_at) as last_activity
+        MAX(COALESCE(units.created_at, b.created_at, i.created_at, u.created_at)) as last_activity
        FROM users u
        LEFT JOIN units ON u.id = units.user_id
        LEFT JOIN bookings b ON u.id = b.user_id
@@ -1309,6 +1583,20 @@ app.get('/admin/report/users', async (req, res) => {
       message: 'Failed to fetch users report' 
     });
   }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ 
+    message: 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { error: err.message })
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Endpoint not found' });
 });
 
 const PORT = process.env.PORT || 5000;

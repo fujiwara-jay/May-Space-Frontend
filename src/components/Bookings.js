@@ -33,6 +33,8 @@ function Bookings() {
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
+  const API_BASE = process.env.REACT_APP_API_URL || "https://may-space-backend.onrender.com";
+
   const handleBack = () => {
     navigate(-1);
   };
@@ -84,7 +86,7 @@ function Bookings() {
     
     setActionMessage("");
     try {
-      const res = await fetch(`https://may-space-backend.onrender.com/bookings/${bookingId}`, {
+      const res = await fetch(`${API_BASE}/bookings/${bookingId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -104,7 +106,7 @@ function Bookings() {
   const handleStatusUpdate = async (bookingId, status) => {
     setActionMessage("");
     try {
-      const res = await fetch(`https://may-space-backend.onrender.com/bookings/${bookingId}/status`, {
+      const res = await fetch(`${API_BASE}/bookings/${bookingId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -128,12 +130,12 @@ function Bookings() {
     setError(null);
     try {
       const headers = { "X-User-ID": userId };
-      const myRes = await fetch("https://may-space-backend.onrender.com/bookings/my", { headers });
+      const myRes = await fetch(`${API_BASE}/bookings/my`, { headers });
       const myData = await myRes.json();
       if (!myRes.ok) throw new Error(myData.message || "Failed to fetch my bookings");
       setMyBookings(myData.bookings || []);
 
-      const rentedRes = await fetch("https://may-space-backend.onrender.com/bookings/rented", { headers });
+      const rentedRes = await fetch(`${API_BASE}/bookings/rented`, { headers });
       const rentedData = await rentedRes.json();
       if (!rentedRes.ok) throw new Error(rentedData.message || "Failed to fetch rented bookings");
       setRentedUnits(rentedData.bookings || []);

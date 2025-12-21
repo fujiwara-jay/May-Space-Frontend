@@ -54,6 +54,7 @@ const UnitFinder = () => {
   const [tooltip, setTooltip] = useState({ show: false, target: null });
   const [loading, setLoading] = useState(false);
   const [userBookings, setUserBookings] = useState([]);
+  const [bookingStatusCache, setBookingStatusCache] = useState({});
 
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType");
@@ -135,6 +136,11 @@ const UnitFinder = () => {
       });
       const data = await res.json();
       if (res.ok) {
+        // Cache the result
+        setBookingStatusCache(prev => ({
+          ...prev,
+          [unitId]: data
+        }));
         return data;
       }
       return null;
@@ -142,6 +148,10 @@ const UnitFinder = () => {
       console.error("Error fetching unit booking status:", err);
       return null;
     }
+  };
+
+  const getCachedBookingStatus = (unitId) => {
+    return bookingStatusCache[unitId];
   };
 
   const handleLogout = () => {
@@ -194,6 +204,8 @@ const UnitFinder = () => {
       if (mountedRef.current) {
         setAllUnits(normalized);
         setFilteredUnits(normalized);
+        // Clear booking status cache when units are refreshed
+        setBookingStatusCache({});
       }
     } catch (err) {
       if (err.name !== "AbortError" && mountedRef.current) {
@@ -332,10 +344,21 @@ const UnitFinder = () => {
       return;
     }
 
+    // Check if user is trying to book their own unit
+    if (parseInt(unit.user_id) === parseInt(userId)) {
+      setActionMessage("You cannot book your own unit.");
+      return;
+    }
+
     // Fetch current booking status
     const bookingStatus = await fetchUnitBookingStatus(unit.id);
     
     if (bookingStatus) {
+      if (bookingStatus.isOwnUnit) {
+        setActionMessage("You cannot book your own unit.");
+        return;
+      }
+      
       if (!bookingStatus.canBook) {
         setActionMessage(bookingStatus.message || "This unit cannot be booked at this time.");
         return;
@@ -656,7 +679,9 @@ const UnitFinder = () => {
     }
 
     const bookingStatus = getUnitBookingStatus(modalUnit.id);
+    const cachedStatus = getCachedBookingStatus(modalUnit.id);
     const isUnitAvailable = modalUnit.is_available !== 0 && modalUnit.is_available !== false;
+    const isOwnUnit = parseInt(modalUnit.user_id) === parseInt(userId);
 
     return (
       <>
@@ -674,6 +699,12 @@ const UnitFinder = () => {
                 <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Booked)</span>
               }
             </p>
+            
+            {isOwnUnit && (
+              <div className="owner-notice">
+                <p><strong>⚠️ Note:</strong> This is your own unit. You cannot book it.</p>
+              </div>
+            )}
             
             {bookingStatus && (
               <div className="user-booking-status">
@@ -738,13 +769,16 @@ const UnitFinder = () => {
                 isGuest || 
                 loading || 
                 !isUnitAvailable || 
+                isOwnUnit ||
                 (bookingStatus && 
                  (bookingStatus.status === 'confirmed' || 
                   bookingStatus.status === 'pending'))
               }
             >
-              {bookingStatus?.status === 'denied' ? '📅 Book Again' : '📅 Book Now'}
+              {isOwnUnit ? '📅 Your Unit' : 
+               bookingStatus?.status === 'denied' ? '📅 Book Again' : '📅 Book Now'}
               {!isUnitAvailable && " (Unavailable)"}
+              {isOwnUnit && " (Cannot Book Own Unit)"}
               {(bookingStatus?.status === 'confirmed' || bookingStatus?.status === 'pending') && " (Already Booked)"}
             </button>
             {tooltip.show && tooltip.target === "book" && (
@@ -760,9 +794,10 @@ const UnitFinder = () => {
             <button
               className="inquire-btn"
               onClick={(e) => handleInquireClick(e, modalUnit)}
-              disabled={isGuest || loading}
+              disabled={isGuest || loading || isOwnUnit}
             >
               💬 Inquire Further
+              {isOwnUnit && " (Cannot Inquire Own Unit)"}
             </button>
             {tooltip.show && tooltip.target === "inquire" && (
               <div className="button-tooltip">Please Login to use this feature</div>
@@ -820,7 +855,7 @@ const UnitFinder = () => {
             </button>
             <button 
               className="location-open-btn"
-              onClick={() => window.open("https://www.google.com/maps/place/Gumaro+building/@14.4988713,121.0479489,701m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3397cfab380b0201:0xb89d0451207c5c3c!8m2!3d14.4988661!4d121.0505238!16s%2Fg%2F11vcm53x_3?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D", "_blank")}
+              onClick={() => window.open("https://www.google.com/maps/place/Gumaro+building/@14.4988713,121.0479489,701m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3397cfab380b0201:0xb89d0451207c5c3c!8m2!3d14.4988661!4d121.0505238!16s%2Fg%2F11vcm53x_3?hl=en&entry=ttu&g_ep=EgoyMDI5MTExMS4wIKXMDSoASAFQAw%3D%3D", "_blank")}
             >
               Open in Google Maps
             </button>
@@ -959,11 +994,12 @@ const UnitFinder = () => {
           {filteredUnits.map((unit) => {
             const isAvailable = unit.is_available !== 0 && unit.is_available !== false;
             const bookingStatus = getUnitBookingStatus(unit.id);
+            const isOwnUnit = parseInt(unit.user_id) === parseInt(userId);
             
             return (
               <div
                 key={unit.id}
-                className={`unit-card ${!isAvailable ? 'unavailable-unit' : ''}`}
+                className={`unit-card ${!isAvailable ? 'unavailable-unit' : ''} ${isOwnUnit ? 'own-unit' : ''}`}
                 onClick={() => setModalUnit(unit)}
                 role="button"
                 tabIndex={0}
@@ -988,6 +1024,11 @@ const UnitFinder = () => {
                       BOOKED
                     </div>
                   )}
+                  {isOwnUnit && (
+                    <div className="own-unit-badge">
+                      YOUR UNIT
+                    </div>
+                  )}
                   {unit.images?.length > 1 && (
                     <div className="image-count-badge">
                       View {unit.images.length}
@@ -1005,6 +1046,11 @@ const UnitFinder = () => {
                       <span style={{ color: '#e57373' }}> Unavailable (Booked)</span>
                     }
                   </p>
+                  {isOwnUnit && (
+                    <p className="own-unit-notice">
+                      <span style={{ color: '#ff9800', fontWeight: 600 }}>⚠️ This is your unit</span>
+                    </p>
+                  )}
                   
                   {bookingStatus && (
                     <div className="unit-card-booking-status">
