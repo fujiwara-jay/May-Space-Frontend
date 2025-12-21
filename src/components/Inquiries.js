@@ -156,7 +156,17 @@ function Inquiries() {
   };
 
   return (
-    <div className="inquiries-container">
+    <>
+      <div className="top-navigation-container">
+        <div className="back-button-top-container">
+          <button className="back-btn-top" onClick={handleBack}>
+            ⬅ Back
+          </button>
+        </div>
+        
+        <div></div>
+      </div>
+
       <div className="notifications-container">
         <button 
           className="notifications-bell"
@@ -207,87 +217,84 @@ function Inquiries() {
           </div>
         )}
       </div>
+      <div className="inquiries-container">
+        <h2>Message Inquiries</h2>
 
-      <button className="back-button" onClick={handleBack}>
-        ⬅ Back
-      </button>
+        {loading && <div className="loading">Loading inquiries...</div>}
+        {error && <div className="error-message">{error}</div>}
+        {!loading && inquiries.length === 0 && (
+          <div className="no-inquiries">No inquiries found.</div>
+        )}
 
-      <h2>Message Inquiries</h2>
+        <div className="inquiries-list">
+          {inquiries.map((inquiry) => {
+            if (inquiry.parent_inquiry_id) return null;
 
-      {loading && <div className="loading">Loading inquiries...</div>}
-      {error && <div className="error-message">{error}</div>}
-      {!loading && inquiries.length === 0 && (
-        <div className="no-inquiries">No inquiries found.</div>
-      )}
+            const canReply = canReplyToInquiry(inquiry);
+            const allMessages = getAllMessages(inquiry);
+            const currentReply = replyMessages[inquiry.id] || "";
 
-      <div className="inquiries-list">
-        {inquiries.map((inquiry) => {
-          if (inquiry.parent_inquiry_id) return null;
-
-          const canReply = canReplyToInquiry(inquiry);
-          const allMessages = getAllMessages(inquiry);
-          const currentReply = replyMessages[inquiry.id] || "";
-
-          return (
-            <div key={inquiry.id} className="inquiry-card">
-              <div className="inquiry-header">
-                <h4>{inquiry.building_name} - {inquiry.unit_number}</h4>
-                <span className="inquiry-badge">
-                  {parseInt(userId) === inquiry.sender_user_id ? "Your Inquiry" : "Inquiry to You"}
-                </span>
-              </div>
-
-              <div className="inquiry-info">
-                <div><strong>Location:</strong> {inquiry.location}</div>
-                <div><strong>Conversation:</strong> {getConversationTitle(inquiry)}</div>
-              </div>
-
-              <div className="conversation-container">
-                <div className="messages-list">
-                  {allMessages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`message-bubble ${isMyMessage(message) ? 'my-message' : 'other-message'}`}
-                    >
-                      <div className="message-content">
-                        {message.message}
-                      </div>
-                      <div className="message-time">
-                        {new Date(message.created_at).toLocaleString()}
-                      </div>
-                      <div className="message-sender">
-                        {getDisplayName(message)}
-                      </div>
-                    </div>
-                  ))}
+            return (
+              <div key={inquiry.id} className="inquiry-card">
+                <div className="inquiry-header">
+                  <h4>{inquiry.building_name} - {inquiry.unit_number}</h4>
+                  <span className="inquiry-badge">
+                    {parseInt(userId) === inquiry.sender_user_id ? "Your Inquiry" : "Inquiry to You"}
+                  </span>
                 </div>
 
-                {canReply && (
-                  <div className="reply-section">
-                    <textarea
-                      value={currentReply}
-                      onChange={(e) => handleReplyChange(inquiry.id, e.target.value)}
-                      placeholder="Type your reply..."
-                      rows={3}
-                      className="reply-textarea"
-                    />
-                    <div className="reply-actions">
-                      <button 
-                        className="send-reply-btn" 
-                        onClick={() => handleSendReply(inquiry)}
-                        disabled={!currentReply.trim()}
+                <div className="inquiry-info">
+                  <div><strong>Location:</strong> {inquiry.location}</div>
+                  <div><strong>Conversation:</strong> {getConversationTitle(inquiry)}</div>
+                </div>
+
+                <div className="conversation-container">
+                  <div className="messages-list">
+                    {allMessages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`message-bubble ${isMyMessage(message) ? 'my-message' : 'other-message'}`}
                       >
-                        Send Reply
-                      </button>
-                    </div>
+                        <div className="message-content">
+                          {message.message}
+                        </div>
+                        <div className="message-time">
+                          {new Date(message.created_at).toLocaleString()}
+                        </div>
+                        <div className="message-sender">
+                          {getDisplayName(message)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+
+                  {canReply && (
+                    <div className="reply-section">
+                      <textarea
+                        value={currentReply}
+                        onChange={(e) => handleReplyChange(inquiry.id, e.target.value)}
+                        placeholder="Type your reply..."
+                        rows={3}
+                        className="reply-textarea"
+                      />
+                      <div className="reply-actions">
+                        <button 
+                          className="send-reply-btn" 
+                          onClick={() => handleSendReply(inquiry)}
+                          disabled={!currentReply.trim()}
+                        >
+                          Send Reply
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

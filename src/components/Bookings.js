@@ -136,7 +136,17 @@ function Bookings() {
   }, [rentedUnits]);
 
   return (
-    <div className="bookings-container">
+    <>
+      <div className="top-navigation-container">
+        <div className="back-button-top-container">
+          <button className="back-btn-top" onClick={handleBack}>
+            ⬅ Back
+          </button>
+        </div>
+        
+        <div></div>
+      </div>
+
       <div className="notifications-container">
         <button 
           className="notifications-bell"
@@ -198,98 +208,95 @@ function Bookings() {
           </div>
         )}
       </div>
+      <div className="bookings-container">
+        <div className="bookings-header">Bookings</div>
 
-      <button className="back-button" onClick={handleBack}>
-        ⬅ Back
-      </button>
+        {loading && <div className="loading">Loading bookings...</div>}
+        {error && <div className="error-message">{error}</div>}
+        {actionMessage && <div className="success-message">{actionMessage}</div>}
 
-      <div className="bookings-header">Bookings</div>
-
-      {loading && <div className="loading">Loading bookings...</div>}
-      {error && <div className="error-message">{error}</div>}
-      {actionMessage && <div className="success-message">{actionMessage}</div>}
-
-      <div className="bookings-section">
-        <h3>My Bookings</h3>
-        <div className="booking-list">
-          {myBookings.length === 0 ? (
-            <div className="no-inquiries">No bookings made yet.</div>
-          ) : (
-            myBookings.map((booking) => (
-              <div key={booking.id} className="booking-card">
-                <div className="booking-info">
-                  <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
-                  <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
-                  <div><strong>Status:</strong> 
-                    <span className={`status-${booking.status}`}>
-                      {booking.status}
-                    </span>
+        <div className="bookings-section">
+          <h3>My Bookings</h3>
+          <div className="booking-list">
+            {myBookings.length === 0 ? (
+              <div className="no-inquiries">No bookings made yet.</div>
+            ) : (
+              myBookings.map((booking) => (
+                <div key={booking.id} className="booking-card">
+                  <div className="booking-info">
+                    <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
+                    <div><strong>Location:</strong> {booking.location}</div>
+                    <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
+                    <div><strong>Status:</strong> 
+                      <span className={`status-${booking.status}`}>
+                        {booking.status}
+                      </span>
+                    </div>
+                    <div><strong>Transaction Type:</strong> 
+                      <span className="transaction-type">
+                        {booking.transaction_type || "Not specified"}
+                      </span>
+                    </div>
+                    <div><strong>Date of Visiting:</strong> 
+                      <span className="visit-date">
+                        {formatDate(booking.date_of_visiting)}
+                      </span>
+                    </div>
+                    <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                   </div>
-                  <div><strong>Transaction Type:</strong> 
-                    <span className="transaction-type">
-                      {booking.transaction_type || "Not specified"}
-                    </span>
-                  </div>
-                  <div><strong>Date of Visiting:</strong> 
-                    <span className="visit-date">
-                      {formatDate(booking.date_of_visiting)}
-                    </span>
-                  </div>
-                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="bookings-section">
+          <h3>My Rented Units (Bookings for My Units)</h3>
+          <div className="booking-list">
+            {rentedUnits.length === 0 ? (
+              <div className="no-inquiries">No one has booked your units yet.</div>
+            ) : (
+              rentedUnits.map((booking) => (
+                <div key={booking.id} id={`booking-${booking.id}`} className="booking-card">
+                  <div className="booking-info">
+                    <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
+                    <div><strong>Location:</strong> {booking.location}</div>
+                    <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
+                    <div><strong>Booked By:</strong> {booking.name}</div>
+                    <div><strong>Status:</strong> 
+                      <span className={`status-${booking.status}`}>
+                        {booking.status}
+                      </span>
+                    </div>
+                    <div><strong>Transaction Type:</strong> 
+                      <span className="transaction-type">
+                        {booking.transaction_type || "Not specified"}
+                      </span>
+                    </div>
+                    <div><strong>Date of Visiting:</strong> 
+                      <span className="visit-date">
+                        {formatDate(booking.date_of_visiting)}
+                      </span>
+                    </div>
+                    <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
+                  </div>
+                  <div className="booking-actions">
+                    {booking.status === "pending" && (
+                      <>
+                        <button className="confirm-btn" onClick={() => handleStatusUpdate(booking.id, "confirmed")}>Confirm</button>
+                        <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>Deny</button>
+                      </>
+                    )}
+                    {booking.status === "confirmed" && <span style={{ color: '#4caf50', fontWeight: 700 }}>Confirmed</span>}
+                    {booking.status === "denied" && <span style={{ color: '#e57373', fontWeight: 700 }}>Denied</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
-
-      <div className="bookings-section">
-        <h3>My Rented Units (Bookings for My Units)</h3>
-        <div className="booking-list">
-          {rentedUnits.length === 0 ? (
-            <div className="no-inquiries">No one has booked your units yet.</div>
-          ) : (
-            rentedUnits.map((booking) => (
-              <div key={booking.id} id={`booking-${booking.id}`} className="booking-card">
-                <div className="booking-info">
-                  <div><strong>Unit:</strong> {booking.unit_number} ({booking.building_name})</div>
-                  <div><strong>Location:</strong> {booking.location}</div>
-                  <div><strong>Price:</strong> {formatPrice(booking.unitPrice || booking.unit_price || booking.price)}</div>
-                  <div><strong>Booked By:</strong> {booking.name}</div>
-                  <div><strong>Status:</strong> 
-                    <span className={`status-${booking.status}`}>
-                      {booking.status}
-                    </span>
-                  </div>
-                  <div><strong>Transaction Type:</strong> 
-                    <span className="transaction-type">
-                      {booking.transaction_type || "Not specified"}
-                    </span>
-                  </div>
-                  <div><strong>Date of Visiting:</strong> 
-                    <span className="visit-date">
-                      {formatDate(booking.date_of_visiting)}
-                    </span>
-                  </div>
-                  <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
-                </div>
-                <div className="booking-actions">
-                  {booking.status === "pending" && (
-                    <>
-                      <button className="confirm-btn" onClick={() => handleStatusUpdate(booking.id, "confirmed")}>Confirm</button>
-                      <button className="deny-btn" onClick={() => handleStatusUpdate(booking.id, "denied")}>Deny</button>
-                    </>
-                  )}
-                  {booking.status === "confirmed" && <span style={{ color: '#4caf50', fontWeight: 700 }}>Confirmed</span>}
-                  {booking.status === "denied" && <span style={{ color: '#e57373', fontWeight: 700 }}>Denied</span>}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 

@@ -1,3 +1,20 @@
+.highlight {
+  background-color: rgba(224, 193, 109, 0.4);
+  color: #2c363f;
+  padding: 0 6px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(224, 193, 109, 0.3);
+  font-weight: 600;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  text-shadow: none;
+}
+
+.highlight:hover {
+  background-color: rgba(224, 193, 109, 0.6);
+  box-shadow: 0 4px 12px rgba(224, 193, 109, 0.5);
+  cursor: default;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -8,13 +25,54 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  background-color: #1a2026;
+
+}
+
+.top-navigation-container {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.top-navigation-container > * {
+  pointer-events: auto;
+}
+
+.back-button-top-container {
+  margin-left: 25px;
+}
+
+.back-btn-top {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  background-color: #6c757d;
   color: #f7e7b6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.back-btn-top:hover {
+  background-color: #5a6268;
+  color: #f7e7b6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .bookings-container {
   max-width: 900px;
-  margin: 40px auto;
+  margin: 100px auto 40px auto;
   background: #2c363f;
   color: #f7e7b6;
   border-radius: 18px;
@@ -41,6 +99,9 @@ body {
 .bookings-section h3 {
   color: #e0c16d;
   margin-bottom: 12px;
+  font-size: 1.3rem;
+  border-bottom: 2px solid #4a5a6a;
+  padding-bottom: 8px;
 }
 
 .booking-list {
@@ -97,6 +158,12 @@ body {
   font-weight: 600;
 }
 
+.booking-actions {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #4a5a6a;
+}
+
 .confirm-btn, .deny-btn {
   padding: 10px 20px;
   border: none;
@@ -107,6 +174,7 @@ body {
   margin-right: 10px;
   margin-top: 8px;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .confirm-btn {
@@ -117,6 +185,7 @@ body {
 .confirm-btn:hover {
   background: linear-gradient(135deg, #45a049, #3d8b40);
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .deny-btn {
@@ -127,10 +196,37 @@ body {
 .deny-btn:hover {
   background: linear-gradient(135deg, #d32f2f, #b71c1c);
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+}
+
+.loading, .no-inquiries, .error-message, .success-message {
+  text-align: center;
+  margin: 18px 0;
+  font-size: 1.1rem;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.error-message {
+  background: rgba(248, 215, 218, 0.1);
+  color: #f8d7da;
+  border: 1px solid rgba(245, 198, 203, 0.3);
+}
+
+.success-message {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.no-inquiries {
+  background: rgba(255, 255, 255, 0.05);
+  color: #a0aec0;
+  font-style: italic;
 }
 
 .notifications-container {
-  position: absolute;
+  position: fixed;
   top: 20px;
   right: 20px;
   z-index: 1000;
@@ -171,8 +267,8 @@ body {
   align-items: center;
   justify-content: center;
   animation: pulse 2s infinite;
-  border: 2px solid #2c363f;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid #2c363f;
 }
 
 @keyframes pulse {
@@ -191,7 +287,7 @@ body {
   width: 300px;
   max-height: 400px;
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   z-index: 1001;
 }
 
@@ -224,6 +320,13 @@ body {
 
 .clear-notifications-btn:hover {
   background: rgba(224, 193, 109, 0.1);
+}
+
+.no-notifications {
+  padding: 20px;
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
 }
 
 .notifications-list {
@@ -267,29 +370,87 @@ body {
 }
 
 @media (max-width: 768px) {
+  .top-navigation-container {
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 10px;
+    top: 15px;
+  }
+  
+  .back-button-top-container {
+    margin: 0;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .back-btn-top {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+  
   .bookings-container {
-    margin: 20px;
+    margin: 120px 20px 20px 20px;
     padding: 24px 20px;
   }
-
+  
+  .notifications-container {
+    top: 80px;
+    right: 15px;
+  }
+  
   .notifications-dropdown {
     width: 280px;
     right: -50px;
+  }
+  
+  .booking-card {
+    padding: 15px;
+  }
+  
+  .confirm-btn, .deny-btn {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 8px;
   }
 }
 
 @media (max-width: 480px) {
   .bookings-container {
-    margin: 10px;
+    margin: 110px 10px 10px 10px;
     padding: 20px 15px;
   }
-
+  
+  .top-navigation-container {
+    top: 10px;
+  }
+  
+  .notifications-container {
+    top: 70px;
+    right: 10px;
+  }
+  
   .bookings-header {
     font-size: 1.4rem;
   }
-
+  
+  .bookings-section h3 {
+    font-size: 1.1rem;
+  }
+  
   .notifications-dropdown {
     width: 250px;
     right: -80px;
   }
+  
+  .back-btn-top {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+.back-button-container,
+.back-button {
+  display: none;
 }
