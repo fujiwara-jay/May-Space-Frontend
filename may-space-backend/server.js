@@ -820,6 +820,75 @@ app.put('/bookings/:id/status', async (req, res) => {
   }
 });
 
+// Cancel a booking (user can cancel their own booking)
+app.put('/bookings/:id/cancel', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  const bookingId = req.params.id;
+  
+  if (!userId || !bookingId) {
+    return res.status(400).json({ message: 'Invalid request' });
+  }
+  
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Check if booking exists and belongs to this user
+    const [rows] = await connection.execute(
+      `SELECT b.*, u.user_id as unit_owner_id, u.id as unit_id, b.status FROM bookings b 
+       JOIN units u ON b.unit_id = u.id 
+       WHERE b.id = ? AND b.user_id = ?`,
+      [bookingId, userId]
+    );
+    
+    if (rows.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'Booking not found or unauthorized' });
+    }
+    
+    const booking = rows[0];
+    const unitId = booking.unit_id;
+    const currentStatus = booking.status;
+    
+    // If booking is confirmed, make unit available again
+    if (currentStatus === 'confirmed') {
+      await connection.execute(
+        'UPDATE units SET is_available = 1 WHERE id = ?',
+        [unitId]
+      );
+    }
+    
+    // Update booking status to cancelled
+    await connection.execute(
+      'UPDATE bookings SET status = ? WHERE id = ?',
+      ['cancelled', bookingId]
+    );
+    
+    await connection.end();
+    res.status(200).json({ message: 'Booking cancelled successfully' });
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    res.status(500).json({ message: 'Failed to cancel booking' });
+  }
+});
+
+// Get all bookings (public for checking availability)
+app.get('/public/bookings', async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [bookings] = await connection.execute(
+      `SELECT b.*, u.unit_number, u.building_name FROM bookings b 
+       JOIN units u ON b.unit_id = u.id 
+       WHERE b.status IN ('confirmed', 'pending')
+       ORDER BY b.created_at DESC`
+    );
+    await connection.end();
+    res.status(200).json({ bookings });
+  } catch (error) {
+    console.error('Error fetching all bookings:', error);
+    res.status(500).json({ message: 'Failed to fetch bookings' });
+  }
+});
+
 // --- User Profile Endpoints ---
 
 // Get user profile

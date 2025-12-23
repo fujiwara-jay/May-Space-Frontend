@@ -155,9 +155,10 @@ const UnitFinder = () => {
     
     return {
       status: userBooking.status,
-      canBookAgain: userBooking.status === 'denied',
+      canBookAgain: userBooking.status === 'denied' || userBooking.status === 'cancelled',
       isPending: userBooking.status === 'pending',
-      isConfirmed: userBooking.status === 'confirmed'
+      isConfirmed: userBooking.status === 'confirmed',
+      isCancelled: userBooking.status === 'cancelled'
     };
   };
 
@@ -341,7 +342,12 @@ const UnitFinder = () => {
         return;
       }
       
-      if (!bookingStatus.canBookAgain && bookingStatus.status !== 'denied') {
+      if (bookingStatus.isCancelled) {
+        // Allow rebooking if cancelled
+        setActionMessage("Your previous booking was cancelled. You can book again.");
+      }
+      
+      if (!bookingStatus.canBookAgain && bookingStatus.status !== 'cancelled') {
         setActionMessage("You cannot book this unit at this time.");
         return;
       }
@@ -693,6 +699,9 @@ const UnitFinder = () => {
                 {bookingStatus.status === 'pending' && (
                   <p className="pending-info">Waiting for owner confirmation.</p>
                 )}
+                {bookingStatus.status === 'cancelled' && unitAvailable && (
+                  <p className="rebooking-info">Your booking was cancelled. You can book again.</p>
+                )}
               </div>
             )}
           </div>
@@ -728,9 +737,9 @@ const UnitFinder = () => {
             <button
               className="book-now-btn"
               onClick={(e) => handleBookNowClick(e, modalUnit)}
-              disabled={isGuest || loading || !unitAvailable || (bookingStatus && !bookingStatus.canBookAgain && bookingStatus.status !== 'denied')}
+              disabled={isGuest || loading || !unitAvailable || (bookingStatus && !bookingStatus.canBookAgain && bookingStatus.status !== 'denied' && bookingStatus.status !== 'cancelled')}
             >
-              {bookingStatus?.status === 'denied' && unitAvailable ? '📅 Book Again' : '📅 Book Now'}
+              {bookingStatus?.status === 'denied' || bookingStatus?.status === 'cancelled' ? '📅 Book Again' : '📅 Book Now'}
               {!unitAvailable && " (Unavailable)"}
             </button>
             {tooltip.show && tooltip.target === "book" && (

@@ -25,7 +25,6 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-
 }
 
 .top-navigation-container {
@@ -158,23 +157,31 @@ body {
   font-weight: 600;
 }
 
+.status-cancelled {
+  color: #ff9800;
+  font-weight: 600;
+}
+
 .booking-actions {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid #4a5a6a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
-.confirm-btn, .deny-btn {
+.confirm-btn, .deny-btn, .cancel-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 10px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  margin-right: 10px;
-  margin-top: 8px;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  min-width: 120px;
 }
 
 .confirm-btn {
@@ -197,6 +204,17 @@ body {
   background: linear-gradient(135deg, #d32f2f, #b71c1c);
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+}
+
+.cancel-btn {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: linear-gradient(135deg, #f57c00, #e65100);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
 }
 
 .loading, .no-inquiries, .error-message, .success-message {
@@ -409,10 +427,15 @@ body {
     padding: 15px;
   }
   
-  .confirm-btn, .deny-btn {
+  .confirm-btn, .deny-btn, .cancel-btn {
     width: 100%;
     margin-right: 0;
     margin-bottom: 8px;
+  }
+  
+  .booking-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

@@ -99,6 +99,30 @@ function Bookings() {
     }
   };
 
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) {
+      return;
+    }
+    
+    setActionMessage("");
+    try {
+      const res = await fetch(`https://may-space-backend.onrender.com/bookings/${bookingId}/cancel`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-ID": userId,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || `Failed to cancel booking`);
+      setActionMessage(`Booking cancelled successfully`);
+      setTimeout(() => setActionMessage(""), 2000);
+      fetchBookings();
+    } catch (err) {
+      setActionMessage(err.message);
+    }
+  };
+
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
@@ -244,6 +268,19 @@ function Bookings() {
                     </div>
                     <div><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleString()}</div>
                   </div>
+                  <div className="booking-actions">
+                    {(booking.status === "pending" || booking.status === "confirmed") && (
+                      <button 
+                        className="cancel-btn" 
+                        onClick={() => handleCancelBooking(booking.id)}
+                      >
+                        Cancel Booking
+                      </button>
+                    )}
+                    {booking.status === "cancelled" && (
+                      <span style={{ color: '#ff9800', fontWeight: 700 }}>Cancelled</span>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -289,6 +326,7 @@ function Bookings() {
                     )}
                     {booking.status === "confirmed" && <span style={{ color: '#4caf50', fontWeight: 700 }}>Confirmed</span>}
                     {booking.status === "denied" && <span style={{ color: '#e57373', fontWeight: 700 }}>Denied</span>}
+                    {booking.status === "cancelled" && <span style={{ color: '#ff9800', fontWeight: 700 }}>Cancelled by User</span>}
                   </div>
                 </div>
               ))
