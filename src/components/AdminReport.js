@@ -5,6 +5,8 @@ import jsPDF from 'jspdf';
 
 function AdminReport() {
   const navigate = useNavigate();
+  const ADMIN_PIN = "000000";
+  
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,8 +15,15 @@ function AdminReport() {
     startDate: '',
     endDate: ''
   });
+  const [bookingFilter, setBookingFilter] = useState('all');
   const [detailedBookings, setDetailedBookings] = useState([]);
   const [usersReport, setUsersReport] = useState([]);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [pinVerified, setPinVerified] = useState(false);
+  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     fetchStatistics();
@@ -43,6 +52,7 @@ function AdminReport() {
       const params = new URLSearchParams();
       if (dateRange.startDate) params.append('startDate', dateRange.startDate);
       if (dateRange.endDate) params.append('endDate', dateRange.endDate);
+      if (bookingFilter && bookingFilter !== 'all') params.append('status', bookingFilter);
       
       const response = await fetch(`https://may-space-backend.onrender.com/admin/report/bookings?${params}`);
       const data = await response.json();
@@ -85,12 +95,17 @@ function AdminReport() {
     }));
   };
 
+  const handleBookingFilterChange = (e) => {
+    setBookingFilter(e.target.value);
+  };
+
   const handleApplyFilter = () => {
     fetchDetailedBookings();
   };
 
   const handleResetFilter = () => {
     setDateRange({ startDate: '', endDate: '' });
+    setBookingFilter('all');
     fetchDetailedBookings();
   };
 
@@ -98,7 +113,61 @@ function AdminReport() {
     navigate('/admin-dashboard');
   };
 
-  // Obfuscation functions
+  const handleOpenPinModal = () => {
+    setShowPinModal(true);
+    setPinInput('');
+    setPinError('');
+    setPinVerified(false);
+  };
+
+  const handleClosePinModal = () => {
+    setShowPinModal(false);
+    setPinInput('');
+    setPinError('');
+    setIsVerifyingPin(false);
+  };
+
+  const handlePinInput = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setPinInput(value);
+    setPinError('');
+  };
+
+  const handleVerifyPin = () => {
+    if (!pinInput) {
+      setPinError('Please enter the PIN code');
+      return;
+    }
+
+    if (pinInput.length !== 6) {
+      setPinError('PIN must be 6 digits');
+      return;
+    }
+
+    setIsVerifyingPin(true);
+    
+    setTimeout(() => {
+      if (pinInput === ADMIN_PIN) {
+        setPinVerified(true);
+        setPinError('');
+        setIsVerifyingPin(false);
+        setTimeout(() => {
+          handleClosePinModal();
+          handleExportPDF();
+        }, 500);
+      } else {
+        setPinError('Invalid PIN code. Please try again.');
+        setIsVerifyingPin(false);
+      }
+    }, 500);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleVerifyPin();
+    }
+  };
+
   const obfuscateEmail = (email) => {
     if (!email || email === 'N/A') return 'N/A';
     
@@ -155,23 +224,14 @@ function AdminReport() {
     });
   };
 
-  const formatDateForPDF = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   const getBookingPercentage = (status) => {
-    if (!statistics || !statistics.totalBookings) return 0;
+    if (!statistics || !statistics.totalBookings || statistics.totalBookings === 0) return 0;
     const count = statistics.bookingStatus[status];
     return ((count / statistics.totalBookings) * 100).toFixed(1);
   };
 
   const getUnitPercentage = (type) => {
-    if (!statistics || !statistics.totalUnits) return 0;
+    if (!statistics || !statistics.totalUnits || statistics.totalUnits === 0) return 0;
     const count = type === 'available' ? statistics.unitStatus.available : statistics.unitStatus.unavailable;
     return ((count / statistics.totalUnits) * 100).toFixed(1);
   };
@@ -186,7 +246,6 @@ function AdminReport() {
     const rowHeight = 10;
     const headerHeight = 15;
     
-    // Add title if provided
     if (title) {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
@@ -195,7 +254,6 @@ function AdminReport() {
       y += 10;
     }
     
-    // Draw header
     doc.setFillColor(66, 139, 202);
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
@@ -206,7 +264,6 @@ function AdminReport() {
       const width = colWidths ? colWidths[index] * tableWidth : tableWidth / headers.length;
       doc.rect(x, y, width, headerHeight, 'F');
       
-      // Split long text
       const maxChars = Math.floor(width / 3);
       const text = header.length > maxChars ? header.substring(0, maxChars - 3) + '...' : header;
       
@@ -216,18 +273,15 @@ function AdminReport() {
     
     y += headerHeight;
     
-    // Draw rows
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     
     data.forEach((row, rowIndex) => {
-      // Check if we need a new page
       if (y > pageHeight - 30) {
         doc.addPage('l');
         y = margin + 20;
         
-        // Redraw header on new page
         doc.setFillColor(66, 139, 202);
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(10);
@@ -251,7 +305,6 @@ function AdminReport() {
         doc.setFont('helvetica', 'normal');
       }
       
-      // Alternate row colors
       if (rowIndex % 2 === 0) {
         doc.setFillColor(245, 245, 245);
         x = margin;
@@ -262,13 +315,11 @@ function AdminReport() {
         });
       }
       
-      // Draw row data
       x = margin;
       row.forEach((cell, cellIndex) => {
         const width = colWidths ? colWidths[cellIndex] * tableWidth : tableWidth / headers.length;
-        const cellText = cell.toString();
+        const cellText = cell ? cell.toString() : '';
         
-        // Truncate long text
         const maxChars = Math.floor(width / 2);
         const displayText = cellText.length > maxChars ? cellText.substring(0, maxChars - 3) + '...' : cellText;
         
@@ -284,13 +335,12 @@ function AdminReport() {
 
   const handleExportPDF = () => {
     try {
-      // Create a new jsPDF instance in LANDSCAPE mode
-      const doc = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
+      setIsGeneratingPDF(true);
+      const doc = new jsPDF('l', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
       let yPosition = 20;
       
-      // Header - Center in landscape
       doc.setFontSize(24);
       doc.setTextColor(66, 139, 202);
       doc.setFont('helvetica', 'bold');
@@ -307,14 +357,18 @@ function AdminReport() {
       
       yPosition += 15;
       
-      // Company/System Info
       doc.setFontSize(10);
       doc.setTextColor(150, 150, 150);
       doc.text('May Space Management System', pageWidth / 2, yPosition, { align: 'center' });
       
       yPosition += 20;
       
-      // Overview Section
+      doc.setFontSize(9);
+      doc.setTextColor(200, 0, 0);
+      doc.text('CONFIDENTIAL - PIN Verified Export', pageWidth / 2, yPosition, { align: 'center' });
+      
+      yPosition += 10;
+      
       if (statistics) {
         doc.setFontSize(18);
         doc.setTextColor(44, 62, 80);
@@ -323,16 +377,17 @@ function AdminReport() {
         
         yPosition += 12;
         
-        // Create overview table with statistics
         const overviewData = [
           ['Total Users', statistics.totalUsers.toLocaleString(), `+${statistics.recentActivity?.usersLast7Days || 0} last 7 days`],
           ['Total Units', statistics.totalUnits.toLocaleString(), `+${statistics.recentActivity?.unitsLast7Days || 0} last 7 days`],
           ['Total Bookings', statistics.totalBookings.toLocaleString(), 
-            `Confirmed: ${statistics.bookingStatus.confirmed}, Pending: ${statistics.bookingStatus.pending}, Denied: ${statistics.bookingStatus.denied}`],
+            `Confirmed: ${statistics.bookingStatus.confirmed}, Pending: ${statistics.bookingStatus.pending}, 
+            Denied: ${statistics.bookingStatus.denied}, Cancelled: ${statistics.bookingStatus.cancelled}`],
           ['Total Inquiries', statistics.totalInquiries.toLocaleString(), ''],
           ['Available Units', statistics.unitStatus.available, `${getUnitPercentage('available')}% of total`],
           ['Unavailable Units', statistics.unitStatus.unavailable, `${getUnitPercentage('unavailable')}% of total`],
-          ['Booking Rate', `${getBookingPercentage('confirmed')}% confirmed`, 'Success rate']
+          ['Booking Rate', `${getBookingPercentage('confirmed')}% confirmed`, 'Success rate'],
+          ['Recent Cancellations', `${statistics.recentActivity?.cancelledLast7Days || 0}`, 'Last 7 days']
         ];
         
         yPosition = createLandscapeTable(
@@ -347,9 +402,7 @@ function AdminReport() {
         yPosition += 20;
       }
       
-      // Users Report Section - Full width in landscape
       if (usersReport.length > 0) {
-        // Check if we need a new page
         if (yPosition > pageHeight - 100) {
           doc.addPage('l');
           yPosition = 20;
@@ -362,9 +415,8 @@ function AdminReport() {
         
         yPosition += 12;
         
-        // Prepare user data for table - Include ALL details
         const userTableData = usersReport.map(user => [
-          user.id.toString(),
+          user.id?.toString() || '',
           user.name || 'N/A',
           user.username || 'N/A',
           user.email || 'N/A',
@@ -375,7 +427,6 @@ function AdminReport() {
           formatDateTime(user.created_at)
         ]);
         
-        // Create user table with full details
         yPosition = createLandscapeTable(
           doc,
           ['ID', 'Full Name', 'Username', 'Email', 'Contact No.', 'Units Posted', 'Bookings Made', 'Inquiries Sent', 'Join Date'],
@@ -384,14 +435,12 @@ function AdminReport() {
           [0.04, 0.1, 0.08, 0.15, 0.1, 0.06, 0.07, 0.07, 0.13]
         );
         
-        // Users summary
         yPosition += 15;
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.setFont('helvetica', 'normal');
         doc.text(`Total Users: ${usersReport.length}`, 20, yPosition);
         
-        // Calculate averages
         const avgUnits = (usersReport.reduce((sum, user) => sum + (user.units_posted || 0), 0) / usersReport.length).toFixed(1);
         const avgBookings = (usersReport.reduce((sum, user) => sum + (user.bookings_made || 0), 0) / usersReport.length).toFixed(1);
         const avgInquiries = (usersReport.reduce((sum, user) => sum + (user.inquiries_sent || 0), 0) / usersReport.length).toFixed(1);
@@ -401,9 +450,7 @@ function AdminReport() {
         yPosition += 20;
       }
       
-      // Bookings Report Section
       if (detailedBookings.length > 0) {
-        // Add new landscape page for bookings
         doc.addPage('l');
         yPosition = 20;
         
@@ -414,9 +461,8 @@ function AdminReport() {
         
         yPosition += 12;
         
-        // Prepare booking data for table - REMOVED VISIT DATE
         const bookingTableData = detailedBookings.map(booking => [
-          booking.id.toString(),
+          booking.id?.toString() || '',
           booking.building_name || 'N/A',
           booking.unit_number || 'N/A',
           booking.location || 'N/A',
@@ -429,7 +475,6 @@ function AdminReport() {
           formatDateTime(booking.created_at)
         ]);
         
-        // Create booking table in landscape - UPDATED HEADERS AND COLUMN WIDTHS
         yPosition = createLandscapeTable(
           doc,
           ['ID', 'Building', 'Unit', 'Location', 'Renter', 'Renter Email', 'Owner', 'Owner Email', 'Status', 'People', 'Created At'],
@@ -440,23 +485,21 @@ function AdminReport() {
         
         yPosition += 15;
         
-        // Booking summary statistics
         const confirmed = detailedBookings.filter(b => b.status === 'confirmed').length;
         const pending = detailedBookings.filter(b => b.status === 'pending').length;
         const denied = detailedBookings.filter(b => b.status === 'denied').length;
+        const cancelled = detailedBookings.filter(b => b.status === 'cancelled').length;
         const confirmedRate = detailedBookings.length > 0 ? ((confirmed / detailedBookings.length) * 100).toFixed(1) : 0;
         
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Total Bookings: ${detailedBookings.length} | Confirmed: ${confirmed} (${confirmedRate}%) | Pending: ${pending} | Denied: ${denied}`, 20, yPosition);
+        doc.text(`Total Bookings: ${detailedBookings.length} | Confirmed: ${confirmed} (${confirmedRate}%) | Pending: ${pending} | Denied: ${denied} | Cancelled: ${cancelled}`, 20, yPosition);
         
         yPosition += 20;
       }
       
-      // Top Users Section
       if (statistics?.topUsers?.length > 0) {
-        // Add new landscape page for top users
         doc.addPage('l');
         yPosition = 20;
         
@@ -467,7 +510,6 @@ function AdminReport() {
         
         yPosition += 12;
         
-        // Prepare top users data for table
         const topUsersData = statistics.topUsers.map((user, index) => [
           `#${index + 1}`,
           user.username || 'N/A',
@@ -477,7 +519,6 @@ function AdminReport() {
           formatDateTime(user.created_at || new Date())
         ]);
         
-        // Create top users table in landscape
         createLandscapeTable(
           doc,
           ['Rank', 'Username', 'Email', 'Units Posted', 'Contact No.', 'Member Since'],
@@ -485,51 +526,27 @@ function AdminReport() {
           yPosition,
           [0.05, 0.15, 0.25, 0.1, 0.2, 0.15]
         );
-        
-        yPosition += 20;
-        
-        // Add performance metrics
-        doc.setFontSize(12);
-        doc.setTextColor(66, 139, 202);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Performance Metrics:', 20, yPosition);
-        
-        yPosition += 10;
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.setFont('helvetica', 'normal');
-        
-        const totalUnitsPosted = statistics.topUsers.reduce((sum, user) => sum + (user.units_count || 0), 0);
-        const topUser = statistics.topUsers[0];
-        doc.text(`• Top contributor posted ${topUser?.units_count || 0} units (${topUser?.username || 'N/A'})`, 25, yPosition);
-        yPosition += 7;
-        doc.text(`• Total units posted by top ${statistics.topUsers.length} users: ${totalUnitsPosted}`, 25, yPosition);
       }
       
-      // Add footer to all landscape pages
       const totalPages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
-        
-        // Footer text
-        doc.text('CONFIDENTIAL - Admin Use Only | May Space Management System', pageWidth / 2, pageHeight - 10, { align: 'center' });
-        
-        // Page numbers
-        doc.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+        doc.text('CONFIDENTIAL - Admin Use Only | May Space Management System', pageWidth / 2, pageHeight - 15, { align: 'center' });
+        doc.text(`PIN Verified Export | Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
       }
       
-      // Save the PDF
-      const fileName = `Admin_Report_Landscape_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `Admin_Report_${new Date().toISOString().split('T')[0]}_${Date.now()}.pdf`;
       doc.save(fileName);
       
-      // Show success message
       alert(`✅ Landscape PDF report exported successfully as: ${fileName}`);
       
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('❌ Error generating PDF. Please try again or use a different browser.');
+      alert('❌ Error generating PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -564,6 +581,87 @@ function AdminReport() {
 
   return (
     <div className="admin-report-container">
+      {/* PIN Verification Modal */}
+      {showPinModal && (
+        <div className="pin-modal-overlay">
+          <div className="pin-modal">
+            <div className="pin-modal-header">
+              <h3>🔒 Admin PIN Verification</h3>
+              <button 
+                className="pin-modal-close" 
+                onClick={handleClosePinModal}
+                disabled={isVerifyingPin || pinVerified}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="pin-modal-body">
+              <p className="pin-instruction">
+                Please enter your 6-digit admin PIN to export the PDF report.
+              </p>
+              
+              <div className="pin-input-container">
+                <input
+                  type="password"
+                  className="pin-input"
+                  value={pinInput}
+                  onChange={handlePinInput}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter 6-digit PIN"
+                  maxLength="6"
+                  disabled={isVerifyingPin || pinVerified}
+                  autoFocus
+                />
+              </div>
+              
+              {pinError && (
+                <div className="pin-error">
+                  <span className="error-icon">⚠️</span>
+                  {pinError}
+                </div>
+              )}
+              
+              {pinVerified && (
+                <div className="pin-success">
+                  <span className="success-icon">✅</span>
+                  PIN verified! Generating PDF...
+                </div>
+              )}
+              
+              <div className="pin-modal-footer">
+                <button 
+                  className="pin-cancel-btn"
+                  onClick={handleClosePinModal}
+                  disabled={isVerifyingPin || pinVerified}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="pin-verify-btn"
+                  onClick={handleVerifyPin}
+                  disabled={isVerifyingPin || pinVerified || !pinInput || pinInput.length !== 6}
+                >
+                  {isVerifyingPin ? (
+                    <>
+                      <span className="verifying-spinner"></span>
+                      Verifying...
+                    </>
+                  ) : pinVerified ? (
+                    <>
+                      <span className="verified-icon">✅</span>
+                      Verified
+                    </>
+                  ) : (
+                    'Verify PIN'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="report-header">
         <div className="header-top">
           <button onClick={handleBackToDashboard} className="back-button">
@@ -602,7 +700,6 @@ function AdminReport() {
 
       {activeTab === 'overview' && (
         <div className="overview-tab">
-          {/* Summary Cards */}
           <div className="summary-cards">
             <div className="summary-card total-users">
               <div className="card-icon">👥</div>
@@ -631,6 +728,7 @@ function AdminReport() {
                   <span className="status confirmed">{statistics.bookingStatus.confirmed} Confirmed</span>
                   <span className="status pending">{statistics.bookingStatus.pending} Pending</span>
                   <span className="status denied">{statistics.bookingStatus.denied} Denied</span>
+                  <span className="status cancelled">{statistics.bookingStatus.cancelled} Cancelled</span>
                 </div>
               </div>
             </div>
@@ -644,7 +742,6 @@ function AdminReport() {
             </div>
           </div>
 
-          {/* Booking Status Chart */}
           <div className="charts-section">
             <div className="chart-container">
               <h3>Booking Status Distribution</h3>
@@ -689,6 +786,19 @@ function AdminReport() {
                       </div>
                       <div className="chart-bar-percentage">{getBookingPercentage('denied')}%</div>
                     </div>
+                    
+                    <div className="chart-bar-container">
+                      <div className="chart-bar-label">Cancelled</div>
+                      <div className="chart-bar-bg">
+                        <div 
+                          className="chart-bar-fill cancelled"
+                          style={{ width: `${getBookingPercentage('cancelled')}%` }}
+                        >
+                          <span className="chart-bar-value">{statistics.bookingStatus.cancelled}</span>
+                        </div>
+                      </div>
+                      <div className="chart-bar-percentage">{getBookingPercentage('cancelled')}%</div>
+                    </div>
                   </div>
                   
                   <div className="chart-legend">
@@ -703,6 +813,10 @@ function AdminReport() {
                     <div className="legend-item">
                       <span className="legend-color denied"></span>
                       <span>Denied</span>
+                    </div>
+                    <div className="legend-item">
+                      <span className="legend-color cancelled"></span>
+                      <span>Cancelled</span>
                     </div>
                   </div>
                 </div>
@@ -756,7 +870,6 @@ function AdminReport() {
             </div>
           </div>
 
-          {/* Top Users Section */}
           <div className="top-users-section">
             <h3>Units Posted by Users</h3>
             <div className="top-users-list">
@@ -775,7 +888,6 @@ function AdminReport() {
             </div>
           </div>
 
-          {/* Activity Overview */}
           <div className="activity-section">
             <h3>📈 System Activity Overview</h3>
             <div className="activity-grid">
@@ -795,12 +907,10 @@ function AdminReport() {
                 <div className="activity-percentage">{getBookingPercentage('confirmed')}% of total</div>
               </div>
               <div className="activity-item">
-                <div className="activity-label">Total Transactions</div>
-                <div className="activity-value">
-                  {statistics.transactionTypes?.reduce((sum, t) => sum + t.count, 0) || 0}
-                </div>
+                <div className="activity-label">Cancelled Bookings</div>
+                <div className="activity-value">{statistics.bookingStatus.cancelled}</div>
                 <div className="activity-subtext">
-                  {statistics.transactionTypes?.map(t => `${t.transaction_type}: ${t.count}`).join(', ') || 'No data'}
+                  {statistics.recentActivity?.cancelledLast7Days || 0} in last 7 days
                 </div>
               </div>
             </div>
@@ -828,6 +938,20 @@ function AdminReport() {
                 value={dateRange.endDate}
                 onChange={handleDateChange}
               />
+            </div>
+            <div className="filter-group">
+              <label>Status:</label>
+              <select
+                value={bookingFilter}
+                onChange={handleBookingFilterChange}
+                className="status-filter"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="denied">Denied</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
             <button onClick={handleApplyFilter} className="apply-filter-btn">
               Apply Filter
@@ -941,23 +1065,25 @@ function AdminReport() {
               </table>
             </div>
             <div className="privacy-note">
-              🔒 Personal information is obfuscated for privacy. Full details (including Units Posted, Bookings Made, Inquiries Sent) are available in PDF export.
+              🔒 Personal information is obfuscated for privacy. Full details are available in PDF export.
             </div>
           </div>
         </div>
       )}
 
-      {/* Export Button - Landscape PDF */}
       <div className="export-section">
-        <button className="export-btn" onClick={handleExportPDF}>
-          📄 Export Landscape Report (PDF)
+        <button 
+          className="export-btn" 
+          onClick={handleOpenPinModal}
+          disabled={isGeneratingPDF}
+        >
+          {isGeneratingPDF ? '🔄 Generating PDF...' : '🔐 Export Landscape Report (PDF)'}
         </button>
         <div className="export-info">
-          <small>💡 PDF will be exported in landscape mode with full details</small>
+          <small>💡 PIN verification required for PDF export</small>
         </div>
       </div>
 
-      {/* Refresh Button */}
       <div className="refresh-section">
         <button className="refresh-btn" onClick={fetchStatistics}>
           🔄 Refresh Data

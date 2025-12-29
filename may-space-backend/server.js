@@ -1152,12 +1152,13 @@ app.get('/admin/report/statistics', async (req, res) => {
     const [bookingsResult] = await connection.execute('SELECT COUNT(*) as total_bookings FROM bookings');
     const totalBookings = bookingsResult[0].total_bookings;
     
-    // 4. Booking status breakdown
+    // 4. Booking status breakdown (INCLUDING CANCELLED)
     const [bookingStatusResult] = await connection.execute(
       `SELECT 
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_bookings,
         SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_bookings,
-        SUM(CASE WHEN status = 'denied' THEN 1 ELSE 0 END) as denied_bookings
+        SUM(CASE WHEN status = 'denied' THEN 1 ELSE 0 END) as denied_bookings,
+        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_bookings
        FROM bookings`
     );
     
@@ -1189,7 +1190,7 @@ app.get('/admin/report/statistics', async (req, res) => {
     
     // 9. Top users by units posted
     const [topUsersResult] = await connection.execute(
-      `SELECT u.username, u.email, COUNT(units.id) as units_count
+      `SELECT u.username, u.email, u.contact_number, u.created_at, COUNT(units.id) as units_count
        FROM users u
        LEFT JOIN units ON u.id = units.user_id
        GROUP BY u.id
@@ -1207,6 +1208,14 @@ app.get('/admin/report/statistics', async (req, res) => {
        GROUP BY transaction_type`
     );
     
+    // 11. Recent cancellations (last 7 days)
+    const [recentCancellations] = await connection.execute(
+      `SELECT COUNT(*) as recent_cancelled 
+       FROM bookings 
+       WHERE status = 'cancelled' 
+       AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`
+    );
+    
     await connection.end();
     
     res.status(200).json({
@@ -1219,7 +1228,8 @@ app.get('/admin/report/statistics', async (req, res) => {
         bookingStatus: {
           pending: parseInt(bookingStatusResult[0].pending_bookings),
           confirmed: parseInt(bookingStatusResult[0].confirmed_bookings),
-          denied: parseInt(bookingStatusResult[0].denied_bookings)
+          denied: parseInt(bookingStatusResult[0].denied_bookings),
+          cancelled: parseInt(bookingStatusResult[0].cancelled_bookings)
         },
         unitStatus: {
           available: parseInt(unitsStatusResult[0].available_units),
@@ -1227,7 +1237,8 @@ app.get('/admin/report/statistics', async (req, res) => {
         },
         recentActivity: {
           usersLast7Days: parseInt(recentRegistrations[0].recent_users),
-          unitsLast7Days: parseInt(recentUnits[0].recent_units)
+          unitsLast7Days: parseInt(recentUnits[0].recent_units),
+          cancelledLast7Days: parseInt(recentCancellations[0].recent_cancelled)
         },
         topUsers: topUsersResult,
         transactionTypes: transactionTypesResult
@@ -1243,7 +1254,7 @@ app.get('/admin/report/statistics', async (req, res) => {
   }
 });
 
-// Get detailed booking report with filters
+// Get detailed booking report with filters (INCLUDING CANCELLED)
 app.get('/admin/report/bookings', async (req, res) => {
   try {
     const { startDate, endDate, status } = req.query;
@@ -1271,7 +1282,7 @@ app.get('/admin/report/bookings', async (req, res) => {
       params.push(endDate);
     }
     
-    if (status) {
+    if (status && status !== 'all') {
       query += ' AND b.status = ?';
       params.push(status);
     }
