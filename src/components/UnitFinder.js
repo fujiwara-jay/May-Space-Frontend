@@ -325,7 +325,7 @@ const UnitFinder = () => {
 
     // Check if unit is available (not confirmed by anyone else)
     if (!isUnitAvailable(unit.id)) {
-      setActionMessage("This unit is no longer available for booking. It has been confirmed by another user.");
+      setActionMessage("This unit is no longer available for booking.");
       return;
     }
 
@@ -410,7 +410,7 @@ const UnitFinder = () => {
 
     // Double-check availability before submitting
     if (!isUnitAvailable(bookingDetails.unitId)) {
-      setBookingError("This unit is no longer available. It has been confirmed by another user.");
+      setBookingError("This unit is no longer available.");
       return;
     }
 
@@ -637,7 +637,7 @@ const UnitFinder = () => {
             <p><strong>Status:</strong> 
               {unitAvailable ? 
                 <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span> : 
-                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Confirmed by another user)</span>
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable</span>
               }
             </p>
           </div>
@@ -679,7 +679,7 @@ const UnitFinder = () => {
             <p><strong>Status:</strong> 
               {unitAvailable ? 
                 <span style={{ color: '#4caf50', fontWeight: 700 }}> Available</span> : 
-                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable (Confirmed by another user)</span>
+                <span style={{ color: '#e57373', fontWeight: 700 }}> Unavailable</span>
               }
             </p>
             
