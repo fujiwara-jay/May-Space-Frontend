@@ -17,6 +17,7 @@ function AdminRegister() {
   const [passwordStrength, setPasswordStrength] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const checkPasswordStrength = (password) => {
@@ -58,6 +59,10 @@ function AdminRegister() {
       return "Password must contain at least one number";
     }
     
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return "Password must contain at least one special character";
+    }
+      
     return "";
   };
 
@@ -83,6 +88,11 @@ function AdminRegister() {
       setPinInput("");
       setPinError("");
     }
+  };
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setContactNumber(value);
   };
 
   const handleSubmit = async (e) => {
@@ -116,6 +126,9 @@ function AdminRegister() {
       return;
     }
 
+    setIsLoading(true);
+    setError("");
+
     try {
       const response = await fetch("https://may-space-backend.onrender.com/admin/register", {
         method: "POST",
@@ -131,14 +144,7 @@ function AdminRegister() {
         setPasswordStrength("");
 
         setTimeout(() => {
-          setShowSuccess(false);
-          setUsername("");
-          setEmail("");
-          setContactNumber("");
-          setPassword("");
-          setConfirmPassword("");
-          setShowPassword(false);
-          setShowConfirmPassword(false);
+          navigate("/home");
         }, 2000);
       } else {
         setError(data.message || "Admin registration failed");
@@ -146,6 +152,8 @@ function AdminRegister() {
     } catch (err) {
       console.error("Admin registration error:", err);
       setError("Failed to connect to the server");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -177,6 +185,7 @@ function AdminRegister() {
               }}
               className="admin-pin-input"
               maxLength={16}
+              disabled={isLoading}
             />
             {pinError && <div className="error-message">{pinError}</div>}
             <button
@@ -190,6 +199,7 @@ function AdminRegister() {
                   setPinError("Incorrect security pin.");
                 }
               }}
+              disabled={isLoading}
             >
               Continue
             </button>
@@ -197,6 +207,7 @@ function AdminRegister() {
               type="button"
               className="securityBack-btn"
               onClick={handleBack}
+              disabled={isLoading}
             >
               Back
             </button>
@@ -206,7 +217,7 @@ function AdminRegister() {
             <h2>Create Admin Account</h2>
             {error && <div className="error-message">{error}</div>}
             {showSuccess && (
-              <div className="success-popup">Admin registration successful!</div>
+              <div className="success-popup">Admin registration successful! Redirecting to login...</div>
             )}
             <form onSubmit={handleSubmit}>
               <input
@@ -215,6 +226,8 @@ function AdminRegister() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 aria-label="Admin Username"
+                disabled={isLoading || showSuccess}
+                required
               />
               <input
                 type="email"
@@ -222,13 +235,18 @@ function AdminRegister() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-label="Admin Email"
+                disabled={isLoading || showSuccess}
+                required
               />
               <input
                 type="text"
-                placeholder="Contact Number"
+                placeholder="Contact Number (e.g., 09123456789)"
                 value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
+                onChange={handlePhoneChange}
                 aria-label="Admin Contact Number"
+                maxLength={15}
+                disabled={isLoading || showSuccess}
+                required
               />
               
               <div className="password-input-container">
@@ -240,12 +258,15 @@ function AdminRegister() {
                     onChange={handlePasswordChange}
                     aria-label="Admin Password"
                     maxLength={30}
+                    disabled={isLoading || showSuccess}
+                    required
                   />
                   <button 
                     type="button"
                     className="toggle-password"
                     onClick={togglePasswordVisibility}
                     aria-label={showPassword ? "Hide password" : "Show password"}
+                    disabled={isLoading || showSuccess}
                   >
                     {showPassword ? "🙈" : "👁️"}
                   </button>
@@ -279,12 +300,15 @@ function AdminRegister() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     aria-label="Confirm Admin Password"
                     maxLength={30}
+                    disabled={isLoading || showSuccess}
+                    required
                   />
                   <button 
                     type="button"
                     className="toggle-password"
                     onClick={toggleConfirmPasswordVisibility}
                     aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    disabled={isLoading || showSuccess}
                   >
                     {showConfirmPassword ? "🙈" : "👁️"}
                   </button>
@@ -293,13 +317,20 @@ function AdminRegister() {
 
               <div className="register-links">
                 <span>Already have an account? </span>
-                <Link to="/home">Login</Link>
+                <Link to="/home" onClick={() => navigate("/home")}>Login</Link>
               </div>
-              <button type="submit">Register</button>
+              <button 
+                type="submit" 
+                disabled={isLoading || showSuccess}
+                className={isLoading ? "loading" : ""}
+              >
+                {isLoading ? "Registering..." : "Register"}
+              </button>
               <button
                 type="button"
                 className="back-btn"
                 onClick={handleBack}
+                disabled={isLoading}
               >
                 Back
               </button>
