@@ -96,8 +96,7 @@ function UserRegister() {
     }
 
     const phoneRegex = /^[0-9]{10,15}$/;
-    const cleanPhone = contactNumber.replace(/[-\s()]/g, '');
-    if (!phoneRegex.test(cleanPhone)) {
+    if (!phoneRegex.test(contactNumber)) {
       setError("Please enter a valid contact number (10-15 digits)");
       return false;
     }
@@ -131,7 +130,7 @@ function UserRegister() {
           name, 
           username, 
           email, 
-          contactNumber: contactNumber.replace(/[-\s()]/g, ''), 
+          contactNumber, 
           password 
         }),
       });
@@ -183,23 +182,10 @@ function UserRegister() {
     setShowPolicy(false);
   };
 
-  const formatPhoneNumber = (value) => {
-    const phoneNumber = value.replace(/\D/g, '');
-    
-    if (phoneNumber.length <= 3) {
-      return phoneNumber;
-    } else if (phoneNumber.length <= 6) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    } else if (phoneNumber.length <= 10) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
-    } else {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)} ext. ${phoneNumber.slice(10, 15)}`;
-    }
-  };
-
   const handlePhoneChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setContactNumber(formatted);
+    // Only allow digits
+    const value = e.target.value.replace(/\D/g, '');
+    setContactNumber(value);
   };
 
   return (
@@ -369,11 +355,11 @@ function UserRegister() {
           <div className="input-group">
             <input
               type="text"
-              placeholder="Contact Number (e.g., (123) 456-7890)"
+              placeholder="Contact Number (e.g., 09123456789)"
               value={contactNumber}
               onChange={handlePhoneChange}
               aria-label="Contact Number"
-              maxLength={20}
+              maxLength={15}
               required
             />
             <span className="required-indicator">*</span>
