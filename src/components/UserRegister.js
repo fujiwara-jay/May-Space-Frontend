@@ -16,6 +16,7 @@ function UserRegister() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const checkPasswordStrength = (password) => {
@@ -122,6 +123,9 @@ function UserRegister() {
       return;
     }
 
+    setIsLoading(true);
+    setError("");
+
     try {
       const response = await fetch("https://may-space-backend.onrender.com/user/register", {
         method: "POST",
@@ -143,16 +147,7 @@ function UserRegister() {
         setPasswordStrength("");
 
         setTimeout(() => {
-          setShowSuccess(false);
-          setUsername("");
-          setName("");
-          setEmail("");
-          setContactNumber("");
-          setPassword("");
-          setConfirmPassword("");
-          setShowPassword(false);
-          setShowConfirmPassword(false);
-          setAgreedToPolicy(false);
+          navigate("/home");
         }, 2000);
       } else {
         setError(data.message || "User registration failed");
@@ -160,6 +155,8 @@ function UserRegister() {
     } catch (err) {
       console.error("User registration error:", err);
       setError("Failed to connect to the server");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -183,9 +180,12 @@ function UserRegister() {
   };
 
   const handlePhoneChange = (e) => {
-    // Only allow digits
     const value = e.target.value.replace(/\D/g, '');
     setContactNumber(value);
+  };
+
+  const handleBackToLogin = () => {
+    navigate("/home");
   };
 
   return (
@@ -291,13 +291,14 @@ function UserRegister() {
               <button 
                 className="policy-btn disagree-btn"
                 onClick={handleDisagreeToPolicy}
+                disabled={isLoading}
               >
                 Disagree
               </button>
               <button 
                 className="policy-btn agree-btn"
                 onClick={handleAgreeToPolicy}
-                disabled={!agreedToPolicy}
+                disabled={!agreedToPolicy || isLoading}
               >
                 Agree
               </button>
@@ -310,7 +311,7 @@ function UserRegister() {
         <h2>Create User Account</h2>
         {error && <div className="error-message">{error}</div>}
         {showSuccess && (
-          <div className="success-popup">User registration successful!</div>
+          <div className="success-popup">User registration successful! Redirecting to login...</div>
         )}
         <form onSubmit={handleSubmit}>
           <div className="input-group">
@@ -322,6 +323,7 @@ function UserRegister() {
               aria-label="Full Name"
               maxLength={50}
               required
+              disabled={isLoading || showSuccess}
             />
             <span className="required-indicator">*</span>
           </div>
@@ -335,6 +337,7 @@ function UserRegister() {
               aria-label="Username"
               maxLength={30}
               required
+              disabled={isLoading || showSuccess}
             />
             <span className="required-indicator">*</span>
           </div>
@@ -348,6 +351,7 @@ function UserRegister() {
               aria-label="Email"
               maxLength={100}
               required
+              disabled={isLoading || showSuccess}
             />
             <span className="required-indicator">*</span>
           </div>
@@ -361,6 +365,7 @@ function UserRegister() {
               aria-label="Contact Number"
               maxLength={15}
               required
+              disabled={isLoading || showSuccess}
             />
             <span className="required-indicator">*</span>
           </div>
@@ -376,12 +381,14 @@ function UserRegister() {
                   aria-label="Password"
                   maxLength={30}
                   required
+                  disabled={isLoading || showSuccess}
                 />
                 <button 
                   type="button"
                   className="toggle-password"
                   onClick={togglePasswordVisibility}
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  disabled={isLoading || showSuccess}
                 >
                   {showPassword ? "🙈" : "👁️"}
                 </button>
@@ -419,12 +426,14 @@ function UserRegister() {
                   aria-label="Confirm Password"
                   maxLength={30}
                   required
+                  disabled={isLoading || showSuccess}
                 />
                 <button 
                   type="button"
                   className="toggle-password"
                   onClick={toggleConfirmPasswordVisibility}
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  disabled={isLoading || showSuccess}
                 >
                   {showConfirmPassword ? "🙈" : "👁️"}
                 </button>
@@ -440,7 +449,7 @@ function UserRegister() {
           <div className="policy-agreement-container">
             <div 
               className={`policy-checkbox-wrapper ${agreedToPolicy ? 'checked' : ''}`} 
-              onClick={handleCheckboxClick}
+              onClick={() => !isLoading && !showSuccess && handleCheckboxClick()}
             >
               <input
                 type="checkbox"
@@ -459,9 +468,15 @@ function UserRegister() {
 
           <div className="register-links">
             <span>Already have an account? </span>
-            <Link to="/home">Login</Link>
+            <Link to="/home" onClick={handleBackToLogin}>Login</Link>
           </div>
-          <button type="submit">Register</button>
+          <button 
+            type="submit" 
+            disabled={isLoading || showSuccess}
+            className={isLoading ? "loading" : ""}
+          >
+            {isLoading ? "Registering..." : "Register"}
+          </button>
         </form>
       </div>
     </div>
