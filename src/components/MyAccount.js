@@ -455,6 +455,48 @@ const MyAccount = () => {
     setVerificationPassword(e.target.value);
   };
 
+  const maskName = (name) => {
+    if (!name || name.length === 0) return "J*****";
+    
+    const firstLetter = name.charAt(0).toUpperCase();
+    return firstLetter + "*****";
+  };
+
+  const maskEmail = (email) => {
+    if (!email || email.length === 0) return "j*****@example.com";
+    
+    const [localPart, domain] = email.split('@');
+    if (!localPart || !domain) return "j*****@example.com";
+    
+    const firstChar = localPart.charAt(0).toLowerCase();
+    return firstChar + "*****@" + domain;
+  };
+
+  const maskPhone = (phone) => {
+    if (!phone || phone.length === 0) return "0912*******";
+    
+    if (phone.length >= 4) {
+      return phone.substring(0, 4) + "*******";
+    }
+    return "0912*******";
+  };
+
+  const maskUsername = (username) => {
+    if (!username || username.length === 0) return "j*****";
+    
+    const firstChar = username.charAt(0).toLowerCase();
+    return firstChar + "*****";
+  };
+
+  const maskUserId = (userId) => {
+    if (!userId || userId.length === 0) return "U*******";
+    
+    if (userId.length > 8) {
+      return userId.substring(0, 1) + "*******";
+    }
+    return "U*******";
+  };
+
   if (isGuest) {
     return null;
   }
@@ -642,7 +684,7 @@ const MyAccount = () => {
                 ) : showInfo ? (
                   <span>{userData.name || "Not provided"}</span>
                 ) : (
-                  <span className="hidden-info">••••••••••</span>
+                  <span className="hidden-info">{maskName(userData.name)}</span>
                 )}
               </div>
 
@@ -651,7 +693,7 @@ const MyAccount = () => {
                 {showInfo ? (
                   <span className="username-display">{userData.username || "N/A"}</span>
                 ) : (
-                  <span className="hidden-info">••••••••••</span>
+                  <span className="hidden-info">{maskUsername(userData.username)}</span>
                 )}
               </div>
 
@@ -669,7 +711,7 @@ const MyAccount = () => {
                 ) : showInfo ? (
                   <span>{userData.email || "Not provided"}</span>
                 ) : (
-                  <span className="hidden-info">•••••••••••••••</span>
+                  <span className="hidden-info">{maskEmail(userData.email)}</span>
                 )}
               </div>
 
@@ -687,7 +729,7 @@ const MyAccount = () => {
                 ) : showInfo ? (
                   <span>{userData.contactNumber || "Not provided"}</span>
                 ) : (
-                  <span className="hidden-info">••••••••••••</span>
+                  <span className="hidden-info">{maskPhone(userData.contactNumber)}</span>
                 )}
               </div>
 
@@ -696,7 +738,7 @@ const MyAccount = () => {
                 {showInfo ? (
                   <span className="user-id">{userId}</span>
                 ) : (
-                  <span className="hidden-info">••••••••••••••••</span>
+                  <span className="hidden-info">{maskUserId(userId)}</span>
                 )}
               </div>
 
