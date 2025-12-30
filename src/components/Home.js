@@ -286,8 +286,8 @@ function Home() {
               {adminUnlocked && (
                 <div className="register-option admin-option">
                   <div className="option-icon">⚙️</div>
-                  <h4>Register as Admin</h4>
-                  <p>Manage units and system</p>
+                  <h4>Admin Register</h4>
+                  <p>Manage units and Users</p>
                   <button 
                     onClick={handleRegisterAsAdmin} 
                     className="option-btn admin-btn"
