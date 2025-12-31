@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../cssfiles/UserRegister.css";
 
@@ -17,7 +17,21 @@ function UserRegister() {
   const [showPolicy, setShowPolicy] = useState(false);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(null);
+  const [passwordErrors, setPasswordErrors] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (password && confirmPassword) {
+      if (password === confirmPassword) {
+        setPasswordMatch(true);
+      } else {
+        setPasswordMatch(false);
+      }
+    } else {
+      setPasswordMatch(null);
+    }
+  }, [password, confirmPassword]);
 
   const checkPasswordStrength = (password) => {
     if (password.length === 0) return "";
@@ -42,33 +56,50 @@ function UserRegister() {
   };
 
   const validatePassword = (password) => {
+    const errors = [];
+    
     if (password.length < 10 || password.length > 30) {
-      return "Password must be between 10-30 characters";
+      errors.push("Password must be between 10-30 characters");
     }
     
     if (!/[A-Z]/.test(password)) {
-      return "Password must contain at least one uppercase letter";
+      errors.push("Password must contain at least one uppercase letter");
     }
     
     if (!/[a-z]/.test(password)) {
-      return "Password must contain at least one lowercase letter";
+      errors.push("Password must contain at least one lowercase letter");
     }
     
     if (!/\d/.test(password)) {
-      return "Password must contain at least one number";
+      errors.push("Password must contain at least one number");
     }
     
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      return "Password must contain at least one special character";
+      errors.push("Password must contain at least one special character");
     }
-      
-    return "";
+    
+    setPasswordErrors(errors);
+    return errors.length === 0 ? "" : errors[0];
   };
 
   const handlePasswordChange = (e) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
     setPasswordStrength(checkPasswordStrength(newPassword));
+    validatePassword(newPassword);
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+    
+    if (password && value) {
+      if (password === value) {
+        setPasswordMatch(true);
+      } else {
+        setPasswordMatch(false);
+      }
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -80,6 +111,8 @@ function UserRegister() {
   };
 
   const validateForm = () => {
+    setError("");
+
     if (!name || !username || !email || !contactNumber || !password || !confirmPassword) {
       setError("All fields are required");
       return false;
@@ -145,6 +178,8 @@ function UserRegister() {
         setShowSuccess(true);
         setError("");
         setPasswordStrength("");
+        setPasswordMatch(null);
+        setPasswordErrors([]);
 
         setTimeout(() => {
           navigate("/home");
@@ -186,6 +221,20 @@ function UserRegister() {
 
   const handleBackToLogin = () => {
     navigate("/home");
+  };
+
+  const getPasswordMatchText = () => {
+    if (passwordMatch === null) return "";
+    if (passwordMatch === true) return "Passwords match!";
+    if (passwordMatch === false) return "Passwords do not match";
+    return "";
+  };
+
+  const getPasswordMatchClass = () => {
+    if (passwordMatch === null) return "";
+    if (passwordMatch === true) return "match";
+    if (passwordMatch === false) return "mismatch";
+    return "";
   };
 
   return (
@@ -382,6 +431,7 @@ function UserRegister() {
                   maxLength={30}
                   required
                   disabled={isLoading || showSuccess}
+                  className={passwordErrors.length > 0 ? "password-error" : ""}
                 />
                 <button 
                   type="button"
@@ -393,6 +443,7 @@ function UserRegister() {
                   {showPassword ? "🙈" : "👁️"}
                 </button>
               </div>
+              
               {password && (
                 <div className={`password-strength ${passwordStrength}`}>
                   <span>Password Strength: </span>
@@ -404,12 +455,35 @@ function UserRegister() {
                   </div>
                 </div>
               )}
+              
+              {passwordErrors.length > 0 && (
+                <div className="password-errors">
+                  {passwordErrors.map((errorMsg, index) => (
+                    <div key={index} className="password-error-item">
+                      <span className="error-icon">✗</span>
+                      <span>{errorMsg}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="password-requirements">
                 <small>Password must be 10-30 characters with at least:</small>
-                <small>• One uppercase letter (A-Z)</small>
-                <small>• One lowercase letter (a-z)</small>
-                <small>• One number (0-9)</small>
-                <small>• One special character (!@#$%^&*)</small>
+                <small className={password.length >= 10 && password.length <= 30 ? "requirement-met" : ""}>
+                  • 10-30 characters
+                </small>
+                <small className={/[A-Z]/.test(password) ? "requirement-met" : ""}>
+                  • One uppercase letter (A-Z)
+                </small>
+                <small className={/[a-z]/.test(password) ? "requirement-met" : ""}>
+                  • One lowercase letter (a-z)
+                </small>
+                <small className={/\d/.test(password) ? "requirement-met" : ""}>
+                  • One number (0-9)
+                </small>
+                <small className={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? "requirement-met" : ""}>
+                  • One special character (!@#$%^&*)
+                </small>
               </div>
             </div>
             <span className="required-indicator">*</span>
@@ -422,11 +496,12 @@ function UserRegister() {
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm Password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={handleConfirmPasswordChange}
                   aria-label="Confirm Password"
                   maxLength={30}
                   required
                   disabled={isLoading || showSuccess}
+                  className={passwordMatch === false ? "password-mismatch" : ""}
                 />
                 <button 
                   type="button"
@@ -438,6 +513,17 @@ function UserRegister() {
                   {showConfirmPassword ? "🙈" : "👁️"}
                 </button>
               </div>
+              
+              {passwordMatch !== null && (
+                <div className={`password-match-indicator ${getPasswordMatchClass()}`}>
+                  <span className="match-icon">
+                    {passwordMatch ? "✓" : "✗"}
+                  </span>
+                  <span className="match-text">
+                    {getPasswordMatchText()}
+                  </span>
+                </div>
+              )}
             </div>
             <span className="required-indicator">*</span>
           </div>
