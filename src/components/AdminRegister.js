@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../cssfiles/AdminRegister.css";
 
@@ -18,7 +18,21 @@ function AdminRegister() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(null);
+  const [passwordErrors, setPasswordErrors] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (password && confirmPassword) {
+      if (password === confirmPassword) {
+        setPasswordMatch(true);
+      } else {
+        setPasswordMatch(false);
+      }
+    } else {
+      setPasswordMatch(null);
+    }
+  }, [password, confirmPassword]);
 
   const checkPasswordStrength = (password) => {
     if (password.length === 0) return "";
@@ -43,33 +57,50 @@ function AdminRegister() {
   };
 
   const validatePassword = (password) => {
+    const errors = [];
+    
     if (password.length < 10 || password.length > 30) {
-      return "Password must be between 10-30 characters";
+      errors.push("Password must be between 10-30 characters");
     }
     
     if (!/[A-Z]/.test(password)) {
-      return "Password must contain at least one uppercase letter";
+      errors.push("Password must contain at least one uppercase letter");
     }
     
     if (!/[a-z]/.test(password)) {
-      return "Password must contain at least one lowercase letter";
+      errors.push("Password must contain at least one lowercase letter");
     }
     
     if (!/\d/.test(password)) {
-      return "Password must contain at least one number";
+      errors.push("Password must contain at least one number");
     }
     
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      return "Password must contain at least one special character";
+      errors.push("Password must contain at least one special character");
     }
-      
-    return "";
+    
+    setPasswordErrors(errors);
+    return errors.length === 0 ? "" : errors[0];
   };
 
   const handlePasswordChange = (e) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
     setPasswordStrength(checkPasswordStrength(newPassword));
+    validatePassword(newPassword);
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+    
+    if (password && value) {
+      if (password === value) {
+        setPasswordMatch(true);
+      } else {
+        setPasswordMatch(false);
+      }
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -95,34 +126,44 @@ function AdminRegister() {
     setContactNumber(value);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const validateForm = () => {
+    setError("");
 
     if (!username || !email || !contactNumber || !password || !confirmPassword) {
       setError("All fields are required");
-      return;
+      return false;
     }
 
     const passwordError = validatePassword(password);
     if (passwordError) {
       setError(passwordError);
-      return;
+      return false;
     }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
-      return;
+      return false;
     }
 
     const phoneRegex = /^[0-9]{10,15}$/;
     if (!phoneRegex.test(contactNumber)) {
       setError("Please enter a valid contact number (10-15 digits)");
-      return;
+      return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
 
@@ -142,6 +183,8 @@ function AdminRegister() {
         setShowSuccess(true);
         setError("");
         setPasswordStrength("");
+        setPasswordMatch(null);
+        setPasswordErrors([]);
 
         setTimeout(() => {
           navigate("/home");
@@ -155,6 +198,20 @@ function AdminRegister() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getPasswordMatchText = () => {
+    if (passwordMatch === null) return "";
+    if (passwordMatch === true) return "Passwords match!";
+    if (passwordMatch === false) return "Passwords do not match";
+    return "";
+  };
+
+  const getPasswordMatchClass = () => {
+    if (passwordMatch === null) return "";
+    if (passwordMatch === true) return "match";
+    if (passwordMatch === false) return "mismatch";
+    return "";
   };
 
   return (
@@ -220,105 +277,164 @@ function AdminRegister() {
               <div className="success-popup">Admin registration successful! Redirecting to login...</div>
             )}
             <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                placeholder="Admin Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                aria-label="Admin Username"
-                disabled={isLoading || showSuccess}
-                required
-              />
-              <input
-                type="email"
-                placeholder="Admin Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-label="Admin Email"
-                disabled={isLoading || showSuccess}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Contact Number (e.g., 09123456789)"
-                value={contactNumber}
-                onChange={handlePhoneChange}
-                aria-label="Admin Contact Number"
-                maxLength={15}
-                disabled={isLoading || showSuccess}
-                required
-              />
-              
-              <div className="password-input-container">
-                <div className="password-wrapper">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password (10-30 characters with uppercase, lowercase & numbers)"
-                    value={password}
-                    onChange={handlePasswordChange}
-                    aria-label="Admin Password"
-                    maxLength={30}
-                    disabled={isLoading || showSuccess}
-                    required
-                  />
-                  <button 
-                    type="button"
-                    className="toggle-password"
-                    onClick={togglePasswordVisibility}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    disabled={isLoading || showSuccess}
-                  >
-                    {showPassword ? "🙈" : "👁️"}
-                  </button>
-                </div>
-                {password && (
-                  <div className={`password-strength ${passwordStrength}`}>
-                    <span>Password Strength: </span>
-                    <span className="strength-text">
-                      {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
-                    </span>
-                    <div className="strength-bar">
-                      <div className={`strength-fill ${passwordStrength}`}></div>
-                    </div>
-                  </div>
-                )}
-                <div className="password-requirements">
-                  <small>Password must be 10-30 characters with at least:</small>
-                  <small>• One uppercase letter (A-Z)</small>
-                  <small>• One lowercase letter (a-z)</small>
-                  <small>• One number (0-9)</small>
-                  <small>• One special character (!@#$%^&*)</small>
-                </div>
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="Admin Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  aria-label="Admin Username"
+                  disabled={isLoading || showSuccess}
+                  required
+                />
+                <span className="required-indicator">*</span>
               </div>
               
-              <div className="password-input-container">
-                <div className="password-wrapper">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    aria-label="Confirm Admin Password"
-                    maxLength={30}
-                    disabled={isLoading || showSuccess}
-                    required
-                  />
-                  <button 
-                    type="button"
-                    className="toggle-password"
-                    onClick={toggleConfirmPasswordVisibility}
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                    disabled={isLoading || showSuccess}
-                  >
-                    {showConfirmPassword ? "🙈" : "👁️"}
-                  </button>
+              <div className="input-group">
+                <input
+                  type="email"
+                  placeholder="Admin Email Address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  aria-label="Admin Email"
+                  disabled={isLoading || showSuccess}
+                  required
+                />
+                <span className="required-indicator">*</span>
+              </div>
+              
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="Contact Number (e.g., 09123456789)"
+                  value={contactNumber}
+                  onChange={handlePhoneChange}
+                  aria-label="Admin Contact Number"
+                  maxLength={15}
+                  disabled={isLoading || showSuccess}
+                  required
+                />
+                <span className="required-indicator">*</span>
+              </div>
+              
+              <div className="input-group">
+                <div className="password-input-container">
+                  <div className="password-wrapper">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password (10-30 characters with uppercase, lowercase & numbers)"
+                      value={password}
+                      onChange={handlePasswordChange}
+                      aria-label="Admin Password"
+                      maxLength={30}
+                      disabled={isLoading || showSuccess}
+                      required
+                      className={passwordErrors.length > 0 ? "password-error" : ""}
+                    />
+                    <button 
+                      type="button"
+                      className="toggle-password"
+                      onClick={togglePasswordVisibility}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      disabled={isLoading || showSuccess}
+                    >
+                      {showPassword ? "🙈" : "👁️"}
+                    </button>
+                  </div>
+                  
+                  {password && (
+                    <div className={`password-strength ${passwordStrength}`}>
+                      <span>Password Strength: </span>
+                      <span className="strength-text">
+                        {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                      </span>
+                      <div className="strength-bar">
+                        <div className={`strength-fill ${passwordStrength}`}></div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {passwordErrors.length > 0 && (
+                    <div className="password-errors">
+                      {passwordErrors.map((errorMsg, index) => (
+                        <div key={index} className="password-error-item">
+                          <span className="error-icon">✗</span>
+                          <span>{errorMsg}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="password-requirements">
+                    <small>Password must be 10-30 characters with at least:</small>
+                    <small className={password.length >= 10 && password.length <= 30 ? "requirement-met" : ""}>
+                      • 10-30 characters
+                    </small>
+                    <small className={/[A-Z]/.test(password) ? "requirement-met" : ""}>
+                      • One uppercase letter (A-Z)
+                    </small>
+                    <small className={/[a-z]/.test(password) ? "requirement-met" : ""}>
+                      • One lowercase letter (a-z)
+                    </small>
+                    <small className={/\d/.test(password) ? "requirement-met" : ""}>
+                      • One number (0-9)
+                    </small>
+                    <small className={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? "requirement-met" : ""}>
+                      • One special character (!@#$%^&*)
+                    </small>
+                  </div>
                 </div>
+                <span className="required-indicator">*</span>
+              </div>
+              
+              <div className="input-group">
+                <div className="password-input-container">
+                  <div className="password-wrapper">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChange={handleConfirmPasswordChange}
+                      aria-label="Confirm Admin Password"
+                      maxLength={30}
+                      disabled={isLoading || showSuccess}
+                      required
+                      className={passwordMatch === false ? "password-mismatch" : ""}
+                    />
+                    <button 
+                      type="button"
+                      className="toggle-password"
+                      onClick={toggleConfirmPasswordVisibility}
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      disabled={isLoading || showSuccess}
+                    >
+                      {showConfirmPassword ? "🙈" : "👁️"}
+                    </button>
+                  </div>
+                  
+                  {passwordMatch !== null && (
+                    <div className={`password-match-indicator ${getPasswordMatchClass()}`}>
+                      <span className="match-icon">
+                        {passwordMatch ? "✓" : "✗"}
+                      </span>
+                      <span className="match-text">
+                        {getPasswordMatchText()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <span className="required-indicator">*</span>
+              </div>
+
+              <div className="required-fields-note">
+                <small><span className="required-indicator">*</span> Required fields</small>
               </div>
 
               <div className="register-links">
                 <span>Already have an account? </span>
                 <Link to="/home" onClick={() => navigate("/home")}>Login</Link>
               </div>
+              
               <button 
                 type="submit" 
                 disabled={isLoading || showSuccess}
@@ -326,6 +442,7 @@ function AdminRegister() {
               >
                 {isLoading ? "Registering..." : "Register"}
               </button>
+              
               <button
                 type="button"
                 className="back-btn"
