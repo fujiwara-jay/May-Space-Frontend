@@ -54,7 +54,7 @@ const UnitFinder = () => {
   const [tooltip, setTooltip] = useState({ show: false, target: null });
   const [loading, setLoading] = useState(false);
   const [userBookings, setUserBookings] = useState([]);
-  const [allBookings, setAllBookings] = useState([]); // Track all bookings to check availability
+  const [allBookings, setAllBookings] = useState([]);
 
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType");
@@ -65,7 +65,7 @@ const UnitFinder = () => {
   useEffect(() => {
     mountedRef.current = true;
     fetchAllUnits();
-    fetchAllBookings(); // Fetch all bookings to check unit availability
+    fetchAllBookings();
     if (userId && userId !== "guest") {
       fetchUserBookings();
     }
@@ -129,21 +129,18 @@ const UnitFinder = () => {
     }
   };
 
-  // Check if unit is available (not booked by anyone with confirmed status)
   const isUnitAvailable = (unitId) => {
-    // First check unit's own availability flag
     const unit = allUnits.find(u => u.id === unitId);
     if (unit && (unit.is_available === 0 || unit.is_available === false)) {
       return false;
     }
     
-    // Check if there are any confirmed bookings for this unit
     const confirmedBooking = allBookings.find(booking => 
       parseInt(booking.unit_id) === parseInt(unitId) && 
       booking.status === 'confirmed'
     );
     
-    return !confirmedBooking; // Available if no confirmed booking exists
+    return !confirmedBooking;
   };
 
   const getUnitBookingStatus = (unitId) => {
@@ -323,7 +320,6 @@ const UnitFinder = () => {
       return;
     }
 
-    // Check if unit is available (not confirmed by anyone else)
     if (!isUnitAvailable(unit.id)) {
       setActionMessage("This unit is no longer available for booking.");
       return;
@@ -343,7 +339,6 @@ const UnitFinder = () => {
       }
       
       if (bookingStatus.isCancelled) {
-        // Allow rebooking if cancelled
         setActionMessage("Your previous booking was cancelled. You can book again.");
       }
       
@@ -408,7 +403,6 @@ const UnitFinder = () => {
     setBookingError(null);
     setActionMessage(null);
 
-    // Double-check availability before submitting
     if (!isUnitAvailable(bookingDetails.unitId)) {
       setBookingError("This unit is no longer available.");
       return;

@@ -239,7 +239,6 @@ function UserRegister() {
 
   return (
     <div className="renter-register-container">
-      {/* Policy Modal */}
       {showPolicy && (
         <div className="policy-modal-overlay">
           <div className="policy-modal">

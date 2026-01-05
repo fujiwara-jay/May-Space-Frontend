@@ -825,7 +825,6 @@ const MyAccount = () => {
         </div>
       </div>
 
-      {/* Password Verification Modal */}
       {showPasswordModal && (
         <div className="password-modal-overlay" onClick={handleCancelVerification}>
           <div className="password-modal-content" onClick={(e) => e.stopPropagation()}>

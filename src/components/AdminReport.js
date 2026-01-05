@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import '../cssfiles/AdminReport.css';
-import jsPDF from 'jspdf';
 
 function AdminReport() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ function AdminReport() {
   const [pinError, setPinError] = useState('');
   const [pinVerified, setPinVerified] = useState(false);
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingExcel, setIsGeneratingExcel] = useState(false);
 
   useEffect(() => {
     fetchStatistics();
@@ -32,16 +32,23 @@ function AdminReport() {
   const fetchStatistics = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('https://may-space-backend.onrender.com/admin/report/statistics');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setStatistics(data.data);
       } else {
-        throw new Error(data.message);
+        throw new Error(data.message || 'Failed to fetch statistics');
       }
     } catch (err) {
       setError(err.message);
+      console.error('Error fetching statistics:', err);
     } finally {
       setLoading(false);
     }
@@ -49,6 +56,7 @@ function AdminReport() {
 
   const fetchDetailedBookings = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       if (dateRange.startDate) params.append('startDate', dateRange.startDate);
       if (dateRange.endDate) params.append('endDate', dateRange.endDate);
@@ -59,22 +67,31 @@ function AdminReport() {
       
       if (data.success) {
         setDetailedBookings(data.data);
+      } else {
+        throw new Error(data.message);
       }
     } catch (err) {
       console.error('Error fetching detailed bookings:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchUsersReport = async () => {
     try {
+      setLoading(true);
       const response = await fetch('https://may-space-backend.onrender.com/admin/report/users');
       const data = await response.json();
       
       if (data.success) {
         setUsersReport(data.data);
+      } else {
+        throw new Error(data.message);
       }
     } catch (err) {
       console.error('Error fetching users report:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -153,7 +170,7 @@ function AdminReport() {
         setIsVerifyingPin(false);
         setTimeout(() => {
           handleClosePinModal();
-          handleExportPDF();
+          handleExportExcel();
         }, 500);
       } else {
         setPinError('Invalid PIN code. Please try again.');
@@ -168,40 +185,55 @@ function AdminReport() {
     }
   };
 
+  const obfuscateName = (name) => {
+    if (!name || name === 'N/A' || name === 'Unknown User' || name === 'No email') return 'N/A';
+    
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) {
+      const firstChar = parts[0].charAt(0);
+      const hiddenPart = '*'.repeat(Math.max(parts[0].length - 1, 3));
+      return `${firstChar}${hiddenPart}`;
+    }
+    
+    return parts.map(part => {
+      if (part.length <= 2) return `${part.charAt(0)}*`;
+      const firstChar = part.charAt(0);
+      const hiddenPart = '*'.repeat(Math.max(part.length - 1, 2));
+      return `${firstChar}${hiddenPart}`;
+    }).join(' ');
+  };
+
   const obfuscateEmail = (email) => {
     if (!email || email === 'N/A') return 'N/A';
     
     const [username, domain] = email.split('@');
-    if (!username || !domain) return email;
+    if (!username || !domain) return 'N/A';
+    
+    if (username.length <= 2) {
+      return `${username.charAt(0)}***@${domain}`;
+    }
     
     const firstChar = username.charAt(0);
     const lastChar = username.charAt(username.length - 1);
-    const domainParts = domain.split('.');
-    const domainName = domainParts[0];
-    const domainExt = domainParts.slice(1).join('.');
+    const hiddenPart = '*'.repeat(Math.max(username.length - 2, 3));
     
-    return `${firstChar}*****${lastChar}@${domainName.charAt(0)}***.${domainExt}`;
+    return `${firstChar}${hiddenPart}${lastChar}@${domain}`;
   };
 
-  const obfuscatePhone = (phone) => {
-    if (!phone || phone === 'N/A') return 'N/A';
+  const obfuscateContact = (contact) => {
+    if (!contact || contact === 'N/A') return 'N/A';
     
-    const visiblePrefix = phone.substring(0, 2);
-    const visibleSuffix = phone.substring(phone.length - 2);
-    const hiddenPart = '*'.repeat(Math.max(phone.length - 4, 0));
+    const digits = contact.replace(/\D/g, '');
     
-    return `${visiblePrefix}${hiddenPart}${visibleSuffix}`;
-  };
-
-  const obfuscateName = (name) => {
-    if (!name || name === 'N/A') return 'N/A';
-    
-    const parts = name.split(' ');
-    if (parts.length === 1) {
-      return `${parts[0].charAt(0)}***`;
+    if (digits.length <= 4) {
+      return '*'.repeat(digits.length);
     }
     
-    return parts.map(part => `${part.charAt(0)}***`).join(' ');
+    const firstTwo = digits.substring(0, 2);
+    const lastTwo = digits.substring(digits.length - 2);
+    const hiddenPart = '*'.repeat(Math.max(digits.length - 4, 4));
+    
+    return `${firstTwo}${hiddenPart}${lastTwo}`;
   };
 
   const formatDate = (dateString) => {
@@ -236,325 +268,148 @@ function AdminReport() {
     return ((count / statistics.totalUnits) * 100).toFixed(1);
   };
 
-  const createLandscapeTable = (doc, headers, data, startY, colWidths, title = '') => {
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 15;
-    const tableWidth = pageWidth - (margin * 2);
-    
-    let y = startY;
-    const rowHeight = 10;
-    const headerHeight = 15;
-    
-    if (title) {
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(44, 62, 80);
-      doc.text(title, margin, y);
-      y += 10;
-    }
-    
-    doc.setFillColor(66, 139, 202);
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    
-    let x = margin;
-    headers.forEach((header, index) => {
-      const width = colWidths ? colWidths[index] * tableWidth : tableWidth / headers.length;
-      doc.rect(x, y, width, headerHeight, 'F');
-      
-      const maxChars = Math.floor(width / 3);
-      const text = header.length > maxChars ? header.substring(0, maxChars - 3) + '...' : header;
-      
-      doc.text(text, x + 2, y + headerHeight - 4);
-      x += width;
-    });
-    
-    y += headerHeight;
-    
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    
-    data.forEach((row, rowIndex) => {
-      if (y > pageHeight - 30) {
-        doc.addPage('l');
-        y = margin + 20;
-        
-        doc.setFillColor(66, 139, 202);
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        
-        x = margin;
-        headers.forEach((header, index) => {
-          const width = colWidths ? colWidths[index] * tableWidth : tableWidth / headers.length;
-          doc.rect(x, y, width, headerHeight, 'F');
-          
-          const maxChars = Math.floor(width / 3);
-          const text = header.length > maxChars ? header.substring(0, maxChars - 3) + '...' : header;
-          
-          doc.text(text, x + 2, y + headerHeight - 4);
-          x += width;
-        });
-        
-        y += headerHeight;
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-      }
-      
-      if (rowIndex % 2 === 0) {
-        doc.setFillColor(245, 245, 245);
-        x = margin;
-        headers.forEach((_, index) => {
-          const width = colWidths ? colWidths[index] * tableWidth : tableWidth / headers.length;
-          doc.rect(x, y, width, rowHeight, 'F');
-          x += width;
-        });
-      }
-      
-      x = margin;
-      row.forEach((cell, cellIndex) => {
-        const width = colWidths ? colWidths[cellIndex] * tableWidth : tableWidth / headers.length;
-        const cellText = cell ? cell.toString() : '';
-        
-        const maxChars = Math.floor(width / 2);
-        const displayText = cellText.length > maxChars ? cellText.substring(0, maxChars - 3) + '...' : cellText;
-        
-        doc.text(displayText, x + 2, y + rowHeight - 3);
-        x += width;
-      });
-      
-      y += rowHeight;
-    });
-    
-    return y;
-  };
-
-  const handleExportPDF = () => {
+  const handleExportExcel = () => {
     try {
-      setIsGeneratingPDF(true);
-      const doc = new jsPDF('l', 'mm', 'a4');
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
-      let yPosition = 20;
+      setIsGeneratingExcel(true);
       
-      doc.setFontSize(24);
-      doc.setTextColor(66, 139, 202);
-      doc.setFont('helvetica', 'bold');
-      doc.text('ADMIN REPORT - FULL DETAILS', pageWidth / 2, yPosition, { align: 'center' });
+      const wb = XLSX.utils.book_new();
       
-      yPosition += 10;
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Report Period: ${dateRange.startDate || 'All Time'} to ${dateRange.endDate || 'Present'}`, pageWidth / 2, yPosition, { align: 'center' });
-      
-      yPosition += 6;
-      doc.text(`Exported on: ${new Date().toLocaleString()}`, pageWidth / 2, yPosition, { align: 'center' });
-      
-      yPosition += 15;
-      
-      doc.setFontSize(10);
-      doc.setTextColor(150, 150, 150);
-      doc.text('May Space Management System', pageWidth / 2, yPosition, { align: 'center' });
-      
-      yPosition += 20;
-      
-      doc.setFontSize(9);
-      doc.setTextColor(200, 0, 0);
-      doc.text('CONFIDENTIAL - PIN Verified Export', pageWidth / 2, yPosition, { align: 'center' });
-      
-      yPosition += 10;
+      const overviewData = [
+        ['MAY SPACE MANAGEMENT SYSTEM - ADMIN REPORT'],
+        ['Report Period:', `${dateRange.startDate || 'All Time'} to ${dateRange.endDate || 'Present'}`],
+        ['Exported on:', new Date().toLocaleString()],
+        ['CONFIDENTIAL - PIN Verified Export'],
+        [],
+        ['SYSTEM OVERVIEW'],
+        [],
+        ['Metric', 'Count', 'Details']
+      ];
       
       if (statistics) {
-        doc.setFontSize(18);
-        doc.setTextColor(44, 62, 80);
-        doc.setFont('helvetica', 'bold');
-        doc.text('SYSTEM OVERVIEW', 20, yPosition);
-        
-        yPosition += 12;
-        
-        const overviewData = [
-          ['Total Users', statistics.totalUsers.toLocaleString(), `+${statistics.recentActivity?.usersLast7Days || 0} last 7 days`],
-          ['Total Units', statistics.totalUnits.toLocaleString(), `+${statistics.recentActivity?.unitsLast7Days || 0} last 7 days`],
-          ['Total Bookings', statistics.totalBookings.toLocaleString(), 
+        overviewData.push(
+          ['Total Users', statistics.totalUsers, `+${statistics.recentActivity?.usersLast7Days || 0} last 7 days`],
+          ['Total Units', statistics.totalUnits, `+${statistics.recentActivity?.unitsLast7Days || 0} last 7 days`],
+          ['Total Bookings', statistics.totalBookings, 
             `Confirmed: ${statistics.bookingStatus.confirmed}, Pending: ${statistics.bookingStatus.pending}, 
             Denied: ${statistics.bookingStatus.denied}, Cancelled: ${statistics.bookingStatus.cancelled}`],
-          ['Total Inquiries', statistics.totalInquiries.toLocaleString(), ''],
+          ['Total Inquiries', statistics.totalInquiries, ''],
           ['Available Units', statistics.unitStatus.available, `${getUnitPercentage('available')}% of total`],
           ['Unavailable Units', statistics.unitStatus.unavailable, `${getUnitPercentage('unavailable')}% of total`],
           ['Booking Rate', `${getBookingPercentage('confirmed')}% confirmed`, 'Success rate'],
           ['Recent Cancellations', `${statistics.recentActivity?.cancelledLast7Days || 0}`, 'Last 7 days']
-        ];
-        
-        yPosition = createLandscapeTable(
-          doc,
-          ['Metric', 'Count', 'Details'],
-          overviewData,
-          yPosition,
-          [0.25, 0.2, 0.55],
-          'System Statistics'
         );
-        
-        yPosition += 20;
       }
       
+      const overviewWs = XLSX.utils.aoa_to_sheet(overviewData);
+      XLSX.utils.book_append_sheet(wb, overviewWs, 'System Overview');
+      
       if (usersReport.length > 0) {
-        if (yPosition > pageHeight - 100) {
-          doc.addPage('l');
-          yPosition = 20;
-        }
+        const usersData = [
+          ['USERS REPORT - COMPLETE DETAILS'],
+          ['Total Users:', usersReport.length],
+          ['Average per User:', 
+            `Units: ${(usersReport.reduce((sum, user) => sum + (user.units_posted || 0), 0) / usersReport.length).toFixed(1)}, 
+            Bookings: ${(usersReport.reduce((sum, user) => sum + (user.bookings_made || 0), 0) / usersReport.length).toFixed(1)}, 
+            Inquiries: ${(usersReport.reduce((sum, user) => sum + (user.inquiries_sent || 0), 0) / usersReport.length).toFixed(1)}`],
+          [],
+          ['ID', 'Full Name', 'Username', 'Email', 'Contact No.', 'Units Posted', 'Bookings Made', 'Inquiries Sent', 'Join Date']
+        ];
         
-        doc.setFontSize(18);
-        doc.setTextColor(44, 62, 80);
-        doc.setFont('helvetica', 'bold');
-        doc.text('USERS REPORT - COMPLETE DETAILS', 20, yPosition);
+        usersReport.forEach(user => {
+          usersData.push([
+            user.id,
+            user.name || 'N/A',
+            user.username || 'N/A',
+            user.email || 'N/A',
+            user.contact_number || 'N/A',
+            user.units_posted || 0,
+            user.bookings_made || 0,
+            user.inquiries_sent || 0,
+            formatDateTime(user.created_at)
+          ]);
+        });
         
-        yPosition += 12;
-        
-        const userTableData = usersReport.map(user => [
-          user.id?.toString() || '',
-          user.name || 'N/A',
-          user.username || 'N/A',
-          user.email || 'N/A',
-          user.contact_number || 'N/A',
-          (user.units_posted || 0).toString(),
-          (user.bookings_made || 0).toString(),
-          (user.inquiries_sent || 0).toString(),
-          formatDateTime(user.created_at)
-        ]);
-        
-        yPosition = createLandscapeTable(
-          doc,
-          ['ID', 'Full Name', 'Username', 'Email', 'Contact No.', 'Units Posted', 'Bookings Made', 'Inquiries Sent', 'Join Date'],
-          userTableData,
-          yPosition,
-          [0.04, 0.1, 0.08, 0.15, 0.1, 0.06, 0.07, 0.07, 0.13]
-        );
-        
-        yPosition += 15;
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Total Users: ${usersReport.length}`, 20, yPosition);
-        
-        const avgUnits = (usersReport.reduce((sum, user) => sum + (user.units_posted || 0), 0) / usersReport.length).toFixed(1);
-        const avgBookings = (usersReport.reduce((sum, user) => sum + (user.bookings_made || 0), 0) / usersReport.length).toFixed(1);
-        const avgInquiries = (usersReport.reduce((sum, user) => sum + (user.inquiries_sent || 0), 0) / usersReport.length).toFixed(1);
-        
-        doc.text(`Average per User - Units: ${avgUnits}, Bookings: ${avgBookings}, Inquiries: ${avgInquiries}`, 100, yPosition);
-        
-        yPosition += 20;
+        const usersWs = XLSX.utils.aoa_to_sheet(usersData);
+        XLSX.utils.book_append_sheet(wb, usersWs, 'Users Report');
       }
       
       if (detailedBookings.length > 0) {
-        doc.addPage('l');
-        yPosition = 20;
-        
-        doc.setFontSize(18);
-        doc.setTextColor(44, 62, 80);
-        doc.setFont('helvetica', 'bold');
-        doc.text('BOOKINGS REPORT - COMPLETE DETAILS', 20, yPosition);
-        
-        yPosition += 12;
-        
-        const bookingTableData = detailedBookings.map(booking => [
-          booking.id?.toString() || '',
-          booking.building_name || 'N/A',
-          booking.unit_number || 'N/A',
-          booking.location || 'N/A',
-          booking.renter_username || 'N/A',
-          booking.renter_email || 'N/A',
-          booking.owner_username || 'N/A',
-          booking.owner_email || 'N/A',
-          booking.status || 'N/A',
-          (booking.number_of_people || 'N/A').toString(),
-          formatDateTime(booking.created_at)
-        ]);
-        
-        yPosition = createLandscapeTable(
-          doc,
-          ['ID', 'Building', 'Unit', 'Location', 'Renter', 'Renter Email', 'Owner', 'Owner Email', 'Status', 'People', 'Created At'],
-          bookingTableData,
-          yPosition,
-          [0.03, 0.08, 0.05, 0.08, 0.07, 0.10, 0.07, 0.10, 0.06, 0.05, 0.11]
-        );
-        
-        yPosition += 15;
-        
         const confirmed = detailedBookings.filter(b => b.status === 'confirmed').length;
         const pending = detailedBookings.filter(b => b.status === 'pending').length;
         const denied = detailedBookings.filter(b => b.status === 'denied').length;
         const cancelled = detailedBookings.filter(b => b.status === 'cancelled').length;
         const confirmedRate = detailedBookings.length > 0 ? ((confirmed / detailedBookings.length) * 100).toFixed(1) : 0;
         
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Total Bookings: ${detailedBookings.length} | Confirmed: ${confirmed} (${confirmedRate}%) | Pending: ${pending} | Denied: ${denied} | Cancelled: ${cancelled}`, 20, yPosition);
+        const bookingsData = [
+          ['BOOKINGS REPORT - COMPLETE DETAILS'],
+          ['Total Bookings:', detailedBookings.length],
+          ['Status Summary:', `Confirmed: ${confirmed} (${confirmedRate}%), Pending: ${pending}, Denied: ${denied}, Cancelled: ${cancelled}`],
+          [],
+          ['ID', 'Building', 'Unit', 'Location', 'Renter', 'Renter Email', 'Owner', 'Owner Email', 'Status', 'People', 'Created At']
+        ];
         
-        yPosition += 20;
+        detailedBookings.forEach(booking => {
+          bookingsData.push([
+            booking.id,
+            booking.building_name || 'N/A',
+            booking.unit_number || 'N/A',
+            booking.location || 'N/A',
+            booking.renter_username || 'N/A',
+            booking.renter_email || 'N/A',
+            booking.owner_username || 'N/A',
+            booking.owner_email || 'N/A',
+            booking.status || 'N/A',
+            booking.number_of_people || 'N/A',
+            formatDateTime(booking.created_at)
+          ]);
+        });
+        
+        const bookingsWs = XLSX.utils.aoa_to_sheet(bookingsData);
+        XLSX.utils.book_append_sheet(wb, bookingsWs, 'Bookings Report');
       }
       
       if (statistics?.topUsers?.length > 0) {
-        doc.addPage('l');
-        yPosition = 20;
+        const topUsersData = [
+          ['TOP PERFORMING USERS'],
+          [],
+          ['Rank', 'Username', 'Email', 'Units Posted', 'Contact No.', 'Member Since']
+        ];
         
-        doc.setFontSize(18);
-        doc.setTextColor(44, 62, 80);
-        doc.setFont('helvetica', 'bold');
-        doc.text('TOP PERFORMING USERS', 20, yPosition);
+        statistics.topUsers.forEach((user, index) => {
+          topUsersData.push([
+            `#${index + 1}`,
+            user.username || 'N/A',
+            user.email || 'N/A',
+            user.units_count || 0,
+            user.contact_number || 'N/A',
+            formatDateTime(user.created_at || new Date())
+          ]);
+        });
         
-        yPosition += 12;
-        
-        const topUsersData = statistics.topUsers.map((user, index) => [
-          `#${index + 1}`,
-          user.username || 'N/A',
-          user.email || 'N/A',
-          (user.units_count || 0).toString(),
-          user.contact_number || 'N/A',
-          formatDateTime(user.created_at || new Date())
-        ]);
-        
-        createLandscapeTable(
-          doc,
-          ['Rank', 'Username', 'Email', 'Units Posted', 'Contact No.', 'Member Since'],
-          topUsersData,
-          yPosition,
-          [0.05, 0.15, 0.25, 0.1, 0.2, 0.15]
-        );
+        const topUsersWs = XLSX.utils.aoa_to_sheet(topUsersData);
+        XLSX.utils.book_append_sheet(wb, topUsersWs, 'Top Users');
       }
       
-      const totalPages = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text('CONFIDENTIAL - Admin Use Only | May Space Management System', pageWidth / 2, pageHeight - 15, { align: 'center' });
-        doc.text(`PIN Verified Export | Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
-      }
+      const fileName = `Admin_Report_${new Date().toISOString().split('T')[0]}_${Date.now()}.xlsx`;
       
-      const fileName = `Admin_Report_${new Date().toISOString().split('T')[0]}_${Date.now()}.pdf`;
-      doc.save(fileName);
+      XLSX.writeFile(wb, fileName);
       
-      alert(`✅ Landscape PDF report exported successfully as: ${fileName}`);
+      alert(`✅ Excel report exported successfully as: ${fileName}`);
       
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('❌ Error generating PDF. Please try again.');
+      console.error('Error generating Excel:', error);
+      alert('❌ Error generating Excel report. Please try again.');
     } finally {
-      setIsGeneratingPDF(false);
+      setIsGeneratingExcel(false);
     }
   };
 
   if (loading) {
     return (
       <div className="admin-report-container">
-        <div className="loading-simple">
-          <p>Loading report data...</p>
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading report data...</p>
         </div>
       </div>
     );
@@ -581,7 +436,6 @@ function AdminReport() {
 
   return (
     <div className="admin-report-container">
-      {/* PIN Verification Modal */}
       {showPinModal && (
         <div className="pin-modal-overlay">
           <div className="pin-modal">
@@ -598,7 +452,7 @@ function AdminReport() {
             
             <div className="pin-modal-body">
               <p className="pin-instruction">
-                Please enter your 6-digit admin PIN to export the PDF report.
+                Please enter your 6-digit admin PIN to export the Excel report.
               </p>
               
               <div className="pin-input-container">
@@ -625,7 +479,7 @@ function AdminReport() {
               {pinVerified && (
                 <div className="pin-success">
                   <span className="success-icon">✅</span>
-                  PIN verified! Generating PDF...
+                  PIN verified! Generating Excel...
                 </div>
               )}
               
@@ -877,7 +731,7 @@ function AdminReport() {
                 <div key={user.username || index} className="top-user-card">
                   <div className="user-rank">#{index + 1}</div>
                   <div className="user-info">
-                    <h4>{obfuscateName(user.username || 'Unknown User')}</h4>
+                    <h4>{obfuscateName(user.username)}</h4>
                     <p>{obfuscateEmail(user.email)}</p>
                   </div>
                   <div className="user-stats">
@@ -1042,7 +896,7 @@ function AdminReport() {
                         <small>@{obfuscateName(user.username)}</small>
                       </td>
                       <td>{obfuscateEmail(user.email)}</td>
-                      <td>{obfuscatePhone(user.contact_number)}</td>
+                      <td>{obfuscateContact(user.contact_number)}</td>
                       <td>
                         <span className={`stat-value ${user.units_posted > 0 ? 'active' : 'inactive'}`}>
                           {user.units_posted || 0}
@@ -1065,7 +919,7 @@ function AdminReport() {
               </table>
             </div>
             <div className="privacy-note">
-              🔒 Personal information is obfuscated for privacy. Full details are available in PDF export.
+              🔒 Personal information is masked for privacy. Full details available in PIN-verified Excel export.
             </div>
           </div>
         </div>
@@ -1075,12 +929,12 @@ function AdminReport() {
         <button 
           className="export-btn" 
           onClick={handleOpenPinModal}
-          disabled={isGeneratingPDF}
+          disabled={isGeneratingExcel}
         >
-          {isGeneratingPDF ? '🔄 Generating PDF...' : '🔐 Export Landscape Report (PDF)'}
+          {isGeneratingExcel ? '🔄 Generating Excel...' : '🔐 Export Full Report (Excel)'}
         </button>
         <div className="export-info">
-          <small>💡 PIN verification required for PDF export</small>
+          <small>💡 PIN verification required for unmasked Excel export</small>
         </div>
       </div>
 
